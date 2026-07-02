@@ -1,4 +1,4 @@
-import { DUCK_MAX_LEVEL, GACHA, RARITY_ORDER, SHARD_CAP } from "./balance";
+import { ASCENSION, DUCK_MAX_LEVEL, GACHA, RARITY_ORDER, SHARD_CAP } from "./balance";
 import { DUCK_DEFS, getDuckDef, isDuckUnlocked, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getStats } from "./state";
@@ -60,7 +60,9 @@ function rollDuckOfRarity(state: GameState, rng: Rng, rarity: Rarity): string {
   return pool[index].id;
 }
 
-function grantDuck(state: GameState, defId: string): GachaResult {
+// Exported for reuse by the shard shop, which grants ducks the same way
+// packs do (dupe -> shards, with shard-cap overflow into Shard Points).
+export function grantDuck(state: GameState, defId: string): GachaResult {
   const rarity = getDuckDef(defId).rarity;
   const owned = state.ducks.find((d) => d.defId === defId);
   if (owned) {
@@ -144,6 +146,33 @@ export function upgradeDuck(state: GameState, defId: string): boolean {
   const duck = state.ducks.find((d) => d.defId === defId)!;
   duck.shards -= upgradeCost(duck);
   duck.level += 1;
+  emit("roster", {});
+  return true;
+}
+
+// Cost formula (PLAN2.md §4): 2x the duck's dupe-shard value x10.
+export function ascensionCost(defId: string): number {
+  return ASCENSION.shardCostMult * GACHA.dupeShards[getDuckDef(defId).rarity];
+}
+
+export function canAscend(state: GameState, defId: string): boolean {
+  const duck = state.ducks.find((d) => d.defId === defId);
+  return (
+    !!duck &&
+    duck.level >= DUCK_MAX_LEVEL &&
+    (duck.ascension ?? 0) < ASCENSION.maxAscensions &&
+    duck.shards >= ascensionCost(defId)
+  );
+}
+
+// Resets level to 1 but keeps (and increases) the permanent ascension stat
+// multiplier — a classic prestige loop.
+export function ascendDuck(state: GameState, defId: string): boolean {
+  if (!canAscend(state, defId)) return false;
+  const duck = state.ducks.find((d) => d.defId === defId)!;
+  duck.shards -= ascensionCost(defId);
+  duck.ascension = (duck.ascension ?? 0) + 1;
+  duck.level = 1;
   emit("roster", {});
   return true;
 }

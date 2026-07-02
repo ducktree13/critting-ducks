@@ -16,7 +16,7 @@ One checkbox per build phase. Work top to bottom — the game is playable at the
   *Playable check: collection shows ~160 entries; traits visibly change stats; new game starts with just Bill.*
 - [x] **V2-5 — Gear & crafting**: enemy materials, equipment drops with rarities, crafting menu, 3 equip slots, selling. Tests.
   *Playable check: kill enemies → materials/gear; craft an item; equip it; duck card reflects stats.*
-- [ ] **V2-6 — Shard shop + ascension**: 12h rotating SP shop, ascension milestones. Tests.
+- [x] **V2-6 — Shard shop + ascension**: 12h rotating SP shop, ascension milestones. Tests.
   *Playable check: overflow shards become SP; shop restocks on the 12h boundary; ascend a maxed duck.*
 - [ ] **V2-7 — Chapter system**: Act-2 transition (tree felled → 4 saplings), authored Mining/Combat/Crit/Passive trees, growth scaling, rotate/overview modes, falling clickable leaves + Duck Tree. Tests.
   *Playable check: completing Act 1 fells the tree; saplings grow; a clicked leaf pays out (and can crit).*

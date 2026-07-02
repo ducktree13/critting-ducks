@@ -109,8 +109,9 @@ function renderRoster(state: GameState): void {
   for (let i = 0; i < stats.arenaSlots; i++) {
     const defId = state.rosters.arena[i];
     if (defId) {
+      const ascension = state.ducks.find((d) => d.defId === defId)?.ascension ?? 0;
       slots.push(
-        `<div class="duck-slot fighter" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64)}</div>`,
+        `<div class="duck-slot fighter" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64, ascension)}</div>`,
       );
     } else {
       slots.push(`<div class="duck-slot empty" data-slot="${i}" title="Assign a duck">+</div>`);

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { SHARD_CAP } from "./balance";
-import { canUpgrade, openPack, packPrice, packUnlocked, rollRarity, upgradeDuck } from "./packs";
+import { ASCENSION, SHARD_CAP } from "./balance";
+import { ascendDuck, ascensionCost, canAscend, canUpgrade, openPack, packPrice, packUnlocked, rollRarity, upgradeDuck } from "./packs";
 import { assignToRoster, createInitialState, refreshStats } from "./state";
 import type { GameState, Rng } from "./types";
 
@@ -172,6 +172,50 @@ describe("shards", () => {
     expect(upgradeDuck(state, "bill")).toBe(true); // cost 2
     expect(bill.shards).toBe(0);
     expect(canUpgrade(state, "bill")).toBe(false);
+  });
+});
+
+describe("ascension", () => {
+  it("requires max level before ascending", () => {
+    const bill = state.ducks.find((d) => d.defId === "bill")!;
+    bill.shards = 9999;
+    expect(canAscend(state, "bill")).toBe(false);
+    bill.level = 10;
+    expect(canAscend(state, "bill")).toBe(true);
+  });
+
+  it("costs 20x the duck's dupe-shard value", () => {
+    // bill is common (dupeShards 1) -> cost 20
+    expect(ascensionCost("bill")).toBe(20 * 1);
+    // goose is legendary (dupeShards 10) -> cost 200
+    expect(ascensionCost("goose")).toBe(20 * 10);
+  });
+
+  it("resets level to 1 but keeps a permanent stat multiplier", () => {
+    const bill = state.ducks.find((d) => d.defId === "bill")!;
+    bill.level = 10;
+    bill.shards = ascensionCost("bill");
+    expect(ascendDuck(state, "bill")).toBe(true);
+    expect(bill.level).toBe(1);
+    expect(bill.ascension).toBe(1);
+    expect(bill.shards).toBe(0);
+  });
+
+  it("caps at the max ascension count", () => {
+    const bill = state.ducks.find((d) => d.defId === "bill")!;
+    bill.level = 10;
+    bill.ascension = ASCENSION.maxAscensions;
+    bill.shards = 9999;
+    expect(canAscend(state, "bill")).toBe(false);
+    expect(ascendDuck(state, "bill")).toBe(false);
+  });
+
+  it("refuses to ascend without enough shards", () => {
+    const bill = state.ducks.find((d) => d.defId === "bill")!;
+    bill.level = 10;
+    bill.shards = ascensionCost("bill") - 1;
+    expect(ascendDuck(state, "bill")).toBe(false);
+    expect(bill.level).toBe(10);
   });
 });
 

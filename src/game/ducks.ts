@@ -1,4 +1,4 @@
-import { DUCK_LEVEL_STAT_BONUS } from "./balance";
+import { ASCENSION, DUCK_LEVEL_STAT_BONUS } from "./balance";
 import { GENERATED_DUCKS } from "./duckgen";
 import { TRAITS } from "./traits";
 import type { DuckDef, EquipSlot, EquipmentStats, GameState, OwnedDuck } from "./types";
@@ -37,6 +37,12 @@ export function levelStatMult(level: number): number {
   return 1 + DUCK_LEVEL_STAT_BONUS * (level - 1);
 }
 
+// Each ascension (0–3) permanently boosts base stats; level resets to 1 on
+// ascending but this multiplier persists (PLAN2.md §4).
+export function ascensionMult(duck: OwnedDuck): number {
+  return 1 + ASCENSION.statMultPerAscension * (duck.ascension ?? 0);
+}
+
 function traitEffect(def: DuckDef) {
   return TRAITS[def.trait].effect;
 }
@@ -48,14 +54,14 @@ function gearEffect(state: GameState, defId: string, slot: EquipSlot): Equipment
 
 export function miningPowerOf(duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  return def.miningPower * levelStatMult(duck.level) * (traitEffect(def).miningMult ?? 1);
+  return def.miningPower * levelStatMult(duck.level) * ascensionMult(duck) * (traitEffect(def).miningMult ?? 1);
 }
 
 // Weapon gear: +flatAttack, then *attackMult.
 export function attackDamageOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
   const gear = gearEffect(state, duck.defId, "weapon");
-  const base = def.attackDamage * levelStatMult(duck.level) * (traitEffect(def).attackMult ?? 1);
+  const base = def.attackDamage * levelStatMult(duck.level) * ascensionMult(duck) * (traitEffect(def).attackMult ?? 1);
   return (base + (gear?.flatAttack ?? 0)) * (gear?.attackMult ?? 1);
 }
 
@@ -63,14 +69,15 @@ export function attackDamageOf(state: GameState, duck: OwnedDuck): number {
 export function hpOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
   const gear = gearEffect(state, duck.defId, "armor");
-  return def.hp * levelStatMult(duck.level) * (traitEffect(def).hpMult ?? 1) * (gear?.hpMult ?? 1);
+  return def.hp * levelStatMult(duck.level) * ascensionMult(duck) * (traitEffect(def).hpMult ?? 1) * (gear?.hpMult ?? 1);
 }
 
-// Armor gear: +flatDefense. Defense does not scale with level (matches v1).
+// Armor gear: +flatDefense. Defense does not scale with level (matches v1)
+// but does scale with ascension.
 export function defenseOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
   const gear = gearEffect(state, duck.defId, "armor");
-  return def.defense * (traitEffect(def).defenseMult ?? 1) + (gear?.flatDefense ?? 0);
+  return def.defense * ascensionMult(duck) * (traitEffect(def).defenseMult ?? 1) + (gear?.flatDefense ?? 0);
 }
 
 export function attackSpeedOf(duck: OwnedDuck): number {

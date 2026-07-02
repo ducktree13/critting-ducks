@@ -1,7 +1,7 @@
-import { GEAR, MATERIAL_NAMES } from "../game/balance";
+import { ASCENSION, GEAR, MATERIAL_NAMES } from "../game/balance";
 import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
 import { equipItem, equippedItemsFor, sellEquipment, unequipItem } from "../game/gear";
-import { upgradeCost } from "../game/packs";
+import { ascendDuck, ascensionCost, canAscend, upgradeCost } from "../game/packs";
 import { toggleFavorite } from "../game/state";
 import { TRAITS } from "../game/traits";
 import type { EquipSlot, EquipmentItem, GameState, Rarity } from "../game/types";
@@ -131,7 +131,7 @@ function renderGrid(): void {
       const def = getDuckDef(duck.defId);
       return `
         <button class="inv-tile rarity-${def.rarity}${duck.defId === selectedDefId ? " selected" : ""}" data-duck="${duck.defId}">
-          ${duckSvg(duck.defId, 48)}
+          ${duckSvg(duck.defId, 48, duck.ascension ?? 0)}
           ${duck.favorite ? `<span class="inv-fav">♥</span>` : ""}
           <small>${def.name}</small>
         </button>`;
@@ -156,6 +156,8 @@ function renderCard(): void {
   }
   const def = getDuckDef(duck.defId);
   const cost = upgradeCost(duck);
+  const ascension = duck.ascension ?? 0;
+  const maxedOut = duck.level >= 10 && ascension >= ASCENSION.maxAscensions;
   const mine = gameState.rosters.mine.includes(duck.defId);
   const arena = gameState.rosters.arena.includes(duck.defId);
   const rosterLabel = mine ? "Rostered in Mine" : arena ? "Rostered in Arena" : "Not rostered";
@@ -181,16 +183,25 @@ function renderCard(): void {
     .join("");
 
   card.innerHTML = `
-    <div class="inv-card-art">${duckSvg(duck.defId, 96)}</div>
+    <div class="inv-card-art">${duckSvg(duck.defId, 96, duck.ascension ?? 0)}</div>
     <div class="inv-card-body">
       <div class="inv-card-title">
         <b>${def.name}</b>
         <button class="fav-btn" id="inv-fav-btn">${duck.favorite ? "♥" : "♡"}</button>
       </div>
-      <div class="inv-card-sub">${def.rarity} · ${def.role} · Lv ${duck.level} · ${TRAITS[def.trait].name}</div>
+      <div class="inv-card-sub">${def.rarity} · ${def.role} · Lv ${duck.level}${ascension ? ` · ${"★".repeat(ascension)}` : ""} · ${TRAITS[def.trait].name}</div>
       <div class="inv-card-trait">${TRAITS[def.trait].desc}</div>
       <div class="inv-card-stats">${statLine.join(" · ")}</div>
-      <div class="inv-card-shards">${duck.shards} shard${duck.shards === 1 ? "" : "s"}${duck.level < 10 ? ` (upgrade costs ${cost})` : " (max level)"}</div>
+      <div class="inv-card-shards">
+        ${duck.shards} shard${duck.shards === 1 ? "" : "s"}${duck.level < 10 ? ` (upgrade costs ${cost})` : ""}
+        ${
+          maxedOut
+            ? " (fully ascended)"
+            : duck.level >= 10
+              ? `<button class="settings-btn" id="inv-ascend-btn" ${canAscend(gameState, duck.defId) ? "" : "disabled"}>Ascend (${ascensionCost(duck.defId)} shards)</button>`
+              : ""
+        }
+      </div>
       <div class="inv-card-roster">${rosterLabel}</div>
       <div class="inv-card-equip">${slotsHtml}</div>
     </div>
@@ -199,6 +210,12 @@ function renderCard(): void {
     toggleFavorite(gameState, duck.defId);
     renderCard();
     renderGrid();
+  });
+  card.querySelector("#inv-ascend-btn")?.addEventListener("click", () => {
+    if (ascendDuck(gameState, duck.defId)) {
+      renderCard();
+      renderGrid();
+    }
   });
   card.querySelectorAll<HTMLButtonElement>(".equip-slot").forEach((btn) => {
     const slot = btn.dataset.slot as EquipSlot;

@@ -56,9 +56,11 @@ function proceduralLook(defId: string): DuckLook {
   };
 }
 
+const STAR_X = [30, 60, 90];
+
 // One parametric duck: body ellipse, wing arc, head circle, beak triangle,
-// eye dot, rarity ring, optional accessory.
-export function duckSvg(defId: string, size: number): string {
+// eye dot, rarity ring, optional accessory, ascension star pips.
+export function duckSvg(defId: string, size: number, ascension = 0): string {
   const def = getDuckDef(defId);
   const look = LOOKS[defId] ?? proceduralLook(defId);
   const ring = RARITY_RING[def.rarity];
@@ -74,6 +76,10 @@ export function duckSvg(defId: string, size: number): string {
           ? `<g fill="#fff8d0"><circle cx="30" cy="28" r="2.4"/><circle cx="98" cy="70" r="2"/><circle cx="44" cy="16" r="1.6"/></g>`
           : "";
 
+  const stars = Array.from({ length: Math.max(0, Math.min(ascension, 3)) }, (_, i) =>
+    `<text x="${STAR_X[i]}" y="14" font-size="16" text-anchor="middle" fill="#f5c518" stroke="#a87c00" stroke-width="0.5">★</text>`,
+  ).join("");
+
   return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" role="img" aria-label="${def.name}">
     <circle cx="60" cy="60" r="56" fill="none" stroke="${ring}" stroke-width="4"/>
     <ellipse cx="56" cy="76" rx="30" ry="21" fill="${look.body}"/>
@@ -82,6 +88,7 @@ export function duckSvg(defId: string, size: number): string {
     <polygon points="92,45 106,50 92,55" fill="${look.beak}"/>
     <circle cx="84" cy="44" r="2.4" fill="#1a1a1a"/>
     ${accessory}
+    ${stars}
   </svg>`;
 }
 
@@ -97,7 +104,8 @@ export function duckTooltipHtml(state: GameState, duck: OwnedDuck): string {
   const def = getDuckDef(duck.defId);
   const trait = TRAITS[def.trait];
   const parts = [`<b>${def.name}</b> <span class="tt-rarity rarity-${def.rarity}">${def.rarity}</span>`];
-  parts.push(`<div class="tt-meta">${ROLE_LABEL[def.role]} · Level ${duck.level} · ${trait.name}</div>`);
+  const ascensionTag = duck.ascension ? ` · ${"★".repeat(duck.ascension)}` : "";
+  parts.push(`<div class="tt-meta">${ROLE_LABEL[def.role]} · Level ${duck.level} · ${trait.name}${ascensionTag}</div>`);
   const stats: string[] = [];
   if (def.role !== "fighter") stats.push(`Mining ${miningPowerOf(duck).toFixed(2)}`);
   if (def.role !== "miner") {

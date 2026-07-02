@@ -23,7 +23,7 @@ export function openRosterPicker(state: GameState, panel: Panel, slotIndex: numb
             : "";
       return `
         <button class="picker-row" data-duck="${duck.defId}">
-          <span class="picker-art">${duckSvg(duck.defId, 44)}</span>
+          <span class="picker-art">${duckSvg(duck.defId, 44, duck.ascension ?? 0)}</span>
           <span class="picker-info">
             <b>${def.name}</b>
             <small>Lv ${duck.level} · ${def.role}${where ? ` · ${where}` : ""}</small>

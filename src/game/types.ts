@@ -66,6 +66,7 @@ export interface OwnedDuck {
   shards: number;
   nextHitIn: number;
   favorite?: boolean;
+  ascension?: number; // 0–3; prestige tier, resets level to 1 but boosts base stats
 }
 
 export type MaterialId = "slimeGoo" | "gooseFeather" | "golemCrumb" | "sharkTooth" | "pondlordRelic";

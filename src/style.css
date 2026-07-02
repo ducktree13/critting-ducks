@@ -670,6 +670,30 @@ main.panels {
   gap: 10px;
 }
 
+.shard-shop-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0 8px;
+}
+
+.shard-shop-head h4 {
+  margin: 0;
+}
+
+.shard-shop-head small {
+  color: var(--muted);
+}
+
+.shard-shop-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--card-border);
+}
+
 .duck-card {
   display: flex;
   flex-direction: column;
@@ -682,6 +706,13 @@ main.panels {
   font-size: 0.8rem;
   text-align: center;
 }
+
+.duck-card.rarity-uncommon { border-color: #4caf50; }
+.duck-card.rarity-rare { border-color: #2196f3; }
+.duck-card.rarity-epic { border-color: #9c27b0; }
+.duck-card.rarity-legendary { border-color: #f5c518; }
+.duck-card.rarity-mythic { border-color: #c0392b; }
+.duck-card.rarity-divine { border-color: #e8f4ff; }
 
 .duck-card small {
   color: var(--muted);

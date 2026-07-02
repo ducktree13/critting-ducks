@@ -1,6 +1,7 @@
 import { DUCK_MAX_LEVEL, GACHA, RARITY_ORDER } from "../game/balance";
 import { DUCK_DEFS, getDuckDef } from "../game/ducks";
 import { canUpgrade, openPack, packPrice, packUnlocked, upgradeCost, upgradeDuck } from "../game/packs";
+import { buyFromShardShop, currentShardShopSlots, msUntilRestock } from "../game/shardshop";
 import { toggleFavorite } from "../game/state";
 import type { GameState, PackId, Rng } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
@@ -44,6 +45,11 @@ export function initShopModal(state: GameState, rng: Rng, actions: SaveActions):
       </div>
       <div class="shop-crit-banner" id="shop-crit-banner"></div>
       <div class="shop-reveal" id="shop-reveal"></div>
+      <div class="shard-shop-head">
+        <h4>Shard Shop</h4>
+        <small id="shard-shop-restock"></small>
+      </div>
+      <div class="shard-shop-slots" id="shard-shop-slots"></div>
       <div class="shop-collection" id="shop-collection"></div>
       <div class="shop-settings">
         <button class="settings-btn" id="save-export">Export save</button>
@@ -76,9 +82,41 @@ export function initShopModal(state: GameState, rng: Rng, actions: SaveActions):
 export function openShop(): void {
   renderPackButtons();
   renderCollection();
+  renderShardShop();
   overlay.querySelector("#shop-reveal")!.innerHTML = "";
   overlay.querySelector("#shop-crit-banner")!.textContent = "";
   overlay.classList.add("open");
+}
+
+function renderShardShop(): void {
+  const now = Date.now();
+  const hours = Math.ceil(msUntilRestock(now) / 3_600_000);
+  overlay.querySelector("#shard-shop-restock")!.textContent = `Restocks in ${hours}h`;
+
+  const slots = overlay.querySelector("#shard-shop-slots")!;
+  slots.innerHTML = currentShardShopSlots(gameState, now)
+    .map((slot) => {
+      const def = getDuckDef(slot.defId);
+      const affordable = gameState.shardPoints >= slot.price;
+      return `
+        <div class="duck-card rarity-${def.rarity}" data-shard-slot="${slot.defId}">
+          ${duckSvg(def.id, 56)}
+          <b>${def.name}</b>
+          <small>${def.rarity}</small>
+          <button class="settings-btn" data-buy-shard="${slot.defId}" ${affordable ? "" : "disabled"}>${fmt(slot.price)} SP</button>
+        </div>`;
+    })
+    .join("");
+
+  slots.querySelectorAll<HTMLButtonElement>("[data-buy-shard]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (buyFromShardShop(gameState, btn.dataset.buyShard!, Date.now())) {
+        renderShardShop();
+        renderCollection();
+        renderPackButtons(); // SP balance shown alongside packs
+      }
+    });
+  });
 }
 
 function closeShop(): void {
@@ -164,7 +202,7 @@ function renderCollection(): void {
     return `
       <div class="duck-card" data-duck="${def.id}">
         <button class="fav-toggle" data-duck="${def.id}" aria-label="Toggle favorite">${owned.favorite ? "♥" : "♡"}</button>
-        ${duckSvg(def.id, 56)}
+        ${duckSvg(def.id, 56, owned.ascension ?? 0)}
         <b>${def.name}</b>
         <small>Lv ${owned.level}${maxed ? " (max)" : ""} · ${owned.shards} shard${owned.shards === 1 ? "" : "s"}</small>
         ${maxed ? "" : `<button class="upgrade-btn" data-duck="${def.id}" ${canUpgrade(gameState, def.id) ? "" : "disabled"}>Upgrade (${cost})</button>`}

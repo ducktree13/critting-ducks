@@ -141,6 +141,22 @@ export const GEAR = {
 
 export const RARITY_ORDER: readonly Rarity[] = RARITY_TIERS;
 
+export const ASCENSION = {
+  maxAscensions: 3,
+  statMultPerAscension: 0.25, // +25% to base stats per ascension
+  // Cost formula (PLAN2.md §4): 2x the duck's dupe-shard value x10.
+  shardCostMult: 20,
+} as const;
+
+export const SHARD_SHOP = {
+  slots: 4,
+  restockPeriodMs: 12 * 3600 * 1000,
+  divineMinLevel: 35,
+  spPrice: {
+    common: 50, uncommon: 100, rare: 200, epic: 400, legendary: 800, mythic: 2000, divine: 5000,
+  } as Record<Rarity, number>,
+} as const;
+
 export const ARENA_BASE = {
   baseEnemyHp: 24,
   enemyHpGrowth: 1.16,
