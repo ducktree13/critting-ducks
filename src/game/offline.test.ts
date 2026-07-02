@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { passivePowerOf } from "./ducks";
 import { computeOfflineProgress, offlineIncomePerSec } from "./offline";
 import { computeStats, createInitialState } from "./state";
 import type { GameState } from "./types";
@@ -82,5 +83,17 @@ describe("computeOfflineProgress", () => {
     expect(report.levelsGained).toBe(5);
     expect(state.level).toBe(6);
     expect(state.xp).toBeCloseTo(1800 - 100 - 160 - 256 - 409.6 - 655.36);
+  });
+
+  it("adds pond income at full rate, not discounted by the mine's offline rate", () => {
+    state.rosters.mine = []; // isolate pond's contribution
+    state.ducks.push({ defId: "puddle", level: 1, shards: 0, nextHitIn: 1 });
+    state.rosters.pond = ["puddle"];
+    const stats = noBuffStats();
+    const report = computeOfflineProgress(state, 3600, stats);
+    // pondIncomePerSec * elapsed (no *rate), since pond isn't gated by the
+    // mine's offline-rate tree.
+    const expectedGoldPerSec = passivePowerOf(state, state.ducks[1]) * 0.4; // POND.goldPerPassivePowerPerSec
+    expect(report.goldGained).toBeCloseTo(expectedGoldPerSec * 3600);
   });
 });

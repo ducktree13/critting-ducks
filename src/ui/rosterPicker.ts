@@ -20,7 +20,9 @@ export function openRosterPicker(state: GameState, panel: Panel, slotIndex: numb
           ? "in mine"
           : state.rosters.arena.includes(duck.defId)
             ? "in arena"
-            : "";
+            : state.rosters.pond.includes(duck.defId)
+              ? "in pond"
+              : "";
       return `
         <button class="picker-row" data-duck="${duck.defId}">
           <span class="picker-art">${duckSvg(duck.defId, 44, duck.ascension ?? 0)}</span>

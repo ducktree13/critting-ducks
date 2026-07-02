@@ -1,4 +1,4 @@
-import { ASCENSION, DUCK_LEVEL_STAT_BONUS } from "./balance";
+import { ASCENSION, DUCK_LEVEL_STAT_BONUS, POND } from "./balance";
 import { GENERATED_DUCKS } from "./duckgen";
 import { TRAITS } from "./traits";
 import type { DuckDef, EquipSlot, EquipmentStats, GameState, OwnedDuck } from "./types";
@@ -105,6 +105,15 @@ export function goldMultOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
   const gear = gearEffect(state, duck.defId, "charm");
   return (traitEffect(def).goldMult ?? 1) * (gear?.goldMult ?? 1);
+}
+
+// Pond contribution (PLAN2.md §10): derived from effective HP (armor gear
+// included) rather than a new per-duck field, so it scales with rarity/
+// level/ascension/gear for free — every duck in the roster is usable, and
+// Lazy ducks excel via their trait.
+export function passivePowerOf(state: GameState, duck: OwnedDuck): number {
+  const def = getDuckDef(duck.defId);
+  return hpOf(state, duck) * POND.passivePowerFromHp * (traitEffect(def).passivePowerMult ?? 1);
 }
 
 export function makeOwnedDuck(defId: string): OwnedDuck {

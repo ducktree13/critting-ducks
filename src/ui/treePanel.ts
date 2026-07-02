@@ -1,10 +1,14 @@
 import { ACT2_TREE_IDS, treeProgress } from "../game/chapters";
 import { on } from "../game/events";
 import { clickLeaf } from "../game/leaves";
+import { pondIncomePerSec } from "../game/pond";
 import { buy, canBuy, getSkillNode, isOwned, isVisible, nodesForTree, SKILL_NODES } from "../game/skilltree";
+import { getStats } from "../game/state";
 import type { GameState, NodeEffect, SkillNode, TreeId } from "../game/types";
+import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { fmt } from "./format";
 import { renderMissionTracker } from "./missionsPanel";
+import { openRosterPicker } from "./rosterPicker";
 import { attachTooltip } from "./tooltip";
 
 const TREE_NAMES: Record<TreeId, string> = {
@@ -254,6 +258,47 @@ function hashLeaf(id: string): number {
   return h % 100;
 }
 
+// ---- Pond (passive generation, PLAN2.md §10) — always visible beneath
+// the trees, in every view mode. ----
+
+let lastPondRosterKey = "";
+
+function pondRosterKey(state: GameState): string {
+  return state.rosters.pond.join(",") + "|" + getStats(state).pondSlots;
+}
+
+function rebuildPondRoster(state: GameState): void {
+  const strip = panel.querySelector<HTMLElement>("#pond-strip")!;
+  const stats = getStats(state);
+  const slots: string[] = [];
+  for (let i = 0; i < stats.pondSlots; i++) {
+    const defId = state.rosters.pond[i];
+    if (defId) {
+      const ascension = state.ducks.find((d) => d.defId === defId)?.ascension ?? 0;
+      slots.push(`<div class="duck-slot pond-duck" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 40, ascension)}</div>`);
+    } else {
+      slots.push(`<div class="duck-slot empty pond-empty" data-slot="${i}" title="Assign a duck to swim">+</div>`);
+    }
+  }
+  strip.querySelector("#pond-slots")!.innerHTML = slots.join("");
+  strip.querySelectorAll<HTMLElement>(".duck-slot").forEach((slot) => {
+    slot.addEventListener("click", () => openRosterPicker(state, "pond", Number(slot.dataset.slot)));
+    const defId = slot.dataset.duck;
+    if (defId) {
+      const duck = state.ducks.find((d) => d.defId === defId);
+      if (duck) attachTooltip(slot, () => duckTooltipHtml(state, duck));
+    }
+  });
+  lastPondRosterKey = pondRosterKey(state);
+}
+
+function renderPond(state: GameState): void {
+  if (pondRosterKey(state) !== lastPondRosterKey) rebuildPondRoster(state);
+  const income = pondIncomePerSec(state, getStats(state));
+  const ticker = panel.querySelector<HTMLElement>("#pond-ticker")!;
+  ticker.textContent = income.goldPerSec > 0 ? `${fmt(income.goldPerSec * 3600)}/hr` : "idle";
+}
+
 export function initTreePanel(root: HTMLElement, state: GameState): void {
   panel = root;
   gameState = state;
@@ -263,6 +308,10 @@ export function initTreePanel(root: HTMLElement, state: GameState): void {
       <div class="mission-slot" id="tree-mission"></div>
       <div id="tree-canvas"></div>
       <div id="falling-leaves"></div>
+      <div class="pond-strip" id="pond-strip">
+        <div class="pond-header"><small>🌊 Pond</small><small id="pond-ticker"></small></div>
+        <div class="pond-slots" id="pond-slots"></div>
+      </div>
     </div>
   `;
   tickerEl = panel.querySelector<HTMLElement>("#tree-ticker")!;
@@ -277,8 +326,10 @@ export function initTreePanel(root: HTMLElement, state: GameState): void {
     playFellingAnimation();
     rebuildLayout();
   });
+  on("roster", () => rebuildPondRoster(gameState));
 
   rebuildLayout();
+  rebuildPondRoster(state);
 }
 
 export function renderTreePanel(state: GameState): void {
@@ -297,4 +348,5 @@ export function renderTreePanel(state: GameState): void {
 
   renderMissionTracker("tree", missionEl, state);
   renderLeaves(state);
+  renderPond(state);
 }

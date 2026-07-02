@@ -7,6 +7,7 @@ import { tickLeaves } from "./game/leaves";
 import { checkMissions, ensureMissions } from "./game/missions";
 import { tickMine } from "./game/mine";
 import { computeOfflineProgress, offlineIncomePerSec } from "./game/offline";
+import { pondIncomePerSec, tickPond } from "./game/pond";
 import { mulberry32 } from "./game/rng";
 import { clearSave, exportSave, importSave, load, save } from "./game/save";
 import { computeStats, createInitialState, getStats, grantXp, refreshStats } from "./game/state";
@@ -109,9 +110,10 @@ initTutorial(state);
 ensureMissions(state, rng);
 
 function simTick(s: GameState, dt: number, r: Rng): void {
-  refreshStats(s, Date.now());
+  const stats = refreshStats(s, Date.now());
   tickMine(s, dt, r);
   tickArena(s, dt, r);
+  tickPond(s, dt, r, stats);
   checkMissions(s, r);
   checkAchievements(s);
   checkChapterTransition(s);
@@ -133,13 +135,15 @@ function handleFrameGap(gapSec: number): void {
   state.streak.current = 0;
   const stats = noBuffStats();
   const { goldPerSec, xpPerSec } = offlineIncomePerSec(state, stats);
+  const pond = pondIncomePerSec(state, stats);
   const fullSec = Math.min(gapSec, OFFLINE.fullRateGapSec);
   const beyondSec = Math.min(Math.max(gapSec - fullSec, 0), OFFLINE.capSec);
   const credited = fullSec + beyondSec * stats.offlineRate;
-  const gold = goldPerSec * credited;
+  const cappedGapSec = fullSec + beyondSec; // pond ignores the offline-rate discount
+  const gold = goldPerSec * credited + pond.goldPerSec * cappedGapSec;
   state.gold += gold;
   state.lifetime.gold += gold;
-  grantXp(state, xpPerSec * credited);
+  grantXp(state, xpPerSec * credited + pond.xpPerSec * cappedGapSec);
 }
 
 let lastFrame = performance.now();

@@ -1,6 +1,6 @@
 export type OreId = "copper" | "silver" | "crystal" | "starmetal" | "voidstone" | "aurorium";
 export type Rarity = "common" | "uncommon" | "rare" | "epic" | "legendary" | "mythic" | "divine";
-export type Panel = "mine" | "arena";
+export type Panel = "mine" | "arena" | "pond";
 export type PackId = "standard" | "five" | "pack25" | "pack100";
 export type PassiveId = "teamOre10" | "teamDmg10" | "goldenCrit" | "streakShield";
 
@@ -119,7 +119,7 @@ export interface GameState {
   ores: Record<OreId, number>;
   selectedOre: OreId;
   ducks: OwnedDuck[];
-  rosters: { mine: string[]; arena: string[] };
+  rosters: { mine: string[]; arena: string[]; pond: string[] };
   skillNodes: string[];
   shardPoints: number;                       // overflow shards, spent in the shard shop
   packCredits: Record<PackId, number>;       // free packs from level rewards etc.
@@ -197,6 +197,7 @@ export interface DerivedStats {
   goldMult: number;
   mineSlots: number;
   arenaSlots: number;
+  pondSlots: number;
   offlineRate: number;
   buffDurationSec: number;
   unlockedOres: OreId[];

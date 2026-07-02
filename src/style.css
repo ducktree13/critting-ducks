@@ -275,14 +275,16 @@ main.panels {
 .tree-body {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: stretch;
   justify-content: center;
   padding: 8px;
+  gap: 6px;
 }
 
 #tree-canvas {
   width: 100%;
-  height: 100%;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -355,6 +357,48 @@ main.panels {
   40% { transform: rotate(2deg); }
   60% { transform: rotate(-6deg); }
   100% { transform: rotate(0deg) translateY(0); }
+}
+
+.pond-strip {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--card-border);
+  border-radius: 8px 8px 0 0;
+  background: color-mix(in srgb, #4a90b8 12%, var(--card));
+  padding: 6px 10px;
+}
+
+.pond-header {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.pond-slots {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.pond-duck {
+  animation: pond-swim 3.5s ease-in-out infinite;
+}
+
+@keyframes pond-swim {
+  0%, 100% { transform: translateX(-6px) rotate(-3deg); }
+  50% { transform: translateX(6px) rotate(3deg); }
+}
+
+.pond-empty {
+  width: 40px;
+  height: 40px;
+  border: 2px dashed var(--card-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  cursor: pointer;
 }
 
 #falling-leaves {

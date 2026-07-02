@@ -17,6 +17,7 @@ export const BASE_STATS = {
   offlineRate: 0.5,
   mineSlots: 1,
   arenaSlots: 1,
+  pondSlots: 2,
   buffDurationSec: 10,
 } as const;
 
@@ -168,6 +169,16 @@ export const SHARD_SHOP = {
   spPrice: {
     common: 50, uncommon: 100, rare: 200, epic: 400, legendary: 800, mythic: 2000, divine: 5000,
   } as Record<Rarity, number>,
+} as const;
+
+// Pond (PLAN2.md §10): passive generation panel beneath the trees. Ducks
+// contribute passivePower (derived from HP, so it scales with rarity/level/
+// ascension the same way other stats do) each tick, no hits or crits.
+export const POND = {
+  passivePowerFromHp: 0.02,
+  goldPerPassivePowerPerSec: 0.4,
+  xpPerPassivePowerPerSec: 0.08,
+  materialChancePerPassivePowerPerSec: 0.0004, // small, steady trickle
 } as const;
 
 export const ARENA_BASE = {

@@ -1,5 +1,6 @@
 import { BASE_STATS, MINE_XP_PER_HIT, OFFLINE, ORE_VALUES } from "./balance";
 import { getDuckDef, miningPowerOf } from "./ducks";
+import { pondIncomePerSec } from "./pond";
 import { grantXp } from "./state";
 import type { DerivedStats, GameState } from "./types";
 
@@ -42,6 +43,8 @@ export function offlineIncomePerSec(
 
 // Grants capped offline earnings at the given stats' offline rate and
 // returns a report for the Welcome Back modal. Arena does not progress.
+// The pond isn't gated by the mine's offline-rate tree — it's passive
+// income by design, so it keeps accruing at full rate while away.
 export function computeOfflineProgress(
   state: GameState,
   elapsedSec: number,
@@ -50,9 +53,10 @@ export function computeOfflineProgress(
   const cappedSec = Math.min(elapsedSec, OFFLINE.capSec);
   const rate = stats.offlineRate;
   const { goldPerSec, xpPerSec } = offlineIncomePerSec(state, stats);
+  const pond = pondIncomePerSec(state, stats);
 
-  const goldGained = goldPerSec * cappedSec * rate;
-  const xpGained = xpPerSec * cappedSec * rate;
+  const goldGained = goldPerSec * cappedSec * rate + pond.goldPerSec * cappedSec;
+  const xpGained = xpPerSec * cappedSec * rate + pond.xpPerSec * cappedSec;
   const levelBefore = state.level;
 
   state.gold += goldGained;

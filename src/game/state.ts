@@ -2,7 +2,7 @@ import { ARENA_BASE, BASE_STATS, LEVEL_REWARDS, ORE_LEVEL_GATES, PASSIVES, STREA
 import { getDuckDef, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getSkillNode } from "./skilltree";
-import type { DerivedStats, GameState, OreId, PackId, Reward } from "./types";
+import type { DerivedStats, GameState, OreId, PackId, Panel, Reward } from "./types";
 
 export function createInitialState(): GameState {
   const now = Date.now();
@@ -23,7 +23,7 @@ export function createInitialState(): GameState {
     ores,
     selectedOre: "copper",
     ducks: [makeOwnedDuck("bill")],
-    rosters: { mine: ["bill"], arena: [] },
+    rosters: { mine: ["bill"], arena: [], pond: [] },
     skillNodes: [],
     shardPoints: 0,
     packCredits: { standard: 1, five: 0, pack25: 0, pack100: 0 }, // welcome pack
@@ -94,17 +94,17 @@ export function grantXp(state: GameState, amount: number): void {
 // currently sits.
 export function assignToRoster(
   state: GameState,
-  panel: "mine" | "arena",
+  panel: Panel,
   slotIndex: number,
   defId: string | null,
 ): boolean {
   const stats = getStats(state);
-  const slots = panel === "mine" ? stats.mineSlots : stats.arenaSlots;
+  const slots = panel === "mine" ? stats.mineSlots : panel === "arena" ? stats.arenaSlots : stats.pondSlots;
   if (slotIndex < 0 || slotIndex >= slots) return false;
   if (defId !== null && !state.ducks.some((d) => d.defId === defId)) return false;
 
   if (defId !== null) {
-    for (const p of ["mine", "arena"] as const) {
+    for (const p of ["mine", "arena", "pond"] as const) {
       const i = state.rosters[p].indexOf(defId);
       if (i !== -1) state.rosters[p].splice(i, 1);
     }
@@ -165,6 +165,7 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
     goldMult: 1,
     mineSlots: BASE_STATS.mineSlots,
     arenaSlots: BASE_STATS.arenaSlots,
+    pondSlots: BASE_STATS.pondSlots,
     offlineRate: BASE_STATS.offlineRate,
     buffDurationSec: BASE_STATS.buffDurationSec,
     unlockedOres: ["copper"],
@@ -181,7 +182,8 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
         break;
       case "slot":
         if (effect.panel === "mine") stats.mineSlots += 1;
-        else stats.arenaSlots += 1;
+        else if (effect.panel === "arena") stats.arenaSlots += 1;
+        else stats.pondSlots += 1;
         break;
       case "oreUnlock":
         if (state.level >= ORE_LEVEL_GATES[effect.ore]) stats.unlockedOres.push(effect.ore);

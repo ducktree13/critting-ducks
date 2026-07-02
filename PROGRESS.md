@@ -20,7 +20,7 @@ One checkbox per build phase. Work top to bottom — the game is playable at the
   *Playable check: overflow shards become SP; shop restocks on the 12h boundary; ascend a maxed duck.*
 - [x] **V2-7 — Chapter system**: Act-2 transition (tree felled → 4 saplings), authored Mining/Combat/Crit/Passive trees, growth scaling, rotate/overview modes, falling clickable leaves + Duck Tree. Tests.
   *Playable check: completing Act 1 fells the tree; saplings grow; a clicked leaf pays out (and can crit).*
-- [ ] **V2-8 — Pond**: pond beneath the trees, swim roster, passive income + offline integration.
+- [x] **V2-8 — Pond**: pond beneath the trees, swim roster, passive income + offline integration.
   *Playable check: rostered ducks swim and generate trickle income, including while away.*
 - [ ] **V2-9 — Expeditions**: 1h/8h/24h journeys on real timestamps, fail chance by level, journey crits. Tests.
   *Playable check: send a journey, close the game past its timer, return to rewards (or a failure).*
