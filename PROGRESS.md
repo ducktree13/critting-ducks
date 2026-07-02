@@ -10,7 +10,7 @@ One checkbox per build phase. Work top to bottom — the game is playable at the
   *Playable check: first pack ≈10 min of expected income; pack crit grants a bonus pack; ores respect level gates.*
 - [x] **V2-2 — UX layer**: shared hover tooltips (nodes, ducks, pips, veins, packs), panel minimize/expand, favorite toggle, duck inventory menu.
   *Playable check: hover anything meaningful and learn what it does; minimize mine → tree+arena widen.*
-- [ ] **V2-3 — Tutorial + missions/achievements**: frameworks + pinned mission per section + 5-minute tutorial chain ending in a guaranteed-rare pack + locked-duck hooks.
+- [x] **V2-3 — Tutorial + missions/achievements**: frameworks + pinned mission per section + 5-minute tutorial chain ending in a guaranteed-rare pack + locked-duck hooks.
   *Playable check: fresh save completes the tutorial in ≤5 min and holds a rare+ duck.*
 - [ ] **V2-4 — Duck expansion**: duckgen to ~160 ducks, personality traits, Bill-only start, level-gated pools. Tests.
   *Playable check: collection shows ~160 entries; traits visibly change stats; new game starts with just Bill.*

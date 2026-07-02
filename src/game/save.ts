@@ -40,6 +40,14 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
     },
     arena: { ...base.arena, ...partial.arena },
     packCredits: { ...base.packCredits, ...partial.packCredits },
+    unlockedDucks: partial.unlockedDucks ?? base.unlockedDucks,
+    achievementsCompleted: partial.achievementsCompleted ?? base.achievementsCompleted,
+    missions: { ...base.missions, ...partial.missions },
+    pinnedMission: { ...base.pinnedMission, ...partial.pinnedMission },
+    // A save with no tutorial field predates the tutorial (or was loaded,
+    // meaning the player already exists — first-timers get
+    // createInitialState() directly and never pass through this merge).
+    tutorial: partial.tutorial ?? { step: 0, done: true, finaleGranted: true },
     settings: {
       ...base.settings,
       ...partial.settings,

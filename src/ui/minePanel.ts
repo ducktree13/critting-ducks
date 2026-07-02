@@ -4,6 +4,7 @@ import { getStats, refreshStats } from "../game/state";
 import type { GameState, OreId } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { fmt } from "./format";
+import { renderMissionTracker } from "./missionsPanel";
 import { openRosterPicker } from "./rosterPicker";
 import { attachTooltip } from "./tooltip";
 
@@ -40,6 +41,7 @@ let duckRowEl: HTMLElement;
 let oreCountersEl: HTMLElement;
 let veinsEl: HTMLElement;
 let tickerEl: HTMLElement;
+let missionEl: HTMLElement;
 let lastRosterKey = "";
 
 export function initMinePanel(root: HTMLElement, state: GameState): void {
@@ -47,6 +49,7 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
   panel.innerHTML = `
     <h2>Mine <span class="panel-ticker" id="mine-ticker"></span></h2>
     <div class="panel-body mine-body">
+      <div class="mission-slot" id="mine-mission"></div>
       <div class="mine-rock" id="mine-rock"></div>
       <div class="vein-row" id="vein-row"></div>
       <div class="duck-row" id="mine-ducks"></div>
@@ -58,6 +61,7 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
   oreCountersEl = panel.querySelector("#ore-counters")!;
   veinsEl = panel.querySelector("#vein-row")!;
   tickerEl = panel.querySelector("#mine-ticker")!;
+  missionEl = panel.querySelector("#mine-mission")!;
 
   renderVeins(state);
   renderRoster(state);
@@ -171,4 +175,5 @@ export function renderMinePanel(state: GameState): void {
     .map((ore) => `<span class="ore-counter">${ORE_NAMES[ore]}: ${fmt(state.ores[ore])}</span>`)
     .join("");
   tickerEl.textContent = `${state.rosters.mine.length} mining`;
+  renderMissionTracker("mine", missionEl, state);
 }

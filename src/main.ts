@@ -1,6 +1,8 @@
 import "./style.css";
+import { checkAchievements } from "./game/achievements";
 import { tickArena } from "./game/arena";
 import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, OFFLINE, TICK_SEC } from "./game/balance";
+import { checkMissions, ensureMissions } from "./game/missions";
 import { tickMine } from "./game/mine";
 import { computeOfflineProgress, offlineIncomePerSec } from "./game/offline";
 import { mulberry32 } from "./game/rng";
@@ -8,6 +10,7 @@ import { clearSave, exportSave, importSave, load, save } from "./game/save";
 import { computeStats, createInitialState, grantXp, refreshStats } from "./game/state";
 import { gameSpeed } from "./game/streak";
 import type { GameState, Rng } from "./game/types";
+import { initAchievementsPanel } from "./ui/achievementsPanel";
 import { initArenaPanel, renderArenaPanel } from "./ui/arenaPanel";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
@@ -17,6 +20,7 @@ import { initMinePanel, renderMinePanel } from "./ui/minePanel";
 import { initShopModal } from "./ui/shopModal";
 import { initTheme } from "./ui/theme";
 import { initTreePanel, renderTreePanel } from "./ui/treePanel";
+import { initTutorial, renderTutorial } from "./ui/tutorial";
 import { showWelcomeBack } from "./ui/welcomeBack";
 
 const storage = window.localStorage;
@@ -85,6 +89,7 @@ initShopModal(state, rng, {
   },
 });
 initInventoryMenu(state);
+initAchievementsPanel(state);
 initHud(app.querySelector("header.hud")!);
 initTheme(state, app.querySelector<HTMLElement>("#hud-theme")!);
 initMinePanel(minePanelEl, state);
@@ -96,11 +101,15 @@ initLayout(app.querySelector<HTMLElement>("main.panels")!, state, {
   tree: treePanelEl,
   arena: arenaPanelEl,
 });
+initTutorial(state);
+ensureMissions(state, rng);
 
 function simTick(s: GameState, dt: number, r: Rng): void {
   refreshStats(s, Date.now());
   tickMine(s, dt, r);
   tickArena(s, dt, r);
+  checkMissions(s, r);
+  checkAchievements(s);
 }
 
 function render(s: GameState): void {
@@ -108,6 +117,7 @@ function render(s: GameState): void {
   renderMinePanel(s);
   renderTreePanel(s);
   renderArenaPanel(s);
+  renderTutorial(s);
 }
 
 // Hidden-tab gap: credit expected mine income instead of spinning the

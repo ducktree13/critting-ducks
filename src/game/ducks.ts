@@ -1,5 +1,5 @@
 import { DUCK_LEVEL_STAT_BONUS } from "./balance";
-import type { DuckDef, OwnedDuck } from "./types";
+import type { DuckDef, GameState, OwnedDuck } from "./types";
 
 // All 13 v1 ducks, rescaled for the v2 economy (PLAN2.md §3: mining power
 // ~1/10 of v1, attack damage ~1/2). Stats are level-1 values. The full ~160
@@ -48,4 +48,11 @@ export function hpOf(duck: OwnedDuck): number {
 export function makeOwnedDuck(defId: string): OwnedDuck {
   const def = getDuckDef(defId);
   return { defId, level: 1, shards: 0, nextHitIn: 1 / def.attacksPerSecond };
+}
+
+// A locked duck is absent from gacha pools until its lockedBy source (a
+// mission, achievement, leaf drop, or shard-shop purchase) grants it.
+export function isDuckUnlocked(state: GameState, defId: string): boolean {
+  const def = getDuckDef(defId);
+  return !def.lockedBy || state.unlockedDucks.includes(defId);
 }

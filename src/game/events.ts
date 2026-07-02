@@ -1,3 +1,5 @@
+import type { MissionSection } from "./types";
+
 export interface GameEventMap {
   hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; gold: number; xp: number; ore: number; dmg: number };
   crit: { panel: "mine" | "arena"; duckId: string };
@@ -7,6 +9,8 @@ export interface GameEventMap {
   buy: { nodeId: string };
   gacha: { results: { defId: string; isNew: boolean; shardsGained: number }[] };
   roster: Record<string, never>;
+  missionComplete: { section: MissionSection; name: string };
+  achievement: { id: string; name: string };
 }
 
 export type GameEventName = keyof GameEventMap;

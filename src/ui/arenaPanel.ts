@@ -4,6 +4,7 @@ import { getStats } from "../game/state";
 import type { GameState } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { fmt } from "./format";
+import { renderMissionTracker } from "./missionsPanel";
 import { openRosterPicker } from "./rosterPicker";
 import { attachTooltip } from "./tooltip";
 
@@ -22,6 +23,7 @@ let teamBarLabelEl: HTMLElement;
 let duckRowEl: HTMLElement;
 let overlayEl: HTMLElement;
 let tickerEl: HTMLElement;
+let missionEl: HTMLElement;
 let lastRosterKey = "";
 let lastEnemyKey = "";
 
@@ -30,6 +32,7 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
   panel.innerHTML = `
     <h2>Arena <span class="panel-ticker" id="arena-ticker"></span></h2>
     <div class="panel-body arena-body">
+      <div class="mission-slot" id="arena-mission"></div>
       <div class="arena-enemy">
         <div class="enemy-name" id="enemy-name"></div>
         <div class="enemy-art" id="enemy-art"></div>
@@ -51,6 +54,7 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
   duckRowEl = panel.querySelector("#arena-ducks")!;
   overlayEl = panel.querySelector("#arena-overlay")!;
   tickerEl = panel.querySelector("#arena-ticker")!;
+  missionEl = panel.querySelector("#arena-mission")!;
 
   renderRoster(state);
   renderEnemy(state);
@@ -130,6 +134,7 @@ export function renderArenaPanel(state: GameState): void {
   if (rosterKey(state) !== lastRosterKey) renderRoster(state);
   if (String(state.arena.wave) !== lastEnemyKey) renderEnemy(state);
   tickerEl.textContent = `Wave ${state.arena.wave}`;
+  renderMissionTracker("arena", missionEl, state);
 
   const a = state.arena;
   enemyBarEl.style.width = `${a.enemyMaxHp > 0 ? Math.max((a.enemyHp / a.enemyMaxHp) * 100, 0) : 0}%`;

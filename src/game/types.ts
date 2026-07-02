@@ -8,6 +8,8 @@ export interface Rng {
   next(): number; // [0, 1)
 }
 
+export type LockKind = "mission" | "achievement" | "leaf" | "shop";
+
 export interface DuckDef {
   id: string;
   name: string;
@@ -21,6 +23,27 @@ export interface DuckDef {
   critChanceBonus: number;
   critDamageBonus: number;
   passive?: PassiveId;
+  lockedBy?: { kind: LockKind; id: string }; // absent from gacha pools until unlocked
+}
+
+// A one-shot payout applied by grantReward — shared by missions and
+// achievements so both can use the same reward shape and application code.
+export interface Reward {
+  gold?: number;
+  shardPoints?: number;
+  packCredits?: Partial<Record<PackId, number>>;
+  unlockDuck?: string;
+}
+
+export type MissionSection = "mine" | "tree" | "arena";
+
+export interface MissionInstance {
+  id: string;
+  templateId: string;
+  section: MissionSection;
+  startValue: number;
+  target: number;
+  completed: boolean;
 }
 
 export interface OwnedDuck {
@@ -61,6 +84,11 @@ export interface GameState {
   skillNodes: string[];
   shardPoints: number;                       // overflow shards, spent in the shard shop
   packCredits: Record<PackId, number>;       // free packs from level rewards etc.
+  unlockedDucks: string[];                   // defIds of lockedBy ducks the player has freed
+  achievementsCompleted: string[];
+  missions: Record<MissionSection, MissionInstance[]>;
+  pinnedMission: Record<MissionSection, string | null>;
+  tutorial: { step: number; done: boolean; finaleGranted: boolean };
   streak: StreakState;
   arena: ArenaState;
   settings: {

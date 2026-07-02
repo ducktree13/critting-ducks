@@ -13,6 +13,9 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(1_000_000);
   state = createInitialState();
+  // v2 starts with Bill only; arena tests need a fighter rostered.
+  state.ducks.push({ defId: "quackers", level: 1, shards: 0, nextHitIn: 1 });
+  state.rosters.arena = ["quackers"];
   refreshStats(state, Date.now());
   tickArena(state, 0, neverCrit); // bootstrap team HP
 });

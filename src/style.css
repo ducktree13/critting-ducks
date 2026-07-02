@@ -1105,6 +1105,205 @@ main.panels {
   position: relative;
 }
 
+/* ---- Mission trackers ---- */
+
+.mission-slot {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  z-index: 6;
+}
+
+.mission-tracker {
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+}
+
+.mission-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mission-cycle {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.mission-desc {
+  color: var(--muted);
+  margin: 2px 0 4px;
+}
+
+.mission-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--card-border);
+  overflow: hidden;
+}
+
+.mission-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+/* ---- Achievements & toasts ---- */
+
+.achievements-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.ach-row {
+  padding: 8px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.ach-row.done {
+  border-color: var(--accent);
+}
+
+.ach-info small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.ach-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--card-border);
+  overflow: hidden;
+  margin: 4px 0 2px;
+}
+
+.ach-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.ach-progress {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.toast-stack {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 400;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--card);
+  border: 1px solid var(--accent);
+  color: var(--fg);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ---- Tutorial ---- */
+
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: none;
+  pointer-events: none;
+}
+
+.tutorial-overlay.show {
+  display: block;
+}
+
+.tutorial-spotlight {
+  position: fixed;
+  display: none;
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
+  transition: all 0.25s ease;
+  pointer-events: none;
+  z-index: 251;
+}
+
+.tutorial-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: var(--bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 14px 18px;
+  width: min(420px, 90vw);
+  pointer-events: auto;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  z-index: 260;
+  color: var(--fg);
+}
+
+.tutorial-banner p {
+  margin: 6px 0 12px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.tutorial-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#tut-skip {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.tt-primary {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
 /* ---- Floaters ---- */
 
 .floater {

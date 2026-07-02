@@ -2,7 +2,7 @@ import { ARENA_BASE, BASE_STATS, LEVEL_REWARDS, ORE_LEVEL_GATES, PASSIVES, STREA
 import { getDuckDef, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getSkillNode } from "./skilltree";
-import type { DerivedStats, GameState, OreId } from "./types";
+import type { DerivedStats, GameState, OreId, PackId, Reward } from "./types";
 
 export function createInitialState(): GameState {
   const now = Date.now();
@@ -22,11 +22,16 @@ export function createInitialState(): GameState {
     lifetime: { gold: 0, crits: 0, hits: 0, packs: 0 },
     ores,
     selectedOre: "copper",
-    ducks: [makeOwnedDuck("bill"), makeOwnedDuck("quackers")],
-    rosters: { mine: ["bill"], arena: ["quackers"] },
+    ducks: [makeOwnedDuck("bill")],
+    rosters: { mine: ["bill"], arena: [] },
     skillNodes: [],
     shardPoints: 0,
-    packCredits: { standard: 0, five: 0, pack25: 0, pack100: 0 },
+    packCredits: { standard: 1, five: 0, pack25: 0, pack100: 0 }, // welcome pack
+    unlockedDucks: [],
+    achievementsCompleted: [],
+    missions: { mine: [], tree: [], arena: [] },
+    pinnedMission: { mine: null, tree: null, arena: null },
+    tutorial: { step: 0, done: false, finaleGranted: false },
     streak: {
       current: 0,
       best: 0,
@@ -114,6 +119,24 @@ export function assignToRoster(
 export function toggleFavorite(state: GameState, defId: string): void {
   const duck = state.ducks.find((d) => d.defId === defId);
   if (duck) duck.favorite = !duck.favorite;
+}
+
+// Applies a mission/achievement payout. Shared so both systems use the same
+// reward shape and the same application logic.
+export function applyReward(state: GameState, reward: Reward): void {
+  if (reward.gold) {
+    state.gold += reward.gold;
+    state.lifetime.gold += reward.gold;
+  }
+  if (reward.shardPoints) state.shardPoints += reward.shardPoints;
+  if (reward.packCredits) {
+    for (const [pack, count] of Object.entries(reward.packCredits)) {
+      state.packCredits[pack as PackId] += count ?? 0;
+    }
+  }
+  if (reward.unlockDuck && !state.unlockedDucks.includes(reward.unlockDuck)) {
+    state.unlockedDucks.push(reward.unlockDuck);
+  }
 }
 
 // Aggregates base values, purchased skill nodes, rostered duck passives, and

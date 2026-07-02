@@ -18,6 +18,7 @@ let state: GameState;
 beforeEach(() => {
   state = createInitialState();
   state.gold = 1_000_000;
+  state.packCredits.standard = 0; // clear the new-game welcome pack credit
   refreshStats(state, 0);
 });
 
@@ -40,6 +41,13 @@ describe("rollRarity band edges (7 tiers)", () => {
     [0.99999, "divine"],
   ])("roll %f → %s", (roll, rarity) => {
     expect(rollRarity(seq([roll]))).toBe(rarity);
+  });
+});
+
+describe("welcome pack", () => {
+  it("grants a free standard pack credit to brand-new games", () => {
+    const fresh = createInitialState();
+    expect(fresh.packCredits.standard).toBe(1);
   });
 });
 
@@ -168,6 +176,11 @@ describe("shards", () => {
 });
 
 describe("assignToRoster", () => {
+  beforeEach(() => {
+    state.ducks.push({ defId: "quackers", level: 1, shards: 0, nextHitIn: 1 });
+    state.rosters.arena = ["quackers"];
+  });
+
   it("moves a duck between rosters (one roster at a time)", () => {
     expect(assignToRoster(state, "mine", 0, "quackers")).toBe(true);
     expect(state.rosters.mine).toEqual(["quackers"]);

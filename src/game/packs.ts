@@ -1,5 +1,5 @@
 import { DUCK_MAX_LEVEL, GACHA, SHARD_CAP } from "./balance";
-import { DUCK_DEFS, getDuckDef, makeOwnedDuck } from "./ducks";
+import { DUCK_DEFS, getDuckDef, isDuckUnlocked, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getStats } from "./state";
 import type { GameState, PackId, Rarity, Rng } from "./types";
@@ -45,13 +45,16 @@ export function rollRarity(rng: Rng): Rarity {
   return "divine";
 }
 
-// Picks uniformly within the rarity; if that pool is empty (e.g. no mythic
-// ducks exist yet), steps down the ladder to the nearest populated tier.
-function rollDuckOfRarity(rng: Rng, rarity: Rarity): string {
+// Picks uniformly within the rarity, excluding locked ducks (lockedBy).
+// If that pool is empty (all locked, or no ducks of that rarity exist yet),
+// steps down the ladder to the nearest populated, unlocked tier.
+function rollDuckOfRarity(state: GameState, rng: Rng, rarity: Rarity): string {
   let tier = RARITY_ORDER.indexOf(rarity);
   let pool: typeof DUCK_DEFS = [];
   while (tier >= 0) {
-    pool = DUCK_DEFS.filter((d) => d.rarity === RARITY_ORDER[tier]);
+    pool = DUCK_DEFS.filter(
+      (d) => d.rarity === RARITY_ORDER[tier] && isDuckUnlocked(state, d.id),
+    );
     if (pool.length > 0) break;
     tier -= 1;
   }
@@ -88,7 +91,7 @@ function rollOnePack(state: GameState, rng: Rng, pack: PackId): GachaResult[] {
       rarity = guarantee;
     }
     if (guarantee && rarityAtLeast(rarity, guarantee)) guaranteeMet = true;
-    results.push(grantDuck(state, rollDuckOfRarity(rng, rarity)));
+    results.push(grantDuck(state, rollDuckOfRarity(state, rng, rarity)));
   }
   return results;
 }

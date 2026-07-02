@@ -2,11 +2,13 @@ import { on } from "../game/events";
 import { buy, canBuy, getSkillNode, isOwned, isVisible, SKILL_NODES } from "../game/skilltree";
 import type { GameState, NodeEffect, SkillNode } from "../game/types";
 import { fmt } from "./format";
+import { renderMissionTracker } from "./missionsPanel";
 import { attachTooltip } from "./tooltip";
 
 let panel: HTMLElement;
 let svgEl: SVGSVGElement;
 let tickerEl: HTMLElement;
+let missionEl: HTMLElement;
 let gameState: GameState;
 let freshNodeId: string | null = null; // most recently bought — its leaves pop
 
@@ -145,11 +147,13 @@ export function initTreePanel(root: HTMLElement, state: GameState): void {
   panel.innerHTML = `
     <h2>Skill Tree <span class="panel-ticker" id="tree-ticker"></span></h2>
     <div class="panel-body tree-body">
+      <div class="mission-slot" id="tree-mission"></div>
       <svg id="tree-svg" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet"></svg>
     </div>
   `;
   svgEl = panel.querySelector<SVGSVGElement>("#tree-svg")!;
   tickerEl = panel.querySelector<HTMLElement>("#tree-ticker")!;
+  missionEl = panel.querySelector<HTMLElement>("#tree-mission")!;
 
   on("buy", (e) => {
     freshNodeId = e.nodeId;
@@ -165,4 +169,5 @@ export function renderTreePanel(state: GameState): void {
     g.classList.toggle("affordable", canBuy(state, g.dataset.node!));
   });
   tickerEl.textContent = `${state.skillNodes.length}/${SKILL_NODES.length} nodes`;
+  renderMissionTracker("tree", missionEl, state);
 }
