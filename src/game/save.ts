@@ -12,12 +12,17 @@ export interface StorageLike {
   removeItem(key: string): void;
 }
 
+// Chain saves forward one version at a time; mergeWithDefaults then fills any
+// fields a newer schema added.
 function migrate(raw: { version: number; state: unknown }): Partial<GameState> {
-  switch (raw.version) {
-    case 1:
-    default:
-      return raw.state as Partial<GameState>;
+  let state = raw.state as Partial<GameState>;
+  let version = raw.version;
+  if (version === 1) {
+    // v1 → v2: no structural changes; new v2 fields default via merge.
+    state = { ...state, version: 2 };
+    version = 2;
   }
+  return state;
 }
 
 function mergeWithDefaults(partial: Partial<GameState>): GameState {
@@ -40,7 +45,7 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
 
 export function save(state: GameState, storage: StorageLike): void {
   state.lastSaved = Date.now();
-  storage.setItem(SAVE_KEY, JSON.stringify({ version: 1, state }));
+  storage.setItem(SAVE_KEY, JSON.stringify({ version: 2, state }));
 }
 
 export function load(storage: StorageLike): GameState | null {
@@ -57,7 +62,7 @@ export function load(storage: StorageLike): GameState | null {
 }
 
 export function exportSave(state: GameState): string {
-  return JSON.stringify({ version: 1, state });
+  return JSON.stringify({ version: 2, state });
 }
 
 // Parses pasted JSON through the same migrate/merge pipeline as load.
@@ -69,7 +74,7 @@ export function importSave(json: string, storage: StorageLike): GameState | null
       return null;
     }
     const state = mergeWithDefaults(migrate(parsed));
-    storage.setItem(SAVE_KEY, JSON.stringify({ version: 1, state }));
+    storage.setItem(SAVE_KEY, JSON.stringify({ version: 2, state }));
     return state;
   } catch {
     return null;

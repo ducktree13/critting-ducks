@@ -8,7 +8,7 @@ export function createInitialState(): GameState {
   const now = Date.now();
   const ores: Record<OreId, number> = { copper: 0, silver: 0, crystal: 0, starmetal: 0 };
   return {
-    version: 1,
+    version: 2,
     gold: 0,
     xp: 0,
     level: 1,

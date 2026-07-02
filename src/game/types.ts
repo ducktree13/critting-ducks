@@ -47,7 +47,7 @@ export interface ArenaState {
 }
 
 export interface GameState {
-  version: 1;
+  version: 2;
   gold: number;
   xp: number;
   level: number;

@@ -52,6 +52,47 @@ describe("save/load", () => {
     expect(loaded!.streak.buffExpiry).toEqual({ t10: 0, t25: 0, t50: 0, t100: 0 });
   });
 
+  it("migrates a full v1 save to v2 preserving all progress", () => {
+    const storage = fakeStorage();
+    // Representative v1 save captured from the live game (trimmed).
+    const v1 = {
+      version: 1,
+      state: {
+        version: 1,
+        gold: 4321.5,
+        xp: 250,
+        level: 7,
+        lifetime: { gold: 9999, crits: 321, hits: 1000, packs: 3 },
+        ores: { copper: 4800, silver: 160, crystal: 0, starmetal: 0 },
+        selectedOre: "silver",
+        ducks: [
+          { defId: "bill", level: 2, shards: 1, nextHitIn: 0.4 },
+          { defId: "puddle", level: 1, shards: 0, nextHitIn: 0.9 },
+        ],
+        rosters: { mine: ["bill", "puddle"], arena: [] },
+        skillNodes: ["crit1", "speed1", "ore1", "ore2", "oresilver"],
+        streak: { current: 3, best: 17, buffExpiry: { t10: 0, t25: 0, t50: 0, t100: 0 }, shieldReadyAt: 0 },
+        arena: { wave: 12, enemyHp: 50, enemyMaxHp: 100, enemyNextHitIn: 1, teamHp: 0, teamMaxHp: 0, retryAt: 0 },
+        settings: { darkMode: true },
+        lastSaved: 1750000000000,
+        createdAt: 1749000000000,
+      },
+    };
+    storage.setItem("crittingDucks.save", JSON.stringify(v1));
+
+    const loaded = load(storage);
+
+    expect(loaded).not.toBeNull();
+    expect(loaded!.version).toBe(2);
+    expect(loaded!.gold).toBeCloseTo(4321.5);
+    expect(loaded!.level).toBe(7);
+    expect(loaded!.ducks).toHaveLength(2);
+    expect(loaded!.skillNodes).toContain("oresilver");
+    expect(loaded!.streak.best).toBe(17);
+    expect(loaded!.arena.wave).toBe(12);
+    expect(loaded!.settings.darkMode).toBe(true);
+  });
+
   it("export → import round-trips through the migrate/merge pipeline", () => {
     const storage = fakeStorage();
     const state = createInitialState();
