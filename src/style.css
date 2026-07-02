@@ -270,6 +270,164 @@ main.panels {
   font-size: 0.85rem;
 }
 
+/* ---- Skill tree ---- */
+
+.tree-body {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 8px;
+}
+
+#tree-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.tree-ground {
+  stroke: var(--card-border);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.tree-trunk,
+.tree-limb {
+  stroke: #8a6a4a;
+  stroke-width: 7;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.55;
+}
+
+.tree-edge {
+  stroke: #8a6a4a;
+  stroke-width: 3;
+  fill: none;
+  opacity: 0.45;
+}
+
+.tree-edge.lit {
+  stroke: var(--accent);
+  opacity: 1;
+}
+
+.tree-node {
+  cursor: pointer;
+}
+
+.tree-node .hit {
+  fill: transparent;
+}
+
+.tree-node .face {
+  fill: var(--bg);
+  stroke: var(--card-border);
+  stroke-width: 2.5;
+}
+
+.tree-node .glyph {
+  font-size: 12px;
+  text-anchor: middle;
+  fill: var(--muted);
+  pointer-events: none;
+}
+
+.tree-node .cost {
+  font-size: 10px;
+  text-anchor: middle;
+  fill: var(--muted);
+  pointer-events: none;
+}
+
+.tree-node.affordable .face {
+  stroke: var(--accent);
+  animation: node-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes node-pulse {
+  0%, 100% { stroke-width: 2.5; }
+  50% { stroke-width: 5; }
+}
+
+.tree-node.owned .face {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.tree-node.owned .glyph {
+  fill: #fff;
+}
+
+.tree-node.silhouette .face,
+.tree-node.silhouette circle {
+  fill: var(--card-border);
+  opacity: 0.35;
+  cursor: default;
+}
+
+.leaf {
+  fill: #5aa845;
+  opacity: 0.9;
+}
+
+.leaf.pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: leaf-pop 0.4s ease-out backwards;
+}
+
+@keyframes leaf-pop {
+  from { transform: scale(0); }
+  60% { transform: scale(1.3); }
+  to { transform: scale(1); }
+}
+
+.tree-tooltip {
+  display: none;
+  position: absolute;
+  transform: translate(-50%, -115%);
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 150px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  z-index: 20;
+  color: var(--fg);
+  font-size: 0.85rem;
+}
+
+.tree-tooltip.open {
+  display: block;
+}
+
+.tt-desc {
+  margin: 4px 0;
+}
+
+.tt-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-bottom: 6px;
+}
+
+.tt-buy {
+  width: 100%;
+  padding: 6px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tt-buy:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* ---- Floaters ---- */
 
 .floater {

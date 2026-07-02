@@ -1,7 +1,7 @@
 import { ORE_VALUES } from "../game/balance";
 import { getDuckDef } from "../game/ducks";
 import { on } from "../game/events";
-import { getStats } from "../game/state";
+import { getStats, refreshStats } from "../game/state";
 import type { GameState, OreId } from "../game/types";
 import { duckSvg } from "./duckArt";
 import { fmt } from "./format";
@@ -52,6 +52,13 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
 
   renderVeins(state);
   renderRoster(state);
+
+  // Ore unlock nodes change which veins are selectable; the tick-cached
+  // stats snapshot doesn't include the new node yet, so refresh first.
+  on("buy", () => {
+    refreshStats(state, Date.now());
+    renderVeins(state);
+  });
 
   on("hit", (e) => {
     if (e.panel !== "mine") return;

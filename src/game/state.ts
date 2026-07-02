@@ -1,6 +1,7 @@
 import { ARENA_BASE, BASE_STATS, PASSIVES, STREAK_BALANCE, XP_CURVE } from "./balance";
 import { getDuckDef, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
+import { getSkillNode } from "./skilltree";
 import type { DerivedStats, GameState, OreId } from "./types";
 
 export function createInitialState(): GameState {
@@ -65,6 +66,7 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
     flatAttack: 0,
     attackSpeedMult: 1,
     mineSpeedMult: 1,
+    arenaSpeedMult: 1,
     defenseMult: 1,
     flatDefense: 0,
     xpMult: 1,
@@ -75,6 +77,30 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
     buffDurationSec: BASE_STATS.buffDurationSec,
     unlockedOres: ["copper"],
   };
+
+  // Purchased skill nodes fold in declaratively by effect kind.
+  for (const id of state.skillNodes) {
+    const effect = getSkillNode(id).effect;
+    switch (effect.kind) {
+      case "stat":
+        if ("add" in effect) stats[effect.stat] += effect.add;
+        else stats[effect.stat] *= effect.mult;
+        break;
+      case "slot":
+        if (effect.panel === "mine") stats.mineSlots += 1;
+        else stats.arenaSlots += 1;
+        break;
+      case "oreUnlock":
+        stats.unlockedOres.push(effect.ore);
+        break;
+      case "offline":
+        stats.offlineRate = Math.max(stats.offlineRate, effect.rate);
+        break;
+      case "buffDuration":
+        stats.buffDurationSec = effect.seconds;
+        break;
+    }
+  }
 
   // Team passives apply while the duck is rostered in the panel it affects.
   for (const defId of state.rosters.mine) {

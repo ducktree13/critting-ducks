@@ -9,6 +9,7 @@ import type { GameState, Rng } from "./game/types";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
 import { initMinePanel, renderMinePanel } from "./ui/minePanel";
+import { initTreePanel, renderTreePanel } from "./ui/treePanel";
 
 const storage = window.localStorage;
 const state: GameState = load(storage) ?? createInitialState();
@@ -24,10 +25,7 @@ app.innerHTML = `
   <header class="hud"></header>
   <main class="panels">
     <section class="panel" id="mine-panel"></section>
-    <section class="panel" id="tree-panel">
-      <h2>Skill Tree</h2>
-      <div class="panel-body">The tree will grow here soon.</div>
-    </section>
+    <section class="panel" id="tree-panel"></section>
     <section class="panel" id="arena-panel">
       <h2>Arena</h2>
       <div class="panel-body">Battles will happen here soon.</div>
@@ -40,6 +38,7 @@ const arenaPanelEl = app.querySelector<HTMLElement>("#arena-panel")!;
 
 initHud(app.querySelector("header.hud")!);
 initMinePanel(minePanelEl, state);
+initTreePanel(app.querySelector<HTMLElement>("#tree-panel")!, state);
 initFloaters({ mine: minePanelEl, arena: arenaPanelEl });
 
 function simTick(s: GameState, dt: number, r: Rng): void {
@@ -50,6 +49,7 @@ function simTick(s: GameState, dt: number, r: Rng): void {
 function render(s: GameState): void {
   renderHud(s);
   renderMinePanel(s);
+  renderTreePanel(s);
 }
 
 let lastFrame = performance.now();

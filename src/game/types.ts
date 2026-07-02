@@ -64,6 +64,29 @@ export interface GameState {
   createdAt: number;
 }
 
+export type SkillBranch = "trunk" | "left" | "right" | "crown";
+
+export type NodeEffect =
+  | { kind: "stat"; stat: "critChance" | "critMult" | "orePerHit" | "flatAttack" | "flatDefense"; add: number }
+  | { kind: "stat"; stat: "attackSpeedMult" | "mineSpeedMult" | "arenaSpeedMult" | "oreMult" | "attackDamageMult" | "defenseMult" | "xpMult" | "goldMult"; mult: number }
+  | { kind: "slot"; panel: Panel }
+  | { kind: "oreUnlock"; ore: OreId }
+  | { kind: "offline"; rate: number }
+  | { kind: "buffDuration"; seconds: number };
+
+export interface SkillNode {
+  id: string;
+  name: string;
+  desc: string;
+  cost: number;
+  requires?: string;
+  minLevel: number;
+  branch: SkillBranch;
+  x: number;
+  y: number;
+  effect: NodeEffect;
+}
+
 export interface DerivedStats {
   critChance: number;
   critMult: number;
@@ -73,6 +96,7 @@ export interface DerivedStats {
   flatAttack: number;
   attackSpeedMult: number;
   mineSpeedMult: number;
+  arenaSpeedMult: number;
   defenseMult: number;
   flatDefense: number;
   xpMult: number;
