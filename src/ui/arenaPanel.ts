@@ -13,6 +13,21 @@ const BOSS_NAME = "The Pondlord";
 const ENEMY_COLORS = ["#7aa85a", "#d9d9e8", "#c8a05a", "#5a9ad9"];
 const BOSS_COLOR = "#8a5ad9";
 
+// Colosseum backdrop (PLAN2.md §12): tiered stands + a sandy floor, sitting
+// behind the enemy/team content via a negative z-index. The `.expanded`
+// modifier (toggled by layout.ts when mine+tree are both minimized) scales
+// the scene up and animates the crowd for the "full scene" version.
+function colosseumSceneSvg(): string {
+  return `<svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <path d="M-20 40 Q200 -10 420 40 L420 90 Q200 45 -20 90 Z" fill="var(--card-border)" opacity="0.55"/>
+    <path d="M-20 90 Q200 45 420 90 L420 135 Q200 92 -20 135 Z" fill="var(--card-border)" opacity="0.4"/>
+    <g class="crowd">
+      ${Array.from({ length: 14 }, (_, i) => `<circle cx="${20 + i * 27}" cy="${58 - (i % 3) * 4}" r="4" fill="var(--accent)" opacity="0.5"/>`).join("")}
+    </g>
+    <ellipse cx="200" cy="230" rx="220" ry="60" fill="var(--accent)" opacity="0.12"/>
+  </svg>`;
+}
+
 let panel: HTMLElement;
 let enemyArtEl: HTMLElement;
 let enemyNameEl: HTMLElement;
@@ -32,6 +47,7 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
   panel.innerHTML = `
     <h2>Arena <span class="panel-ticker" id="arena-ticker"></span></h2>
     <div class="panel-body arena-body">
+      <div class="arena-scene">${colosseumSceneSvg()}</div>
       <div class="mission-slot" id="arena-mission"></div>
       <div class="arena-enemy">
         <div class="enemy-name" id="enemy-name"></div>

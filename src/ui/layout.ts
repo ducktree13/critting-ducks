@@ -41,4 +41,12 @@ function apply(
     const btn = panelEls[id].querySelector<HTMLButtonElement>(".panel-toggle")!;
     btn.textContent = minimized ? "+" : "−";
   }
+
+  // Colosseum "full scene" mode (PLAN2.md §12): richer animation once mine
+  // and tree are both tucked away and the arena has the stage to itself.
+  const arenaExpanded =
+    !state.settings.panelsMinimized.arena &&
+    state.settings.panelsMinimized.mine &&
+    state.settings.panelsMinimized.tree;
+  panelEls.arena.classList.toggle("expanded", arenaExpanded);
 }

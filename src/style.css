@@ -184,6 +184,19 @@ main.panels {
   align-items: center;
   gap: 16px;
   color: var(--fg);
+  position: relative;
+}
+
+.mine-scene {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.mine-scene svg {
+  width: 100%;
+  height: 100%;
 }
 
 .mine-rock.shake {
@@ -238,6 +251,10 @@ main.panels {
   animation: lunge 0.2s ease-out;
 }
 
+.duck-slot.walk-cycle {
+  animation: walk-cycle 0.6s ease-in-out;
+}
+
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
@@ -247,6 +264,29 @@ main.panels {
   0% { transform: translateX(0); }
   40% { transform: translateX(10px); }
   100% { transform: translateX(0); }
+}
+
+/* A duck steps toward the cave mouth, "collects" its ore, and steps back
+   out (PLAN2.md §12: duck sprites walk a loop path into the cave). */
+@keyframes walk-cycle {
+  0% { transform: translateY(0) scaleX(1); }
+  35% { transform: translateY(-14px) scaleX(1); }
+  50% { transform: translateY(-14px) scaleX(1.08); }
+  65% { transform: translateY(-14px) scaleX(1); }
+  100% { transform: translateY(0) scaleX(1); }
+}
+
+.ore-pip {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 4px var(--accent);
+  transform: translate(0, 0);
+  transition: transform 0.45s ease-in, opacity 0.45s ease-in;
+  pointer-events: none;
+  z-index: 400;
 }
 
 .duck-slot.empty {
@@ -561,6 +601,46 @@ main.panels {
   gap: 16px;
   color: var(--fg);
   position: relative;
+}
+
+.arena-scene {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.arena-scene svg {
+  width: 100%;
+  height: 100%;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.arena-scene .crowd circle {
+  animation: crowd-cheer 1.6s ease-in-out infinite;
+}
+
+.arena-scene .crowd circle:nth-child(odd) {
+  animation-delay: 0.3s;
+}
+
+@keyframes crowd-cheer {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-3px); opacity: 0.8; }
+}
+
+/* Full colosseum scene (PLAN2.md §12): mine + tree minimized, arena alone. */
+.panel.expanded .arena-scene svg {
+  opacity: 1;
+}
+
+.panel.expanded .duck-slot.fighter svg {
+  transform: scale(1.35) scaleX(-1);
+}
+
+.panel.expanded .enemy-art svg {
+  transform: scale(1.35);
 }
 
 .arena-enemy {

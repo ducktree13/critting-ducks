@@ -42,13 +42,32 @@ let oreCountersEl: HTMLElement;
 let veinsEl: HTMLElement;
 let tickerEl: HTMLElement;
 let missionEl: HTMLElement;
+let goldTargetEl: HTMLElement | null = null;
 let lastRosterKey = "";
+
+// Cave-mouth backdrop (PLAN2.md §12): a static SVG scene sitting behind the
+// rock/vein/duck-row content via a negative z-index, so ducks read as
+// walking a loop in front of a cave rather than floating on blank panel bg.
+function caveSceneSvg(): string {
+  return `<svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <defs>
+      <radialGradient id="cave-mouth" cx="50%" cy="20%" r="80%">
+        <stop offset="0%" stop-color="#000" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <path d="M0 260 L0 150 Q60 40 200 20 Q340 40 400 150 L400 260 Z" fill="var(--card-border)" opacity="0.5"/>
+    <ellipse cx="200" cy="70" rx="120" ry="60" fill="url(#cave-mouth)"/>
+    <path d="M90 130 Q200 95 310 130 L300 170 Q200 145 100 170 Z" fill="var(--card-border)" opacity="0.7"/>
+  </svg>`;
+}
 
 export function initMinePanel(root: HTMLElement, state: GameState): void {
   panel = root;
   panel.innerHTML = `
     <h2>Mine <span class="panel-ticker" id="mine-ticker"></span></h2>
     <div class="panel-body mine-body">
+      <div class="mine-scene">${caveSceneSvg()}</div>
       <div class="mission-slot" id="mine-mission"></div>
       <div class="mine-rock" id="mine-rock"></div>
       <div class="vein-row" id="vein-row"></div>
@@ -62,6 +81,7 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
   veinsEl = panel.querySelector("#vein-row")!;
   tickerEl = panel.querySelector("#mine-ticker")!;
   missionEl = panel.querySelector("#mine-mission")!;
+  goldTargetEl = document.querySelector("#hud-gold-amount");
 
   renderVeins(state);
   renderRoster(state);
@@ -81,8 +101,42 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
     if (e.panel !== "mine") return;
     retrigger(rockEl, "shake");
     const duckEl = duckRowEl.querySelector<HTMLElement>(`[data-duck="${e.duckId}"]`);
-    if (duckEl) retrigger(duckEl, "lunge");
+    if (duckEl) {
+      retrigger(duckEl, "walk-cycle");
+      spawnOrePip(duckEl);
+    }
   });
+}
+
+const MAX_PIPS = 16;
+const livePips: HTMLElement[] = [];
+
+// A small ore pip that flies from the depositing duck to the HUD gold
+// counter (PLAN2.md §12: "deposit it on a stockpile, pip flies to the HUD
+// gold counter"). Capped like floaters.ts so a fast crit streak can't spam
+// unbounded DOM nodes.
+function spawnOrePip(duckEl: HTMLElement): void {
+  if (!goldTargetEl) return;
+  if (livePips.length >= MAX_PIPS) return;
+  const from = duckEl.getBoundingClientRect();
+  const to = goldTargetEl.getBoundingClientRect();
+
+  const pip = document.createElement("div");
+  pip.className = "ore-pip";
+  pip.style.left = `${from.left + from.width / 2}px`;
+  pip.style.top = `${from.top + from.height / 2}px`;
+  document.body.appendChild(pip);
+  livePips.push(pip);
+
+  requestAnimationFrame(() => {
+    pip.style.transform = `translate(${to.left + to.width / 2 - (from.left + from.width / 2)}px, ${to.top + to.height / 2 - (from.top + from.height / 2)}px) scale(0.3)`;
+    pip.style.opacity = "0";
+  });
+  setTimeout(() => {
+    pip.remove();
+    const i = livePips.indexOf(pip);
+    if (i !== -1) livePips.splice(i, 1);
+  }, 500);
 }
 
 // Restart a CSS animation by removing and re-adding its class.
