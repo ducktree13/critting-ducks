@@ -68,6 +68,30 @@ export interface OwnedDuck {
   favorite?: boolean;
 }
 
+export type MaterialId = "slimeGoo" | "gooseFeather" | "golemCrumb" | "sharkTooth" | "pondlordRelic";
+export type EquipSlot = "weapon" | "armor" | "charm";
+
+// Every field is an own-duck bonus, applied the same way trait effects are —
+// weapon touches attack, armor touches defense/hp, charm touches crit/gold.
+export interface EquipmentStats {
+  flatAttack?: number;
+  attackMult?: number;
+  flatDefense?: number;
+  hpMult?: number;
+  critChanceBonus?: number;
+  goldMult?: number;
+}
+
+export interface EquipmentItem {
+  id: string; // unique instance id
+  kindId: string; // which named equipment "kind" (art/name lookup)
+  slot: EquipSlot;
+  rarity: Rarity;
+  name: string;
+  stats: EquipmentStats;
+  equippedBy: string | null; // duck defId, or null while in inventory
+}
+
 export interface StreakState {
   current: number;
   best: number;
@@ -99,6 +123,8 @@ export interface GameState {
   shardPoints: number;                       // overflow shards, spent in the shard shop
   packCredits: Record<PackId, number>;       // free packs from level rewards etc.
   unlockedDucks: string[];                   // defIds of lockedBy ducks the player has freed
+  materials: Record<MaterialId, number>;
+  equipment: EquipmentItem[];
   achievementsCompleted: string[];
   missions: Record<MissionSection, MissionInstance[]>;
   pinnedMission: Record<MissionSection, string | null>;

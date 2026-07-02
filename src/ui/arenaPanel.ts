@@ -124,7 +124,7 @@ function renderRoster(state: GameState): void {
     const defId = slot.dataset.duck;
     if (defId) {
       const duck = state.ducks.find((d) => d.defId === defId);
-      if (duck) attachTooltip(slot, () => duckTooltipHtml(duck));
+      if (duck) attachTooltip(slot, () => duckTooltipHtml(state, duck));
     }
   });
   lastRosterKey = rosterKey(state);

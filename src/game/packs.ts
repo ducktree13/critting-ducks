@@ -1,4 +1,4 @@
-import { DUCK_MAX_LEVEL, GACHA, SHARD_CAP } from "./balance";
+import { DUCK_MAX_LEVEL, GACHA, RARITY_ORDER, SHARD_CAP } from "./balance";
 import { DUCK_DEFS, getDuckDef, isDuckUnlocked, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getStats } from "./state";
@@ -15,8 +15,6 @@ export interface PackOpenResult {
   results: GachaResult[]; // all rolls including bonus packs, in order
   bonusPacks: number; // packs granted free by pack crits (0–3)
 }
-
-const RARITY_ORDER: Rarity[] = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "divine"];
 
 export function rarityAtLeast(rarity: Rarity, floor: Rarity): boolean {
   return RARITY_ORDER.indexOf(rarity) >= RARITY_ORDER.indexOf(floor);

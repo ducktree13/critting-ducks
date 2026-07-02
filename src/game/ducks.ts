@@ -1,7 +1,7 @@
 import { DUCK_LEVEL_STAT_BONUS } from "./balance";
 import { GENERATED_DUCKS } from "./duckgen";
 import { TRAITS } from "./traits";
-import type { DuckDef, GameState, OwnedDuck } from "./types";
+import type { DuckDef, EquipSlot, EquipmentStats, GameState, OwnedDuck } from "./types";
 
 // The 13 v1 ducks, rescaled for the v2 economy (PLAN2.md §3: mining power
 // ~1/10 of v1, attack damage ~1/2), plus ~147 more from duckgen.ts to reach
@@ -41,25 +41,36 @@ function traitEffect(def: DuckDef) {
   return TRAITS[def.trait].effect;
 }
 
+// The equipped item's stats for one slot, or undefined if nothing's there.
+function gearEffect(state: GameState, defId: string, slot: EquipSlot): EquipmentStats | undefined {
+  return state.equipment.find((e) => e.equippedBy === defId && e.slot === slot)?.stats;
+}
+
 export function miningPowerOf(duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
   return def.miningPower * levelStatMult(duck.level) * (traitEffect(def).miningMult ?? 1);
 }
 
-export function attackDamageOf(duck: OwnedDuck): number {
+// Weapon gear: +flatAttack, then *attackMult.
+export function attackDamageOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  return def.attackDamage * levelStatMult(duck.level) * (traitEffect(def).attackMult ?? 1);
+  const gear = gearEffect(state, duck.defId, "weapon");
+  const base = def.attackDamage * levelStatMult(duck.level) * (traitEffect(def).attackMult ?? 1);
+  return (base + (gear?.flatAttack ?? 0)) * (gear?.attackMult ?? 1);
 }
 
-export function hpOf(duck: OwnedDuck): number {
+// Armor gear: *hpMult (level scaling matches v1's own hp scaling).
+export function hpOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  return def.hp * levelStatMult(duck.level) * (traitEffect(def).hpMult ?? 1);
+  const gear = gearEffect(state, duck.defId, "armor");
+  return def.hp * levelStatMult(duck.level) * (traitEffect(def).hpMult ?? 1) * (gear?.hpMult ?? 1);
 }
 
-// Defense does not scale with level (matches v1), only with trait.
-export function defenseOf(duck: OwnedDuck): number {
+// Armor gear: +flatDefense. Defense does not scale with level (matches v1).
+export function defenseOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  return def.defense * (traitEffect(def).defenseMult ?? 1);
+  const gear = gearEffect(state, duck.defId, "armor");
+  return def.defense * (traitEffect(def).defenseMult ?? 1) + (gear?.flatDefense ?? 0);
 }
 
 export function attackSpeedOf(duck: OwnedDuck): number {
@@ -67,18 +78,23 @@ export function attackSpeedOf(duck: OwnedDuck): number {
   return def.attacksPerSecond * (traitEffect(def).attackSpeedMult ?? 1);
 }
 
-export function critChanceBonusOf(duck: OwnedDuck): number {
+// Charm gear: +critChanceBonus.
+export function critChanceBonusOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  return def.critChanceBonus + (traitEffect(def).critChanceBonus ?? 0);
+  const gear = gearEffect(state, duck.defId, "charm");
+  return def.critChanceBonus + (traitEffect(def).critChanceBonus ?? 0) + (gear?.critChanceBonus ?? 0);
 }
 
-// Multiplies this duck's own XP/gold contribution (e.g. Intelligent, Greedy).
+// Multiplies this duck's own XP contribution (trait-only, e.g. Intelligent).
 export function xpMultOf(duck: OwnedDuck): number {
   return traitEffect(getDuckDef(duck.defId)).xpMult ?? 1;
 }
 
-export function goldMultOf(duck: OwnedDuck): number {
-  return traitEffect(getDuckDef(duck.defId)).goldMult ?? 1;
+// Multiplies this duck's own gold contribution: trait (e.g. Greedy) * charm gear.
+export function goldMultOf(state: GameState, duck: OwnedDuck): number {
+  const def = getDuckDef(duck.defId);
+  const gear = gearEffect(state, duck.defId, "charm");
+  return (traitEffect(def).goldMult ?? 1) * (gear?.goldMult ?? 1);
 }
 
 export function makeOwnedDuck(defId: string): OwnedDuck {

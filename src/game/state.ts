@@ -28,6 +28,8 @@ export function createInitialState(): GameState {
     shardPoints: 0,
     packCredits: { standard: 1, five: 0, pack25: 0, pack100: 0 }, // welcome pack
     unlockedDucks: [],
+    materials: { slimeGoo: 0, gooseFeather: 0, golemCrumb: 0, sharkTooth: 0, pondlordRelic: 0 },
+    equipment: [],
     achievementsCompleted: [],
     missions: { mine: [], tree: [], arena: [] },
     pinnedMission: { mine: null, tree: null, arena: null },

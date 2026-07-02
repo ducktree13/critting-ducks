@@ -1111,6 +1111,116 @@ main.panels {
   position: relative;
 }
 
+/* ---- Gear: equip slots, unequipped gear list, crafting ---- */
+
+.inv-card-equip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.equip-slot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.equip-slot:hover {
+  border-color: var(--accent);
+}
+
+.equip-slot small {
+  color: var(--muted);
+  margin-right: 8px;
+}
+
+.equip-slot.rarity-uncommon { border-color: #4caf50; }
+.equip-slot.rarity-rare { border-color: #2196f3; }
+.equip-slot.rarity-epic { border-color: #9c27b0; }
+.equip-slot.rarity-legendary { border-color: #f5c518; }
+.equip-slot.rarity-mythic { border-color: #c0392b; }
+.equip-slot.rarity-divine { border-color: #e8f4ff; }
+
+.inventory-materials {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--card-border);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.inventory-gear {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.gear-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: 0.8rem;
+}
+
+.gear-row.rarity-uncommon { border-color: #4caf50; }
+.gear-row.rarity-rare { border-color: #2196f3; }
+.gear-row.rarity-epic { border-color: #9c27b0; }
+.gear-row.rarity-legendary { border-color: #f5c518; }
+.gear-row.rarity-mythic { border-color: #c0392b; }
+.gear-row.rarity-divine { border-color: #e8f4ff; }
+
+.crafting-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 55vh;
+  overflow-y: auto;
+}
+
+.recipe-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.recipe-row.locked {
+  opacity: 0.55;
+}
+
+.recipe-info small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.crafting-result {
+  margin-top: 12px;
+}
+
 /* ---- Mission trackers ---- */
 
 .mission-slot {

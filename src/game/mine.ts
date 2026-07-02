@@ -30,7 +30,7 @@ export function tickMine(state: GameState, dt: number, rng: Rng): void {
       duck.nextHitIn += 1 / hitsPerSec;
 
       const critChance = Math.min(
-        Math.max(stats.critChance + critChanceBonusOf(duck), 0),
+        Math.max(stats.critChance + critChanceBonusOf(state, duck), 0),
         BASE_STATS.critChanceCap,
       );
       const isCrit = rng.next() < critChance;
@@ -38,7 +38,7 @@ export function tickMine(state: GameState, dt: number, rng: Rng): void {
 
       const ore =
         (stats.orePerHit + miningPowerOf(duck)) * stats.oreMult * (isCrit ? critMult : 1);
-      let gold = ore * ORE_VALUES[state.selectedOre] * stats.goldMult * goldMultOf(duck);
+      let gold = ore * ORE_VALUES[state.selectedOre] * stats.goldMult * goldMultOf(state, duck);
       if (isCrit && goldenCritRostered) gold *= PASSIVES.goldenCritGoldMult;
       const xp = MINE_XP_PER_HIT * stats.xpMult * xpMultOf(duck);
 

@@ -14,7 +14,7 @@ One checkbox per build phase. Work top to bottom — the game is playable at the
   *Playable check: fresh save completes the tutorial in ≤5 min and holds a rare+ duck.*
 - [x] **V2-4 — Duck expansion**: duckgen to ~160 ducks, personality traits, Bill-only start, level-gated pools. Tests.
   *Playable check: collection shows ~160 entries; traits visibly change stats; new game starts with just Bill.*
-- [ ] **V2-5 — Gear & crafting**: enemy materials, equipment drops with rarities, crafting menu, 3 equip slots, selling. Tests.
+- [x] **V2-5 — Gear & crafting**: enemy materials, equipment drops with rarities, crafting menu, 3 equip slots, selling. Tests.
   *Playable check: kill enemies → materials/gear; craft an item; equip it; duck card reflects stats.*
 - [ ] **V2-6 — Shard shop + ascension**: 12h rotating SP shop, ascension milestones. Tests.
   *Playable check: overflow shards become SP; shop restocks on the 12h boundary; ascend a maxed duck.*

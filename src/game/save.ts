@@ -41,6 +41,8 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
     arena: { ...base.arena, ...partial.arena },
     packCredits: { ...base.packCredits, ...partial.packCredits },
     unlockedDucks: partial.unlockedDucks ?? base.unlockedDucks,
+    materials: { ...base.materials, ...partial.materials },
+    equipment: partial.equipment ?? base.equipment,
     achievementsCompleted: partial.achievementsCompleted ?? base.achievementsCompleted,
     missions: { ...base.missions, ...partial.missions },
     pinnedMission: { ...base.pinnedMission, ...partial.pinnedMission },

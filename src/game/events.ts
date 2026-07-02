@@ -1,4 +1,4 @@
-import type { MissionSection } from "./types";
+import type { EquipmentItem, MaterialId, MissionSection } from "./types";
 
 export interface GameEventMap {
   hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; gold: number; xp: number; ore: number; dmg: number };
@@ -11,6 +11,8 @@ export interface GameEventMap {
   roster: Record<string, never>;
   missionComplete: { section: MissionSection; name: string };
   achievement: { id: string; name: string };
+  materialDrop: { material: MaterialId };
+  equipmentDrop: { item: EquipmentItem };
 }
 
 export type GameEventName = keyof GameEventMap;

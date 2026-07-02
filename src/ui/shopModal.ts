@@ -1,13 +1,11 @@
-import { DUCK_MAX_LEVEL, GACHA } from "../game/balance";
+import { DUCK_MAX_LEVEL, GACHA, RARITY_ORDER } from "../game/balance";
 import { DUCK_DEFS, getDuckDef } from "../game/ducks";
 import { canUpgrade, openPack, packPrice, packUnlocked, upgradeCost, upgradeDuck } from "../game/packs";
 import { toggleFavorite } from "../game/state";
-import type { GameState, PackId, Rarity, Rng } from "../game/types";
+import type { GameState, PackId, Rng } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { fmt } from "./format";
 import { attachTooltip } from "./tooltip";
-
-const RARITY_ORDER: Rarity[] = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "divine"];
 
 export interface SaveActions {
   onExport(): Promise<boolean>;
@@ -187,6 +185,6 @@ function renderCollection(): void {
   });
   grid.querySelectorAll<HTMLElement>(".duck-card[data-duck]").forEach((card) => {
     const duck = gameState.ducks.find((d) => d.defId === card.dataset.duck);
-    if (duck) attachTooltip(card, () => duckTooltipHtml(duck));
+    if (duck) attachTooltip(card, () => duckTooltipHtml(gameState, duck));
   });
 }

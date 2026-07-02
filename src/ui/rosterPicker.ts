@@ -53,7 +53,7 @@ export function openRosterPicker(state: GameState, panel: Panel, slotIndex: numb
     const defId = btn.dataset.duck;
     if (defId) {
       const duck = state.ducks.find((d) => d.defId === defId);
-      if (duck) attachTooltip(btn, () => duckTooltipHtml(duck));
+      if (duck) attachTooltip(btn, () => duckTooltipHtml(state, duck));
     }
   });
 

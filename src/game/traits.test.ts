@@ -15,23 +15,33 @@ describe("trait effects fold into duck stat helpers", () => {
   it("Bill (stoic) boosts defense only, leaving mining untouched", () => {
     const bill = state.ducks[0];
     expect(miningPowerOf(bill)).toBeCloseTo(0.1); // no miningMult on stoic
-    expect(defenseOf(bill)).toBeCloseTo(0 * 1.15); // 0 base defense either way
+    expect(defenseOf(state, bill)).toBeCloseTo(0 * 1.15); // 0 base defense either way
   });
 
   it("a brave duck deals more damage", () => {
     const quackers = { defId: "quackers", level: 1, shards: 0, nextHitIn: 1 };
-    expect(attackDamageOf(quackers)).toBeCloseTo(1.5 * 1.1);
+    expect(attackDamageOf(state, quackers)).toBeCloseTo(1.5 * 1.1);
   });
 
   it("a greedy duck earns more gold and less xp on its own hits", () => {
     const nugget = { defId: "nugget", level: 1, shards: 0, nextHitIn: 1 };
-    expect(goldMultOf(nugget)).toBeCloseTo(1.1);
+    expect(goldMultOf(state, nugget)).toBeCloseTo(1.1);
     expect(xpMultOf(nugget)).toBeCloseTo(0.95);
   });
 
   it("loyal boosts hp", () => {
     const puddle = { defId: "puddle", level: 1, shards: 0, nextHitIn: 1 };
-    expect(hpOf(puddle)).toBeCloseTo(30 * 1.05);
+    expect(hpOf(state, puddle)).toBeCloseTo(30 * 1.05);
+  });
+
+  it("weapon gear adds flat attack then multiplies", () => {
+    const quackers = { defId: "quackers", level: 1, shards: 0, nextHitIn: 1 };
+    state.equipment.push({
+      id: "eq1", kindId: "Dagger", slot: "weapon", rarity: "common",
+      name: "Worn Dagger", stats: { flatAttack: 1, attackMult: 1.1 }, equippedBy: "quackers",
+    });
+    // (1.5 base * 1.1 brave + 1 flat) * 1.1 gear mult
+    expect(attackDamageOf(state, quackers)).toBeCloseTo((1.5 * 1.1 + 1) * 1.1);
   });
 });
 

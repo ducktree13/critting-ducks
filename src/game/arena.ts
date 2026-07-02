@@ -1,6 +1,7 @@
 import { ARENA_BASE, BASE_STATS } from "./balance";
 import { attackDamageOf, attackSpeedOf, critChanceBonusOf, defenseOf, getDuckDef, hpOf, xpMultOf } from "./ducks";
 import { emit } from "./events";
+import { rollEquipmentDrop, rollMaterialDrop } from "./gear";
 import { getStats, grantXp } from "./state";
 import { registerHitResult } from "./streak";
 import type { ArenaState, GameState, OwnedDuck, Rng } from "./types";
@@ -52,6 +53,8 @@ function victory(state: GameState, rng: Rng, nowMs: number): void {
     const lucky = fighters[Math.min(Math.floor(rng.next() * fighters.length), fighters.length - 1)];
     lucky.shards += 1;
   }
+  rollMaterialDrop(state, rng, wave, boss);
+  rollEquipmentDrop(state, rng, boss);
 
   emit("wave", { wave, boss, gold, xp });
   arena.wave += 1;
@@ -68,7 +71,7 @@ export function tickArena(state: GameState, dt: number, rng: Rng): void {
   const fighters = rosteredFighters(state);
   const nowMs = Date.now();
 
-  arena.teamMaxHp = fighters.reduce((sum, d) => sum + hpOf(d), 0);
+  arena.teamMaxHp = fighters.reduce((sum, d) => sum + hpOf(state, d), 0);
   arena.teamHp = Math.min(arena.teamHp, arena.teamMaxHp);
 
   // Empty roster: the enemy idles and nothing progresses.
@@ -95,14 +98,14 @@ export function tickArena(state: GameState, dt: number, rng: Rng): void {
       duck.nextHitIn += 1 / hitsPerSec;
 
       const critChance = Math.min(
-        Math.max(stats.critChance + critChanceBonusOf(duck), 0),
+        Math.max(stats.critChance + critChanceBonusOf(state, duck), 0),
         BASE_STATS.critChanceCap,
       );
       const isCrit = rng.next() < critChance;
       const critMult = stats.critMult + def.critDamageBonus;
 
       const dmg =
-        (attackDamageOf(duck) + stats.flatAttack) *
+        (attackDamageOf(state, duck) + stats.flatAttack) *
         stats.attackDamageMult *
         (isCrit ? critMult : 1);
       arena.enemyHp -= dmg;
@@ -123,7 +126,7 @@ export function tickArena(state: GameState, dt: number, rng: Rng): void {
 
   // Enemy attacks.
   const teamDefense =
-    (fighters.reduce((sum, d) => sum + defenseOf(d), 0) + stats.flatDefense) *
+    (fighters.reduce((sum, d) => sum + defenseOf(state, d), 0) + stats.flatDefense) *
     stats.defenseMult;
   const enemyAttack = enemyAttackAt(arena.wave);
 

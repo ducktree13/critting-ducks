@@ -1,4 +1,5 @@
 import { ACHIEVEMENTS } from "../game/achievements";
+import { MATERIAL_NAMES } from "../game/balance";
 import { on } from "../game/events";
 import type { GameState } from "../game/types";
 import { fmt } from "./format";
@@ -32,6 +33,8 @@ export function initAchievementsPanel(state: GameState): void {
 
   on("achievement", (e) => showToast(`🏆 Achievement: ${e.name}`));
   on("missionComplete", (e) => showToast(`✔ Mission complete: ${e.name}`));
+  on("equipmentDrop", (e) => showToast(`⚔ Gear found: ${e.item.name}`));
+  on("materialDrop", (e) => showToast(`🧪 Material: ${MATERIAL_NAMES[e.material]}`));
 }
 
 export function openAchievements(): void {

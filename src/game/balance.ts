@@ -2,7 +2,7 @@
 // Pacing targets (PLAN2.md §1): tutorial ≤5 min, first rare+ duck ~20 min,
 // Act 1 in 6–8 h, endgame at 1–2 months.
 
-import type { OreId, PackId, Rarity } from "./types";
+import type { MaterialId, OreId, PackId, Rarity } from "./types";
 
 export const TICK_SEC = 0.1; // fixed simulation timestep, in game-seconds
 export const MAX_ACCUMULATOR_SEC = 1.0; // clamp so a slow frame can't spiral
@@ -105,6 +105,41 @@ export const STREAK_BALANCE = {
   quackeningMult: 1.25, // T100: all multipliers
   quackeningCritBonus: 0.1, // T100: flat crit chance, within cap
 } as const;
+
+const RARITY_TIERS: Rarity[] = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "divine"];
+
+// Materials are themed to the enemy family they drop from (PLAN2.md §6);
+// the boss (every 10th wave) always drops its own relic.
+export const MATERIAL_BY_WAVE_INDEX: readonly MaterialId[] = [
+  "slimeGoo", "gooseFeather", "golemCrumb", "sharkTooth",
+];
+export const BOSS_MATERIAL: MaterialId = "pondlordRelic";
+
+export const MATERIAL_NAMES: Record<MaterialId, string> = {
+  slimeGoo: "Slime Goo",
+  gooseFeather: "Goose Feather",
+  golemCrumb: "Golem Crumb",
+  sharkTooth: "Shark Tooth",
+  pondlordRelic: "Pondlord Relic",
+};
+
+export const GEAR = {
+  materialDropChance: 0.35, // per normal kill; 1.0 (guaranteed) on boss waves
+  equipmentDropChance: 0.03, // per normal kill; boss uses equipmentBossDropChance
+  equipmentBossDropChance: 0.25,
+  sellPrice: {
+    common: 5, uncommon: 15, rare: 40, epic: 100, legendary: 250, mythic: 600, divine: 1500,
+  } as Record<Rarity, number>,
+  // Stat budget per rarity a rolled equipment item's bonuses are drawn from.
+  statBudget: {
+    common: 1, uncommon: 1.8, rare: 3.5, epic: 7, legendary: 13, mythic: 24, divine: 40,
+  } as Record<Rarity, number>,
+  dropRarityOdds: {
+    common: 0.5, uncommon: 0.28, rare: 0.14, epic: 0.06, legendary: 0.018, mythic: 0.0015, divine: 0.0005,
+  } as Record<Rarity, number>,
+} as const;
+
+export const RARITY_ORDER: readonly Rarity[] = RARITY_TIERS;
 
 export const ARENA_BASE = {
   baseEnemyHp: 24,

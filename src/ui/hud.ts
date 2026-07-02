@@ -4,6 +4,7 @@ import { RateTracker } from "../game/rates";
 import { getStats, xpToNext } from "../game/state";
 import type { GameState } from "../game/types";
 import { openAchievements } from "./achievementsPanel";
+import { openCrafting } from "./craftingMenu";
 import { fmt } from "./format";
 import { openInventory } from "./inventoryMenu";
 import { openShop } from "./shopModal";
@@ -56,6 +57,7 @@ export function initHud(header: HTMLElement): void {
     </div>
     <div class="hud-right">
       <button class="shop-btn" id="hud-achievements">Achievements</button>
+      <button class="shop-btn" id="hud-craft">Craft</button>
       <button class="shop-btn" id="hud-ducks">Ducks</button>
       <button class="shop-btn" id="hud-shop">Shop</button>
       <button class="icon-btn" id="hud-theme" aria-label="Toggle dark mode"></button>
@@ -66,6 +68,7 @@ export function initHud(header: HTMLElement): void {
   header.querySelector("#hud-shop")!.addEventListener("click", openShop);
   header.querySelector("#hud-ducks")!.addEventListener("click", openInventory);
   header.querySelector("#hud-achievements")!.addEventListener("click", openAchievements);
+  header.querySelector("#hud-craft")!.addEventListener("click", openCrafting);
 
   goldEl = header.querySelector("#hud-gold-amount")!;
   goldRateEl = header.querySelector("#hud-gold-rate")!;
