@@ -1,8 +1,9 @@
 export interface GameEventMap {
-  hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; gold: number; xp: number; ore: number };
+  hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; gold: number; xp: number; ore: number; dmg: number };
   crit: { panel: "mine" | "arena"; duckId: string };
   levelup: { level: number };
-  wave: { wave: number; boss: boolean };
+  enemyhit: { dmg: number };
+  wave: { wave: number; boss: boolean; gold: number; xp: number };
   buy: { nodeId: string };
   gacha: { results: { defId: string; isNew: boolean; shardsGained: number }[] };
   roster: Record<string, never>;

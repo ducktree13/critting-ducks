@@ -13,7 +13,8 @@ export function initFloaters(anchors: { mine: HTMLElement; arena: HTMLElement })
 
     const el = document.createElement("div");
     el.className = e.isCrit ? "floater crit" : "floater";
-    el.textContent = `+${fmt(e.gold)}${e.isCrit ? "!" : ""}`;
+    const amount = e.panel === "arena" ? e.dmg : e.gold;
+    el.textContent = `+${fmt(amount)}${e.isCrit ? "!" : ""}`;
     const jitter = (Math.random() - 0.5) * 80;
     el.style.left = `calc(50% + ${jitter}px)`;
     anchor.appendChild(el);

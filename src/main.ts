@@ -1,4 +1,5 @@
 import "./style.css";
+import { tickArena } from "./game/arena";
 import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, TICK_SEC } from "./game/balance";
 import { tickMine } from "./game/mine";
 import { mulberry32 } from "./game/rng";
@@ -6,6 +7,7 @@ import { load, save } from "./game/save";
 import { createInitialState, refreshStats } from "./game/state";
 import { gameSpeed } from "./game/streak";
 import type { GameState, Rng } from "./game/types";
+import { initArenaPanel, renderArenaPanel } from "./ui/arenaPanel";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
 import { initMinePanel, renderMinePanel } from "./ui/minePanel";
@@ -27,10 +29,7 @@ app.innerHTML = `
   <main class="panels">
     <section class="panel" id="mine-panel"></section>
     <section class="panel" id="tree-panel"></section>
-    <section class="panel" id="arena-panel">
-      <h2>Arena</h2>
-      <div class="panel-body">Battles will happen here soon.</div>
-    </section>
+    <section class="panel" id="arena-panel"></section>
   </main>
 `;
 
@@ -41,17 +40,20 @@ initShopModal(state, rng);
 initHud(app.querySelector("header.hud")!);
 initMinePanel(minePanelEl, state);
 initTreePanel(app.querySelector<HTMLElement>("#tree-panel")!, state);
+initArenaPanel(arenaPanelEl, state);
 initFloaters({ mine: minePanelEl, arena: arenaPanelEl });
 
 function simTick(s: GameState, dt: number, r: Rng): void {
   refreshStats(s, Date.now());
   tickMine(s, dt, r);
+  tickArena(s, dt, r);
 }
 
 function render(s: GameState): void {
   renderHud(s);
   renderMinePanel(s);
   renderTreePanel(s);
+  renderArenaPanel(s);
 }
 
 let lastFrame = performance.now();

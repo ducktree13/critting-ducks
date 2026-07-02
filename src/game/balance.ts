@@ -62,7 +62,16 @@ export const ARENA_BASE = {
   enemyHpGrowth: 1.18,
   baseEnemyAttack: 3,
   enemyAttackGrowth: 1.15,
-  enemyAttackSpeed: 0.8,
-  bossInterval: 10,
+  enemyAttackSpeed: 0.8, // hits/sec
+  bossInterval: 10, // every Nth wave is a boss
   bossHpMult: 3,
+  bossRewardMult: 2,
+  baseGoldReward: 10,
+  goldRewardGrowth: 1.15,
+  baseXpReward: 15,
+  xpRewardGrowth: 1.12,
+  xpPerHit: 2,
+  shardChance: 0.1, // per victory; 1.0 on boss waves
+  retrySec: 3, // real-time pause after a wipe
+  nextWaveDelaySec: 1, // real-time pause between waves
 } as const;

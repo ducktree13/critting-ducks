@@ -59,6 +59,12 @@ export function initHud(header: HTMLElement): void {
   streakEl = header.querySelector("#hud-streak")!;
   pipEls = Array.from(header.querySelectorAll<HTMLElement>(".pip"));
 
+  on("wave", (e) => {
+    const now = Date.now();
+    goldRate.add(now, e.gold);
+    xpRate.add(now, e.xp);
+  });
+
   on("hit", (e) => {
     const now = Date.now();
     goldRate.add(now, e.gold);

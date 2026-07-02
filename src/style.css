@@ -428,6 +428,113 @@ main.panels {
   cursor: not-allowed;
 }
 
+/* ---- Arena panel ---- */
+
+.arena-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--fg);
+  position: relative;
+}
+
+.arena-enemy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.enemy-name {
+  font-weight: 600;
+}
+
+.enemy-name small {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.enemy-art.flash {
+  animation: enemy-flash 0.15s ease-out;
+}
+
+@keyframes enemy-flash {
+  0% { filter: brightness(1); transform: translateX(0); }
+  40% { filter: brightness(1.8); transform: translateX(4px); }
+  100% { filter: brightness(1); transform: translateX(0); }
+}
+
+.hp-bar {
+  position: relative;
+  width: min(260px, 90%);
+  height: 16px;
+  border-radius: 8px;
+  background: var(--card-border);
+  overflow: hidden;
+}
+
+.hp-bar .hp-fill {
+  display: block;
+  height: 100%;
+  background: #d9534f;
+  transition: width 0.12s linear;
+}
+
+.hp-bar.team .hp-fill {
+  background: #5cb85c;
+}
+
+.hp-bar.flash {
+  animation: bar-flash 0.2s ease-out;
+}
+
+@keyframes bar-flash {
+  50% { box-shadow: 0 0 0 3px var(--crit); }
+}
+
+.hp-bar .hp-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+}
+
+.arena-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.duck-slot.fighter svg {
+  transform: scaleX(-1); /* face the enemy */
+}
+
+.arena-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  font-weight: 600;
+  z-index: 5;
+  text-align: center;
+}
+
+.arena-overlay.show {
+  display: flex;
+}
+
 /* ---- Shop modal & roster picker ---- */
 
 .shop-btn {

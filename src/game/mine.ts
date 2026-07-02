@@ -44,7 +44,7 @@ export function tickMine(state: GameState, dt: number, rng: Rng): void {
       grantXp(state, xp);
       registerHitResult(state, isCrit, Date.now(), stats);
 
-      emit("hit", { panel: "mine", duckId: defId, isCrit, gold, xp, ore });
+      emit("hit", { panel: "mine", duckId: defId, isCrit, gold, xp, ore, dmg: 0 });
     }
   }
 }
