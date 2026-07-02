@@ -1,8 +1,12 @@
+import { STREAK_BALANCE } from "../game/balance";
 import { on } from "../game/events";
 import { RateTracker } from "../game/rates";
-import { xpToNext } from "../game/state";
+import { getStats, xpToNext } from "../game/state";
 import type { GameState } from "../game/types";
 import { fmt } from "./format";
+
+type TierKey = keyof typeof STREAK_BALANCE.tiers;
+const TIER_KEYS: TierKey[] = ["t10", "t25", "t50", "t100"];
 
 const goldRate = new RateTracker();
 const xpRate = new RateTracker();
@@ -13,6 +17,7 @@ let xpFillEl: HTMLElement;
 let xpLabelEl: HTMLElement;
 let xpRateEl: HTMLElement;
 let streakEl: HTMLElement;
+let pipEls: HTMLElement[] = [];
 
 export function initHud(header: HTMLElement): void {
   header.innerHTML = `
@@ -33,6 +38,9 @@ export function initHud(header: HTMLElement): void {
     </div>
     <div class="hud-center">
       <span class="hud-streak" id="hud-streak">0</span>
+      <span class="streak-pips" id="streak-pips">
+        ${TIER_KEYS.map((k) => `<span class="pip" data-tier="${k}">${STREAK_BALANCE.tiers[k]}</span>`).join("")}
+      </span>
     </div>
     <div class="hud-right">
       <span class="hud-title">Critting Ducks</span>
@@ -45,11 +53,17 @@ export function initHud(header: HTMLElement): void {
   xpLabelEl = header.querySelector("#hud-xp-label")!;
   xpRateEl = header.querySelector("#hud-xp-rate")!;
   streakEl = header.querySelector("#hud-streak")!;
+  pipEls = Array.from(header.querySelectorAll<HTMLElement>(".pip"));
 
   on("hit", (e) => {
     const now = Date.now();
     goldRate.add(now, e.gold);
     xpRate.add(now, e.xp);
+    if (e.isCrit) {
+      streakEl.classList.remove("pulse");
+      void streakEl.offsetWidth;
+      streakEl.classList.add("pulse");
+    }
   });
 }
 
@@ -62,4 +76,20 @@ export function renderHud(state: GameState): void {
   xpLabelEl.textContent = `Lv ${state.level}`;
   xpRateEl.textContent = `${fmt(xpRate.perHour(now))} xp/hr`;
   streakEl.textContent = String(state.streak.current);
+  streakEl.classList.toggle("hot", state.streak.current > 0);
+
+  // Tier pips light while their buff is active, with a radial countdown.
+  const durationMs = getStats(state).buffDurationSec * 1000;
+  for (const pip of pipEls) {
+    const tier = pip.dataset.tier as TierKey;
+    const remaining = state.streak.buffExpiry[tier] - now;
+    if (remaining > 0) {
+      pip.classList.add("lit");
+      const frac = Math.min(remaining / durationMs, 1);
+      pip.style.background = `conic-gradient(var(--accent) ${frac * 360}deg, var(--card-border) 0deg)`;
+    } else {
+      pip.classList.remove("lit");
+      pip.style.background = "";
+    }
+  }
 }

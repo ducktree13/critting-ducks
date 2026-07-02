@@ -1,4 +1,4 @@
-import { ARENA_BASE, BASE_STATS, PASSIVES, XP_CURVE } from "./balance";
+import { ARENA_BASE, BASE_STATS, PASSIVES, STREAK_BALANCE, XP_CURVE } from "./balance";
 import { getDuckDef, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import type { DerivedStats, GameState, OreId } from "./types";
@@ -53,9 +53,9 @@ export function grantXp(state: GameState, amount: number): void {
 }
 
 // Aggregates base values, purchased skill nodes, rostered duck passives, and
-// active streak buffs into one derived-stats snapshot. Skill nodes (Phase 3)
-// and streak buffs (Phase 2) fold in as those systems come online.
-export function computeStats(state: GameState, _nowMs: number): DerivedStats {
+// active streak buffs into one derived-stats snapshot. Skill nodes fold in
+// when the tree lands in Phase 3.
+export function computeStats(state: GameState, nowMs: number): DerivedStats {
   const stats: DerivedStats = {
     critChance: BASE_STATS.critChance,
     critMult: BASE_STATS.critMult,
@@ -83,6 +83,21 @@ export function computeStats(state: GameState, _nowMs: number): DerivedStats {
   for (const defId of state.rosters.arena) {
     if (getDuckDef(defId).passive === "teamDmg10") stats.attackDamageMult *= PASSIVES.teamDmgMult;
   }
+
+  // Streak tier buffs, active while their real-time expiry is in the future.
+  const expiry = state.streak.buffExpiry;
+  if (nowMs < expiry.t10) stats.goldMult *= STREAK_BALANCE.tierBuffMult;
+  if (nowMs < expiry.t25) stats.xpMult *= STREAK_BALANCE.tierBuffMult;
+  if (nowMs < expiry.t50) stats.attackDamageMult *= STREAK_BALANCE.tierBuffMult;
+  if (nowMs < expiry.t100) {
+    stats.critChance += STREAK_BALANCE.quackeningCritBonus;
+    stats.oreMult *= STREAK_BALANCE.quackeningMult;
+    stats.attackDamageMult *= STREAK_BALANCE.quackeningMult;
+    stats.attackSpeedMult *= STREAK_BALANCE.quackeningMult;
+    stats.xpMult *= STREAK_BALANCE.quackeningMult;
+    stats.goldMult *= STREAK_BALANCE.quackeningMult;
+  }
+  stats.critChance = Math.min(Math.max(stats.critChance, 0), BASE_STATS.critChanceCap);
 
   return stats;
 }

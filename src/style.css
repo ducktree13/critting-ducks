@@ -82,10 +82,55 @@ header.hud .hud-title {
   transition: width 0.15s linear;
 }
 
+.hud-center {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .hud-streak {
   font-size: 1.3rem;
   font-weight: 700;
+  color: var(--muted);
+  min-width: 32px;
+  text-align: center;
+}
+
+.hud-streak.hot {
   color: var(--crit);
+}
+
+.hud-streak.pulse {
+  animation: streak-pulse 0.25s ease-out;
+}
+
+@keyframes streak-pulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+.streak-pips {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.pip {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--card-border);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 600;
+}
+
+.pip.lit {
+  color: #fff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.55);
 }
 
 main.panels {

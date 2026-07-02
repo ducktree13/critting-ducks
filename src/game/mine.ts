@@ -2,6 +2,7 @@ import { BASE_STATS, MINE_XP_PER_HIT, ORE_VALUES, PASSIVES } from "./balance";
 import { getDuckDef, miningPowerOf } from "./ducks";
 import { emit } from "./events";
 import { getStats, grantXp } from "./state";
+import { registerHitResult } from "./streak";
 import type { GameState, Rng } from "./types";
 
 export function tickMine(state: GameState, dt: number, rng: Rng): void {
@@ -41,6 +42,7 @@ export function tickMine(state: GameState, dt: number, rng: Rng): void {
       state.lifetime.hits += 1;
       if (isCrit) state.lifetime.crits += 1;
       grantXp(state, xp);
+      registerHitResult(state, isCrit, Date.now(), stats);
 
       emit("hit", { panel: "mine", duckId: defId, isCrit, gold, xp, ore });
     }

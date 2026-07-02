@@ -4,6 +4,7 @@ import { tickMine } from "./game/mine";
 import { mulberry32 } from "./game/rng";
 import { load, save } from "./game/save";
 import { createInitialState, refreshStats } from "./game/state";
+import { gameSpeed } from "./game/streak";
 import type { GameState, Rng } from "./game/types";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
@@ -12,6 +13,11 @@ import { initMinePanel, renderMinePanel } from "./ui/minePanel";
 const storage = window.localStorage;
 const state: GameState = load(storage) ?? createInitialState();
 const rng: Rng = mulberry32(Date.now() >>> 0);
+
+// Dev-only handle for manual verification (PLAN.md §12); stripped from builds.
+if (import.meta.env.DEV) {
+  (window as unknown as { __cd: { state: GameState } }).__cd = { state };
+}
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
@@ -55,10 +61,12 @@ function frame(now: number): void {
 
   if (realDeltaSeconds > FRAME_GAP_THRESHOLD_SEC) {
     // Tab was hidden/throttled. Offline progress (Phase 6) will fill this
-    // gap; for now just drop it so the accumulator can't spin.
+    // gap; for now just drop it so the accumulator can't spin. Buff timers
+    // expire naturally by timestamp; the streak does not survive the gap.
     accumulator = 0;
+    state.streak.current = 0;
   } else {
-    accumulator = Math.min(accumulator + realDeltaSeconds, MAX_ACCUMULATOR_SEC);
+    accumulator = Math.min(accumulator + realDeltaSeconds * gameSpeed(state), MAX_ACCUMULATOR_SEC);
     while (accumulator >= TICK_SEC) {
       simTick(state, TICK_SEC, rng);
       accumulator -= TICK_SEC;

@@ -7,7 +7,7 @@ One checkbox per build phase (full details in [PLAN.md](PLAN.md) §13). Work top
   *Playable check: three empty panels render; save survives reload.*
 - [x] **Phase 1 — Mine + HUD**: `ducks.ts` (definitions), `mine.ts`, `rates.ts`, `minePanel.ts`, `hud.ts`, `floaters.ts`, `duckArt.ts`. Bill mining copper.
   *Playable check: gold accumulates, floaters fly, gold/hr and xp/hr display.*
-- [ ] **Phase 2 — Streak**: `streak.ts` + HUD streak widget + game-speed wiring + tier buffs in `computeStats`. Tests.
+- [x] **Phase 2 — Streak**: `streak.ts` + HUD streak widget + game-speed wiring + tier buffs in `computeStats`. Tests.
   *Playable check: crits chain, game speed visibly ramps, T10 buff pip works.*
 - [ ] **Phase 3 — Skill tree**: `skilltree.ts` + `treePanel.ts` (SVG tree, leaf growth, purchase flow, level gating). Tests.
   *Playable check: buy crit/ore nodes, effects apply, tree grows leaves.*

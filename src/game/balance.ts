@@ -40,6 +40,15 @@ export const PASSIVES = {
   streakShieldCooldownMs: 60_000, // Deathbill: 1 non-crit forgiven per 60s
 } as const;
 
+export const STREAK_BALANCE = {
+  tiers: { t10: 10, t25: 25, t50: 50, t100: 100 },
+  speedPerCrit: 0.01, // gameSpeed = 1 + speedPerCrit * min(streak, speedCap)
+  speedCap: 100, // streak count where speed maxes out (2.0x)
+  tierBuffMult: 1.5, // T10 gold, T25 xp, T50 arena damage
+  quackeningMult: 1.25, // T100: all multipliers
+  quackeningCritBonus: 0.1, // T100: flat crit chance, within cap
+} as const;
+
 export const ARENA_BASE = {
   baseEnemyHp: 30,
   enemyHpGrowth: 1.18,
