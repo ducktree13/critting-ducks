@@ -1,21 +1,64 @@
 import "./style.css";
+import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, TICK_SEC } from "./game/balance";
+import { load, save } from "./game/save";
+import { createInitialState } from "./game/state";
+import type { GameState, Rng } from "./game/types";
+
+const storage = window.localStorage;
+const state: GameState = load(storage) ?? createInitialState();
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
-
 app.innerHTML = `
-  <main class="placeholder">
-    <svg class="duck" viewBox="0 0 120 120" width="160" height="160" role="img" aria-label="A yellow duck">
-      <ellipse cx="58" cy="78" rx="34" ry="24" fill="#f5c542" />
-      <path d="M46 74 q14 -6 26 2 q-10 12 -26 6 z" fill="#e0a92e" />
-      <circle cx="84" cy="48" r="16" fill="#f5c542" />
-      <polygon points="98,45 113,50 98,56" fill="#f5892e" />
-      <circle cx="88" cy="44" r="2.6" fill="#1a1a1a" />
-    </svg>
-    <h1>Critting Ducks</h1>
-    <p>Under construction &mdash; the ducks are sharpening their beaks.</p>
-    <p class="sub">
-      Follow the build at
-      <a href="https://github.com/AustinSchuetz/critting-ducks">github.com/AustinSchuetz/critting-ducks</a>
-    </p>
+  <header class="hud">
+    <span class="hud-title">Critting Ducks</span>
+  </header>
+  <main class="panels">
+    <section class="panel" id="mine-panel">
+      <h2>Mine</h2>
+      <div class="panel-body">Ducks will mine here soon.</div>
+    </section>
+    <section class="panel" id="tree-panel">
+      <h2>Skill Tree</h2>
+      <div class="panel-body">The tree will grow here soon.</div>
+    </section>
+    <section class="panel" id="arena-panel">
+      <h2>Arena</h2>
+      <div class="panel-body">Battles will happen here soon.</div>
+    </section>
   </main>
 `;
+
+function simTick(_state: GameState, _dt: number, _rng: Rng): void {
+  // No systems to tick yet — mine/arena land in later phases.
+}
+
+const rng: Rng = { next: () => Math.random() };
+let lastFrame = performance.now();
+let accumulator = 0;
+
+function frame(now: number): void {
+  const realDeltaSeconds = (now - lastFrame) / 1000;
+  lastFrame = now;
+
+  if (realDeltaSeconds > FRAME_GAP_THRESHOLD_SEC) {
+    // Tab was hidden/throttled. Offline progress (Phase 6) will fill this
+    // gap; for now just drop it so the accumulator can't spin.
+    accumulator = 0;
+  } else {
+    accumulator = Math.min(accumulator + realDeltaSeconds, MAX_ACCUMULATOR_SEC);
+    while (accumulator >= TICK_SEC) {
+      simTick(state, TICK_SEC, rng);
+      accumulator -= TICK_SEC;
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+
+setInterval(() => save(state, storage), AUTOSAVE_INTERVAL_MS);
+window.addEventListener("beforeunload", () => save(state, storage));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") save(state, storage);
+});

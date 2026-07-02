@@ -3,7 +3,7 @@
 One checkbox per build phase (full details in [PLAN.md](PLAN.md) §13). Work top to bottom — the game is playable at the end of every phase. Check a phase off only after its *playable check* passes and `npm run test` + `npm run build` are clean.
 
 - [x] **Phase –1 — Handoff package**: repo scaffolding (Vite + TypeScript), docs, GitHub Pages deploy pipeline, placeholder page live.
-- [ ] **Phase 0 — Skeleton**: `types.ts`, `balance.ts`, `rng.ts`, `state.ts`, `events.ts`, `save.ts`, fixed-timestep loop in `main.ts`, 3-panel CSS grid with placeholder panels, autosave.
+- [x] **Phase 0 — Skeleton**: `types.ts`, `balance.ts`, `rng.ts`, `state.ts`, `events.ts`, `save.ts`, fixed-timestep loop in `main.ts`, 3-panel CSS grid with placeholder panels, autosave.
   *Playable check: three empty panels render; save survives reload.*
 - [ ] **Phase 1 — Mine + HUD**: `ducks.ts` (definitions), `mine.ts`, `rates.ts`, `minePanel.ts`, `hud.ts`, `floaters.ts`, `duckArt.ts`. Bill mining copper.
   *Playable check: gold accumulates, floaters fly, gold/hr and xp/hr display.*
