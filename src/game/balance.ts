@@ -1,6 +1,6 @@
 // Every tunable number in the game lives here. No magic numbers in logic files.
 
-import type { OreId } from "./types";
+import type { OreId, Rarity } from "./types";
 
 export const TICK_SEC = 0.1; // fixed simulation timestep, in game-seconds
 export const MAX_ACCUMULATOR_SEC = 1.0; // clamp so a slow frame can't spiral
@@ -38,6 +38,14 @@ export const PASSIVES = {
   teamDmgMult: 1.1, // Thunderquack: +10% team damage (arena)
   goldenCritGoldMult: 2, // Golden Goose: mine crits pay +100% gold
   streakShieldCooldownMs: 60_000, // Deathbill: 1 non-crit forgiven per 60s
+} as const;
+
+export const GACHA = {
+  standardPackCost: 100, // 1 roll
+  fivePackCost: 450, // 5 rolls, guaranteed uncommon-or-better
+  fivePackRolls: 5,
+  odds: { common: 0.6, uncommon: 0.25, rare: 0.1, epic: 0.04, legendary: 0.01 } as Record<Rarity, number>,
+  dupeShards: { common: 1, uncommon: 2, rare: 3, epic: 5, legendary: 10 } as Record<Rarity, number>,
 } as const;
 
 export const STREAK_BALANCE = {

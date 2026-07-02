@@ -4,6 +4,8 @@ export interface GameEventMap {
   levelup: { level: number };
   wave: { wave: number; boss: boolean };
   buy: { nodeId: string };
+  gacha: { results: { defId: string; isNew: boolean; shardsGained: number }[] };
+  roster: Record<string, never>;
 }
 
 export type GameEventName = keyof GameEventMap;

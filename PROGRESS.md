@@ -11,7 +11,7 @@ One checkbox per build phase (full details in [PLAN.md](PLAN.md) §13). Work top
   *Playable check: crits chain, game speed visibly ramps, T10 buff pip works.*
 - [x] **Phase 3 — Skill tree**: `skilltree.ts` + `treePanel.ts` (SVG tree, leaf growth, purchase flow, level gating). Tests.
   *Playable check: buy crit/ore nodes, effects apply, tree grows leaves.*
-- [ ] **Phase 4 — Shop, gacha, rosters**: `shop.ts`, `shopModal.ts`, roster pickers, duck levels/shards, slot nodes meaningful. Tests.
+- [x] **Phase 4 — Shop, gacha, rosters**: `shop.ts`, `shopModal.ts`, roster pickers, duck levels/shards, slot nodes meaningful. Tests.
   *Playable check: buy packs, duplicates convert to shards, roster 2–3 miners.*
 - [ ] **Phase 5 — Arena**: `arena.ts`, `arenaPanel.ts`, wave loop, rewards, boss shards, arena hits feeding the streak. Tests.
   *Playable check: full three-panel loop; the T50/T100 chase is live.*

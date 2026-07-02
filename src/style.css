@@ -428,6 +428,238 @@ main.panels {
   cursor: not-allowed;
 }
 
+/* ---- Shop modal & roster picker ---- */
+
+.shop-btn {
+  padding: 6px 14px;
+  margin-right: 12px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shop-overlay,
+.picker-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.shop-overlay.open,
+.picker-overlay {
+  display: flex;
+}
+
+.shop-box {
+  background: var(--bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  width: min(680px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.shop-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shop-head h3 {
+  margin: 0;
+}
+
+.shop-close {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.shop-packs {
+  display: flex;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.pack-btn {
+  flex: 1;
+  padding: 14px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pack-btn:hover {
+  border-color: var(--accent);
+}
+
+.pack-btn small {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.pack-btn .free {
+  color: var(--crit);
+}
+
+.shop-error {
+  color: var(--crit);
+  font-size: 0.85rem;
+}
+
+.shop-reveal {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-height: 0;
+  margin-bottom: 14px;
+}
+
+.reveal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 2px solid var(--card-border);
+  background: var(--card);
+  font-size: 0.8rem;
+  animation: card-flip 0.45s ease-out backwards;
+}
+
+@keyframes card-flip {
+  from { transform: rotateY(90deg) scale(0.7); opacity: 0; }
+  to { transform: rotateY(0) scale(1); opacity: 1; }
+}
+
+.reveal-card.rarity-uncommon { border-color: #4caf50; }
+.reveal-card.rarity-rare { border-color: #2196f3; }
+.reveal-card.rarity-epic { border-color: #9c27b0; box-shadow: 0 0 10px #9c27b055; }
+.reveal-card.rarity-legendary { border-color: #f5c518; box-shadow: 0 0 14px #f5c51888; }
+
+.new-tag {
+  color: var(--crit);
+  font-weight: 700;
+}
+
+.shop-collection {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.duck-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: var(--card);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.duck-card small {
+  color: var(--muted);
+}
+
+.duck-card.unowned .duck-sil {
+  filter: grayscale(1) brightness(0.55) contrast(0.6);
+  opacity: 0.65;
+}
+
+.upgrade-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.upgrade-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.picker-box {
+  background: var(--bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  width: min(360px, 92vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.picker-box h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  text-transform: capitalize;
+}
+
+.picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.picker-row:hover {
+  border-color: var(--accent);
+}
+
+.picker-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.picker-info small {
+  color: var(--muted);
+}
+
+.picker-clear {
+  justify-content: center;
+  color: var(--muted);
+}
+
+.duck-slot {
+  cursor: pointer;
+}
+
 /* ---- Floaters ---- */
 
 .floater {

@@ -9,6 +9,7 @@ import type { GameState, Rng } from "./game/types";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
 import { initMinePanel, renderMinePanel } from "./ui/minePanel";
+import { initShopModal } from "./ui/shopModal";
 import { initTreePanel, renderTreePanel } from "./ui/treePanel";
 
 const storage = window.localStorage;
@@ -36,6 +37,7 @@ app.innerHTML = `
 const minePanelEl = app.querySelector<HTMLElement>("#mine-panel")!;
 const arenaPanelEl = app.querySelector<HTMLElement>("#arena-panel")!;
 
+initShopModal(state, rng);
 initHud(app.querySelector("header.hud")!);
 initMinePanel(minePanelEl, state);
 initTreePanel(app.querySelector<HTMLElement>("#tree-panel")!, state);

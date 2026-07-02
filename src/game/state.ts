@@ -53,6 +53,39 @@ export function grantXp(state: GameState, amount: number): void {
   }
 }
 
+// Assign an owned duck to a roster slot (or clear it with null). A duck can
+// only be in one roster at a time, so assigning removes it from wherever it
+// currently sits.
+export function assignToRoster(
+  state: GameState,
+  panel: "mine" | "arena",
+  slotIndex: number,
+  defId: string | null,
+): boolean {
+  const stats = getStats(state);
+  const slots = panel === "mine" ? stats.mineSlots : stats.arenaSlots;
+  if (slotIndex < 0 || slotIndex >= slots) return false;
+  if (defId !== null && !state.ducks.some((d) => d.defId === defId)) return false;
+
+  if (defId !== null) {
+    for (const p of ["mine", "arena"] as const) {
+      const i = state.rosters[p].indexOf(defId);
+      if (i !== -1) state.rosters[p].splice(i, 1);
+    }
+  }
+
+  const roster = state.rosters[panel];
+  if (defId === null) {
+    roster.splice(slotIndex, 1);
+  } else if (slotIndex < roster.length) {
+    roster[slotIndex] = defId;
+  } else {
+    roster.push(defId);
+  }
+  emit("roster", {});
+  return true;
+}
+
 // Aggregates base values, purchased skill nodes, rostered duck passives, and
 // active streak buffs into one derived-stats snapshot. Skill nodes fold in
 // when the tree lands in Phase 3.

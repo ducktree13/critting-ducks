@@ -5,6 +5,7 @@ import { getStats, refreshStats } from "../game/state";
 import type { GameState, OreId } from "../game/types";
 import { duckSvg } from "./duckArt";
 import { fmt } from "./format";
+import { openRosterPicker } from "./rosterPicker";
 
 const ORE_COLORS: Record<OreId, string> = {
   copper: "#c77b4a",
@@ -115,13 +116,18 @@ function renderRoster(state: GameState): void {
     const defId = state.rosters.mine[i];
     if (defId) {
       slots.push(
-        `<div class="duck-slot" data-duck="${defId}" title="${getDuckDef(defId).name}">${duckSvg(defId, 64)}</div>`,
+        `<div class="duck-slot" data-duck="${defId}" data-slot="${i}" title="${getDuckDef(defId).name} — click to change">${duckSvg(defId, 64)}</div>`,
       );
     } else {
-      slots.push(`<div class="duck-slot empty">+</div>`);
+      slots.push(`<div class="duck-slot empty" data-slot="${i}" title="Assign a duck">+</div>`);
     }
   }
   duckRowEl.innerHTML = slots.join("");
+  duckRowEl.querySelectorAll<HTMLElement>(".duck-slot").forEach((slot) => {
+    slot.addEventListener("click", () =>
+      openRosterPicker(state, "mine", Number(slot.dataset.slot)),
+    );
+  });
   lastRosterKey = rosterKey(state);
 }
 

@@ -4,6 +4,7 @@ import { RateTracker } from "../game/rates";
 import { getStats, xpToNext } from "../game/state";
 import type { GameState } from "../game/types";
 import { fmt } from "./format";
+import { openShop } from "./shopModal";
 
 type TierKey = keyof typeof STREAK_BALANCE.tiers;
 const TIER_KEYS: TierKey[] = ["t10", "t25", "t50", "t100"];
@@ -43,9 +44,12 @@ export function initHud(header: HTMLElement): void {
       </span>
     </div>
     <div class="hud-right">
+      <button class="shop-btn" id="hud-shop">Shop</button>
       <span class="hud-title">Critting Ducks</span>
     </div>
   `;
+
+  header.querySelector("#hud-shop")!.addEventListener("click", openShop);
 
   goldEl = header.querySelector("#hud-gold-amount")!;
   goldRateEl = header.querySelector("#hud-gold-rate")!;
