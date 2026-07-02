@@ -9,6 +9,7 @@ const CORRUPT_KEY = "crittingDucks.save.corrupt";
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem(key: string): void;
 }
 
 function migrate(raw: { version: number; state: unknown }): Partial<GameState> {
@@ -53,4 +54,28 @@ export function load(storage: StorageLike): GameState | null {
     storage.setItem(CORRUPT_KEY, raw);
     return null;
   }
+}
+
+export function exportSave(state: GameState): string {
+  return JSON.stringify({ version: 1, state });
+}
+
+// Parses pasted JSON through the same migrate/merge pipeline as load.
+// Returns null (without touching storage) if the input is unusable.
+export function importSave(json: string, storage: StorageLike): GameState | null {
+  try {
+    const parsed = JSON.parse(json);
+    if (typeof parsed !== "object" || parsed === null || typeof parsed.version !== "number") {
+      return null;
+    }
+    const state = mergeWithDefaults(migrate(parsed));
+    storage.setItem(SAVE_KEY, JSON.stringify({ version: 1, state }));
+    return state;
+  } catch {
+    return null;
+  }
+}
+
+export function clearSave(storage: StorageLike): void {
+  storage.removeItem(SAVE_KEY);
 }

@@ -1,10 +1,11 @@
 import "./style.css";
 import { tickArena } from "./game/arena";
-import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, TICK_SEC } from "./game/balance";
+import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, OFFLINE, TICK_SEC } from "./game/balance";
 import { tickMine } from "./game/mine";
+import { computeOfflineProgress, offlineIncomePerSec } from "./game/offline";
 import { mulberry32 } from "./game/rng";
-import { load, save } from "./game/save";
-import { createInitialState, refreshStats } from "./game/state";
+import { clearSave, exportSave, importSave, load, save } from "./game/save";
+import { computeStats, createInitialState, grantXp, refreshStats } from "./game/state";
 import { gameSpeed } from "./game/streak";
 import type { GameState, Rng } from "./game/types";
 import { initArenaPanel, renderArenaPanel } from "./ui/arenaPanel";
@@ -12,11 +13,28 @@ import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
 import { initMinePanel, renderMinePanel } from "./ui/minePanel";
 import { initShopModal } from "./ui/shopModal";
+import { initTheme } from "./ui/theme";
 import { initTreePanel, renderTreePanel } from "./ui/treePanel";
+import { showWelcomeBack } from "./ui/welcomeBack";
 
 const storage = window.localStorage;
 const state: GameState = load(storage) ?? createInitialState();
 const rng: Rng = mulberry32(Date.now() >>> 0);
+
+// Stats snapshot with every streak buff expired, for offline math.
+const noBuffStats = () => computeStats(state, Number.MAX_SAFE_INTEGER);
+
+// Offline progress: credit time away if the save is older than a minute.
+{
+  const awaySec = (Date.now() - state.lastSaved) / 1000;
+  if (awaySec > OFFLINE.minGapSec) {
+    state.streak.current = 0; // streaks don't survive an absence
+    const report = computeOfflineProgress(state, awaySec, noBuffStats());
+    if (report.goldGained > 0 || report.xpGained > 0) {
+      showWelcomeBack(report);
+    }
+  }
+}
 
 // Dev-only handle for manual verification (PLAN.md §12); stripped from builds.
 if (import.meta.env.DEV) {
@@ -36,8 +54,35 @@ app.innerHTML = `
 const minePanelEl = app.querySelector<HTMLElement>("#mine-panel")!;
 const arenaPanelEl = app.querySelector<HTMLElement>("#arena-panel")!;
 
-initShopModal(state, rng);
+// Set when importing/resetting so the unload handler can't clobber the
+// freshly written (or cleared) save with the in-memory state.
+let skipSave = false;
+
+initShopModal(state, rng, {
+  onExport: () =>
+    navigator.clipboard.writeText(exportSave(state)).then(
+      () => true,
+      () => false,
+    ),
+  onImport: () => {
+    const json = window.prompt("Paste your exported save JSON:");
+    if (!json) return;
+    if (importSave(json, storage)) {
+      skipSave = true;
+      location.reload();
+    } else {
+      window.alert("That save could not be read.");
+    }
+  },
+  onReset: () => {
+    if (!window.confirm("Hard reset? This wipes your ducks, gold, and tree.")) return;
+    clearSave(storage);
+    skipSave = true;
+    location.reload();
+  },
+});
 initHud(app.querySelector("header.hud")!);
+initTheme(state, app.querySelector<HTMLElement>("#hud-theme")!);
 initMinePanel(minePanelEl, state);
 initTreePanel(app.querySelector<HTMLElement>("#tree-panel")!, state);
 initArenaPanel(arenaPanelEl, state);
@@ -56,6 +101,23 @@ function render(s: GameState): void {
   renderArenaPanel(s);
 }
 
+// Hidden-tab gap: credit expected mine income instead of spinning the
+// accumulator — 100% rate for the first 15 minutes, offline rate beyond,
+// same 8h cap. The streak does not survive the gap; buff timers expire
+// naturally by timestamp.
+function handleFrameGap(gapSec: number): void {
+  state.streak.current = 0;
+  const stats = noBuffStats();
+  const { goldPerSec, xpPerSec } = offlineIncomePerSec(state, stats);
+  const fullSec = Math.min(gapSec, OFFLINE.fullRateGapSec);
+  const beyondSec = Math.min(Math.max(gapSec - fullSec, 0), OFFLINE.capSec);
+  const credited = fullSec + beyondSec * stats.offlineRate;
+  const gold = goldPerSec * credited;
+  state.gold += gold;
+  state.lifetime.gold += gold;
+  grantXp(state, xpPerSec * credited);
+}
+
 let lastFrame = performance.now();
 let accumulator = 0;
 
@@ -64,11 +126,8 @@ function frame(now: number): void {
   lastFrame = now;
 
   if (realDeltaSeconds > FRAME_GAP_THRESHOLD_SEC) {
-    // Tab was hidden/throttled. Offline progress (Phase 6) will fill this
-    // gap; for now just drop it so the accumulator can't spin. Buff timers
-    // expire naturally by timestamp; the streak does not survive the gap.
     accumulator = 0;
-    state.streak.current = 0;
+    handleFrameGap(realDeltaSeconds);
   } else {
     accumulator = Math.min(accumulator + realDeltaSeconds * gameSpeed(state), MAX_ACCUMULATOR_SEC);
     while (accumulator >= TICK_SEC) {
@@ -83,8 +142,11 @@ function frame(now: number): void {
 
 requestAnimationFrame(frame);
 
-setInterval(() => save(state, storage), AUTOSAVE_INTERVAL_MS);
-window.addEventListener("beforeunload", () => save(state, storage));
+const saveNow = () => {
+  if (!skipSave) save(state, storage);
+};
+setInterval(saveNow, AUTOSAVE_INTERVAL_MS);
+window.addEventListener("beforeunload", saveNow);
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "hidden") save(state, storage);
+  if (document.visibilityState === "hidden") saveNow();
 });

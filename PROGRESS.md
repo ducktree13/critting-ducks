@@ -15,5 +15,5 @@ One checkbox per build phase (full details in [PLAN.md](PLAN.md) §13). Work top
   *Playable check: buy packs, duplicates convert to shards, roster 2–3 miners.*
 - [x] **Phase 5 — Arena**: `arena.ts`, `arenaPanel.ts`, wave loop, rewards, boss shards, arena hits feeding the streak. Tests.
   *Playable check: full three-panel loop; the T50/T100 chase is live.*
-- [ ] **Phase 6 — Offline + polish**: `offline.ts`, `welcomeBack.ts`, dark mode toggle, frame-gap guard, export/import/reset, T100 free-shop flourish, number formatting, balance touch-up.
+- [x] **Phase 6 — Offline + polish**: `offline.ts`, `welcomeBack.ts`, dark mode toggle, frame-gap guard, export/import/reset, T100 free-shop flourish, number formatting, balance touch-up.
   *Playable check: full manual verification list in PLAN.md §12; `npm run build` clean.*

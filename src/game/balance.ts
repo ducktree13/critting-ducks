@@ -33,6 +33,12 @@ export const MINE_XP_PER_HIT = 1;
 
 export const RATE_WINDOW_SEC = 120; // rolling window for gold/hr and xp/hr
 
+export const OFFLINE = {
+  capSec: 8 * 3600, // max credited away time
+  minGapSec: 60, // shorter absences are ignored on load
+  fullRateGapSec: 15 * 60, // hidden-tab gaps run at 100% for this long
+} as const;
+
 export const PASSIVES = {
   teamOreMult: 1.1, // Drillbert: +10% team ore per hit (mine)
   teamDmgMult: 1.1, // Thunderquack: +10% team damage (arena)

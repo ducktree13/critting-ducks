@@ -45,6 +45,7 @@ export function initHud(header: HTMLElement): void {
     </div>
     <div class="hud-right">
       <button class="shop-btn" id="hud-shop">Shop</button>
+      <button class="icon-btn" id="hud-theme" aria-label="Toggle dark mode"></button>
       <span class="hud-title">Critting Ducks</span>
     </div>
   `;

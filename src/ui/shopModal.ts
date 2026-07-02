@@ -6,11 +6,17 @@ import type { GameState, Rng } from "../game/types";
 import { duckSvg } from "./duckArt";
 import { fmt } from "./format";
 
+export interface SaveActions {
+  onExport(): Promise<boolean>;
+  onImport(): void;
+  onReset(): void;
+}
+
 let overlay: HTMLElement;
 let gameState: GameState;
 let gameRng: Rng;
 
-export function initShopModal(state: GameState, rng: Rng): void {
+export function initShopModal(state: GameState, rng: Rng, actions: SaveActions): void {
   gameState = state;
   gameRng = rng;
 
@@ -28,6 +34,12 @@ export function initShopModal(state: GameState, rng: Rng): void {
       </div>
       <div class="shop-reveal" id="shop-reveal"></div>
       <div class="shop-collection" id="shop-collection"></div>
+      <div class="shop-settings">
+        <button class="settings-btn" id="save-export">Export save</button>
+        <button class="settings-btn" id="save-import">Import</button>
+        <button class="settings-btn danger" id="save-reset">Hard reset</button>
+        <span class="settings-note" id="settings-note"></span>
+      </div>
     </div>
   `;
   overlay.addEventListener("click", (e) => {
@@ -36,6 +48,16 @@ export function initShopModal(state: GameState, rng: Rng): void {
   overlay.querySelector("#shop-close")!.addEventListener("click", closeShop);
   overlay.querySelector("#pack-standard")!.addEventListener("click", () => buyPack("standard"));
   overlay.querySelector("#pack-five")!.addEventListener("click", () => buyPack("five"));
+
+  const note = overlay.querySelector<HTMLElement>("#settings-note")!;
+  overlay.querySelector("#save-export")!.addEventListener("click", () => {
+    void actions.onExport().then((ok) => {
+      note.textContent = ok ? "Copied to clipboard!" : "Copy failed";
+    });
+  });
+  overlay.querySelector("#save-import")!.addEventListener("click", actions.onImport);
+  overlay.querySelector("#save-reset")!.addEventListener("click", actions.onReset);
+
   document.body.appendChild(overlay);
 }
 

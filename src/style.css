@@ -767,6 +767,97 @@ main.panels {
   cursor: pointer;
 }
 
+/* ---- Welcome back modal, settings row, theme toggle ---- */
+
+.icon-btn {
+  border: none;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  padding: 4px;
+  margin-right: 10px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.wb-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.wb-box {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  width: min(380px, 92vw);
+  padding: 20px;
+  text-align: center;
+}
+
+.wb-box h3 {
+  margin: 0 0 8px;
+}
+
+.wb-box p {
+  color: var(--muted);
+}
+
+.wb-box b {
+  color: var(--fg);
+}
+
+.wb-close {
+  margin-top: 10px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.shop-settings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--card-border);
+}
+
+.settings-btn {
+  padding: 5px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.settings-btn:hover {
+  color: var(--fg);
+}
+
+.settings-btn.danger:hover {
+  color: var(--crit);
+  border-color: var(--crit);
+}
+
+.settings-note {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 /* ---- Floaters ---- */
 
 .floater {
