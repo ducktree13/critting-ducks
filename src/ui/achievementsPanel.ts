@@ -35,6 +35,11 @@ export function initAchievementsPanel(state: GameState): void {
   on("missionComplete", (e) => showToast(`✔ Mission complete: ${e.name}`));
   on("equipmentDrop", (e) => showToast(`⚔ Gear found: ${e.item.name}`));
   on("materialDrop", (e) => showToast(`🧪 Material: ${MATERIAL_NAMES[e.material]}`));
+  on("chapterAdvance", () => showToast(`🌳 Act 2 begins! New trees are sprouting.`));
+  on("leafClicked", (e) => {
+    if (e.kind === "duck") showToast(`🍂✨ A leaf revealed... Duck Tree!`);
+    else showToast(`🍂 Leaf: +${fmt(e.amount)} ${e.kind}${e.isCrit ? " (crit!)" : ""}`);
+  });
 }
 
 export function openAchievements(): void {

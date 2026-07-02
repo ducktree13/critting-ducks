@@ -2,12 +2,14 @@ import "./style.css";
 import { checkAchievements } from "./game/achievements";
 import { tickArena } from "./game/arena";
 import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, OFFLINE, TICK_SEC } from "./game/balance";
+import { checkChapterTransition } from "./game/chapters";
+import { tickLeaves } from "./game/leaves";
 import { checkMissions, ensureMissions } from "./game/missions";
 import { tickMine } from "./game/mine";
 import { computeOfflineProgress, offlineIncomePerSec } from "./game/offline";
 import { mulberry32 } from "./game/rng";
 import { clearSave, exportSave, importSave, load, save } from "./game/save";
-import { computeStats, createInitialState, grantXp, refreshStats } from "./game/state";
+import { computeStats, createInitialState, getStats, grantXp, refreshStats } from "./game/state";
 import { gameSpeed } from "./game/streak";
 import type { GameState, Rng } from "./game/types";
 import { initAchievementsPanel } from "./ui/achievementsPanel";
@@ -112,6 +114,7 @@ function simTick(s: GameState, dt: number, r: Rng): void {
   tickArena(s, dt, r);
   checkMissions(s, r);
   checkAchievements(s);
+  checkChapterTransition(s);
 }
 
 function render(s: GameState): void {
@@ -157,6 +160,7 @@ function frame(now: number): void {
     }
   }
 
+  tickLeaves(state, Date.now(), rng, getStats(state));
   render(state);
   requestAnimationFrame(frame);
 }

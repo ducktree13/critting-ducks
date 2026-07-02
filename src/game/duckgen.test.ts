@@ -4,8 +4,10 @@ import { GENERATED_DUCKS } from "./duckgen";
 import type { Rarity } from "./types";
 
 const RARITIES: Rarity[] = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "divine"];
+// Base pack-obtainable roster is 160 (40/35/30/25/15/10/5); Duck Tree is a
+// 161st, leaf-exclusive divine duck on top of that (PLAN2.md §9).
 const TARGET_COUNTS: Record<Rarity, number> = {
-  common: 40, uncommon: 35, rare: 30, epic: 25, legendary: 15, mythic: 10, divine: 5,
+  common: 40, uncommon: 35, rare: 30, epic: 25, legendary: 15, mythic: 10, divine: 6,
 };
 
 function countBy(rarity: Rarity): number {
@@ -13,8 +15,8 @@ function countBy(rarity: Rarity): number {
 }
 
 describe("full duck roster", () => {
-  it("totals 160 ducks", () => {
-    expect(DUCK_DEFS.length).toBe(160);
+  it("totals 161 ducks (160 pack-obtainable + the leaf-exclusive Duck Tree)", () => {
+    expect(DUCK_DEFS.length).toBe(161);
   });
 
   it("matches the target count for every rarity", () => {
@@ -65,7 +67,17 @@ describe("GENERATED_DUCKS", () => {
     expect(nonLegendaryPlus.every((d) => d.trait !== "radiant")).toBe(true);
   });
 
-  it("does not include the reserved leaf-exclusive Duck Tree", () => {
-    expect(DUCK_DEFS.some((d) => d.name === "Duck Tree")).toBe(false);
+  it("does not itself generate the leaf-exclusive Duck Tree", () => {
+    // Duck Tree is hand-curated in ducks.ts, not part of the procedural set.
+    expect(GENERATED_DUCKS.some((d) => d.name === "Duck Tree")).toBe(false);
+  });
+});
+
+describe("Duck Tree (leaf-exclusive)", () => {
+  it("exists, is divine, and is locked behind the leaf source", () => {
+    const duckTree = DUCK_DEFS.find((d) => d.id === "duckTree");
+    expect(duckTree).toBeDefined();
+    expect(duckTree!.rarity).toBe("divine");
+    expect(duckTree!.lockedBy).toEqual({ kind: "leaf", id: "duckTree" });
   });
 });

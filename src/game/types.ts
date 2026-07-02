@@ -132,15 +132,23 @@ export interface GameState {
   tutorial: { step: number; done: boolean; finaleGranted: boolean };
   streak: StreakState;
   arena: ArenaState;
+  chapter: 1 | 2;
+  leaves: LeafDrop[];
+  nextLeafAt: number; // real-time ms epoch
   settings: {
     darkMode: boolean;
     panelsMinimized: { mine: boolean; tree: boolean; arena: boolean };
+    act2Tree: Act2TreeId;
   };
   lastSaved: number;
   createdAt: number;
 }
 
 export type SkillBranch = "trunk" | "left" | "right" | "crown";
+// Act 1 is the original single tree; Act 2 unlocks four more once Act 1 is
+// fully owned (PLAN2.md §9).
+export type Act2TreeId = "mining2" | "combat2" | "crit2" | "passive2";
+export type TreeId = "act1" | Act2TreeId;
 
 export type NodeEffect =
   | { kind: "stat"; stat: "critChance" | "critMult" | "orePerHit" | "flatAttack" | "flatDefense"; add: number }
@@ -158,9 +166,19 @@ export interface SkillNode {
   requires?: string;
   minLevel: number;
   branch: SkillBranch;
+  treeId: TreeId;
   x: number;
   y: number;
   effect: NodeEffect;
+}
+
+export interface LeafDrop {
+  id: string;
+  spawnedAt: number;
+  expiresAt: number;
+  kind: "gold" | "xp" | "duck";
+  amount: number; // gold/xp amount; ignored for "duck"
+  isCrit: boolean;
 }
 
 export interface DerivedStats {

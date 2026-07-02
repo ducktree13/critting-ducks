@@ -49,9 +49,13 @@ export function createInitialState(): GameState {
       teamMaxHp: 0,
       retryAt: 0,
     },
+    chapter: 1,
+    leaves: [],
+    nextLeafAt: 0,
     settings: {
       darkMode: false,
       panelsMinimized: { mine: false, tree: false, arena: false },
+      act2Tree: "mining2",
     },
     lastSaved: now,
     createdAt: now,

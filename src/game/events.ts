@@ -13,6 +13,8 @@ export interface GameEventMap {
   achievement: { id: string; name: string };
   materialDrop: { material: MaterialId };
   equipmentDrop: { item: EquipmentItem };
+  chapterAdvance: { chapter: number };
+  leafClicked: { kind: "gold" | "xp" | "duck"; amount: number; isCrit: boolean };
 }
 
 export type GameEventName = keyof GameEventMap;

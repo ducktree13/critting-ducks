@@ -20,6 +20,9 @@ const HAND_CURATED_DUCKS: readonly DuckDef[] = [
   { id: "thunder", name: "Thunderquack", rarity: "epic", role: "fighter", trait: "brave", miningPower: 0.05, attackDamage: 7, attacksPerSecond: 1.4, hp: 70, defense: 4, critChanceBonus: 0.1, critDamageBonus: 0, passive: "teamDmg10" },
   { id: "goose", name: "The Golden Goose", rarity: "legendary", role: "miner", trait: "stoic", miningPower: 1.0, attackDamage: 2.5, attacksPerSecond: 1.2, hp: 50, defense: 2, critChanceBonus: 0.15, critDamageBonus: 0, passive: "goldenCrit" },
   { id: "deathbill", name: "Deathbill", rarity: "legendary", role: "fighter", trait: "energetic", miningPower: 0.1, attackDamage: 12.5, attacksPerSecond: 1.2, hp: 90, defense: 6, critChanceBonus: 0.15, critDamageBonus: 0.5, passive: "streakShield" },
+  // Leaf-exclusive (PLAN2.md §9): never drops from packs or the shard shop —
+  // only from clicking a falling leaf in Act 2, at a 0.5% chance per leaf.
+  { id: "duckTree", name: "Duck Tree", rarity: "divine", role: "hybrid", trait: "radiant", miningPower: 3.0, attackDamage: 30, attacksPerSecond: 1.3, hp: 800, defense: 30, critChanceBonus: 0.2, critDamageBonus: 0.3, lockedBy: { kind: "leaf", id: "duckTree" } },
 ];
 
 export const DUCK_DEFS: readonly DuckDef[] = [...HAND_CURATED_DUCKS, ...GENERATED_DUCKS];

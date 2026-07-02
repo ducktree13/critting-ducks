@@ -148,6 +148,19 @@ export const ASCENSION = {
   shardCostMult: 20,
 } as const;
 
+// Falling leaves (PLAN2.md §9): every 3–6 real-time minutes a leaf drops
+// from the (grown) tree; clicking it pays out before it fades.
+export const LEAVES = {
+  minGapMs: 3 * 60 * 1000,
+  maxGapMs: 6 * 60 * 1000,
+  expiresAfterMs: 30 * 1000,
+  critMult: 5,
+  duckTreeChance: 0.005,
+  goldPerLevel: 15, // reward scales with player level ("current income")
+  xpPerLevel: 8,
+  duckId: "duckTree",
+} as const;
+
 export const SHARD_SHOP = {
   slots: 4,
   restockPeriodMs: 12 * 3600 * 1000,
