@@ -181,6 +181,42 @@ export const POND = {
   materialChancePerPassivePowerPerSec: 0.0004, // small, steady trickle
 } as const;
 
+// Expeditions (PLAN2.md §11): send a roster away on a real-time journey.
+// Rewards scale with the sent ducks' "expedition power" (attack + mining +
+// a slice of hp, so both fighter and miner ducks pull weight) and the
+// journey's duration tier. Fail chance formula is spec'd exactly; reward
+// rates and roster size are this build's own numbers (not in PLAN2.md).
+// Weights folding a duck's attack/mining/hp into one "expedition power"
+// number, so fighters and miners both pull their weight on a journey.
+export const EXPEDITION_POWER = {
+  attackWeight: 1,
+  miningWeight: 20,
+  hpWeight: 0.05,
+} as const;
+
+export const EXPEDITIONS = {
+  durations: {
+    short: { hours: 1, label: "Short Journey" },
+    long: { hours: 8, label: "Long Journey" },
+    epic: { hours: 24, label: "Grand Journey" },
+  } as const,
+  rosterSize: 3,
+  goldPerPowerPerHour: 6,
+  xpPerPowerPerHour: 2,
+  materialChancePerPowerPerHour: 0.02,
+  shardPointsPerPowerPerHour: 0.15,
+  packChancePerHour: 0.03, // capped below; a Standard Pack credit on success
+  packChanceCap: 0.9,
+  fail: {
+    base: 0.35,
+    perLevel: 0.03,
+    min: 0.05,
+    max: 0.6,
+  },
+  failPayoutMult: 0.2, // on failure: 20% gold/xp, no materials/shards/pack
+  critMult: 2,
+} as const;
+
 export const ARENA_BASE = {
   baseEnemyHp: 24,
   enemyHpGrowth: 1.16,

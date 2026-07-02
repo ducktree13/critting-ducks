@@ -40,6 +40,7 @@ export function initAchievementsPanel(state: GameState): void {
     if (e.kind === "duck") showToast(`🍂✨ A leaf revealed... Duck Tree!`);
     else showToast(`🍂 Leaf: +${fmt(e.amount)} ${e.kind}${e.isCrit ? " (crit!)" : ""}`);
   });
+  on("expeditionReady", () => showToast(`🗺 An expedition is ready to claim!`));
 }
 
 export function openAchievements(): void {

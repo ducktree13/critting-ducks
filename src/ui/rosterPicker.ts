@@ -15,16 +15,19 @@ export function openRosterPicker(state: GameState, panel: Panel, slotIndex: numb
   const rows = state.ducks
     .map((duck) => {
       const def = getDuckDef(duck.defId);
+      const onExpedition = state.expeditions.some((e) => e.ducks.includes(duck.defId));
       const where =
-        state.rosters.mine.includes(duck.defId)
-          ? "in mine"
-          : state.rosters.arena.includes(duck.defId)
-            ? "in arena"
-            : state.rosters.pond.includes(duck.defId)
-              ? "in pond"
-              : "";
+        onExpedition
+          ? "on expedition"
+          : state.rosters.mine.includes(duck.defId)
+            ? "in mine"
+            : state.rosters.arena.includes(duck.defId)
+              ? "in arena"
+              : state.rosters.pond.includes(duck.defId)
+                ? "in pond"
+                : "";
       return `
-        <button class="picker-row" data-duck="${duck.defId}">
+        <button class="picker-row${onExpedition ? " picker-disabled" : ""}" data-duck="${duck.defId}"${onExpedition ? " disabled" : ""}>
           <span class="picker-art">${duckSvg(duck.defId, 44, duck.ascension ?? 0)}</span>
           <span class="picker-info">
             <b>${def.name}</b>

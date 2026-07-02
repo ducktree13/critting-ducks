@@ -52,6 +52,7 @@ export function createInitialState(): GameState {
     chapter: 1,
     leaves: [],
     nextLeafAt: 0,
+    expeditions: [],
     settings: {
       darkMode: false,
       panelsMinimized: { mine: false, tree: false, arena: false },
@@ -102,6 +103,8 @@ export function assignToRoster(
   const slots = panel === "mine" ? stats.mineSlots : panel === "arena" ? stats.arenaSlots : stats.pondSlots;
   if (slotIndex < 0 || slotIndex >= slots) return false;
   if (defId !== null && !state.ducks.some((d) => d.defId === defId)) return false;
+  // Away on an expedition: not available to mine/arena/pond until it returns.
+  if (defId !== null && state.expeditions.some((e) => e.ducks.includes(defId))) return false;
 
   if (defId !== null) {
     for (const p of ["mine", "arena", "pond"] as const) {

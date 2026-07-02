@@ -13,6 +13,7 @@ export interface TraitEffect {
   goldMult?: number;
   hpMult?: number;
   passivePowerMult?: number; // pond contribution (game/pond.ts)
+  expeditionFailReduction?: number; // flat reduction to expedition fail chance (game/expeditions.ts)
 }
 
 export interface TraitDef {
@@ -33,6 +34,6 @@ export const TRAITS: Record<TraitId, TraitDef> = {
   loyal: { id: "loyal", name: "Loyal", desc: "+5% HP", effect: { hpMult: 1.05 } },
   energetic: { id: "energetic", name: "Energetic", desc: "+10% action speed, -5% damage", effect: { attackSpeedMult: 1.1, attackMult: 0.95 } },
   stoic: { id: "stoic", name: "Stoic", desc: "+15% defense", effect: { defenseMult: 1.15 } },
-  curious: { id: "curious", name: "Curious", desc: "+10% expedition success chance (once expeditions arrive)", effect: {} },
-  radiant: { id: "radiant", name: "Radiant", desc: "+5% to all its own stats (legendary+ only)", effect: { miningMult: 1.05, attackMult: 1.05, attackSpeedMult: 1.05, defenseMult: 1.05, critChanceBonus: 0.05, xpMult: 1.05, goldMult: 1.05, hpMult: 1.05, passivePowerMult: 1.05 } },
+  curious: { id: "curious", name: "Curious", desc: "+10% expedition success chance", effect: { expeditionFailReduction: 0.1 } },
+  radiant: { id: "radiant", name: "Radiant", desc: "+5% to all its own stats (legendary+ only)", effect: { miningMult: 1.05, attackMult: 1.05, attackSpeedMult: 1.05, defenseMult: 1.05, critChanceBonus: 0.05, xpMult: 1.05, goldMult: 1.05, hpMult: 1.05, passivePowerMult: 1.05, expeditionFailReduction: 0.05 } },
 };

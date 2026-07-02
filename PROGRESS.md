@@ -22,7 +22,7 @@ One checkbox per build phase. Work top to bottom — the game is playable at the
   *Playable check: completing Act 1 fells the tree; saplings grow; a clicked leaf pays out (and can crit).*
 - [x] **V2-8 — Pond**: pond beneath the trees, swim roster, passive income + offline integration.
   *Playable check: rostered ducks swim and generate trickle income, including while away.*
-- [ ] **V2-9 — Expeditions**: 1h/8h/24h journeys on real timestamps, fail chance by level, journey crits. Tests.
+- [x] **V2-9 — Expeditions**: 1h/8h/24h journeys on real timestamps, fail chance by level, journey crits. Tests.
   *Playable check: send a journey, close the game past its timer, return to rewards (or a failure).*
 - [ ] **V2-10 — Visual overhaul**: mine cave scene with walking ducks, colosseum arena, expanded-mode scenes.
   *Playable check: ducks walk in/out of the cave dropping ore; expanding the arena reveals the colosseum.*

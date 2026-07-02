@@ -15,6 +15,8 @@ export interface GameEventMap {
   equipmentDrop: { item: EquipmentItem };
   chapterAdvance: { chapter: number };
   leafClicked: { kind: "gold" | "xp" | "duck"; amount: number; isCrit: boolean };
+  expeditionReady: { id: string };
+  expeditionClaimed: { success: boolean; isCrit: boolean; gold: number; xp: number };
 }
 
 export type GameEventName = keyof GameEventMap;

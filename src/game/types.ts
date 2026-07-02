@@ -72,6 +72,17 @@ export interface OwnedDuck {
 export type MaterialId = "slimeGoo" | "gooseFeather" | "golemCrumb" | "sharkTooth" | "pondlordRelic";
 export type EquipSlot = "weapon" | "armor" | "charm";
 
+export type ExpeditionDuration = "short" | "long" | "epic"; // 1h / 8h / 24h
+
+export interface ExpeditionInstance {
+  id: string;
+  duration: ExpeditionDuration;
+  ducks: string[]; // defIds sent, unavailable to other rosters while away
+  startedAt: number; // real-time ms epoch
+  endsAt: number; // real-time ms epoch
+  readyNotified?: boolean; // "expeditionReady" event fired once, while the game is open
+}
+
 // Every field is an own-duck bonus, applied the same way trait effects are —
 // weapon touches attack, armor touches defense/hp, charm touches crit/gold.
 export interface EquipmentStats {
@@ -135,6 +146,7 @@ export interface GameState {
   chapter: 1 | 2;
   leaves: LeafDrop[];
   nextLeafAt: number; // real-time ms epoch
+  expeditions: ExpeditionInstance[];
   settings: {
     darkMode: boolean;
     panelsMinimized: { mine: boolean; tree: boolean; arena: boolean };

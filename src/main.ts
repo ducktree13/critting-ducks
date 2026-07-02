@@ -3,6 +3,7 @@ import { checkAchievements } from "./game/achievements";
 import { tickArena } from "./game/arena";
 import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, OFFLINE, TICK_SEC } from "./game/balance";
 import { checkChapterTransition } from "./game/chapters";
+import { checkExpeditions } from "./game/expeditions";
 import { tickLeaves } from "./game/leaves";
 import { checkMissions, ensureMissions } from "./game/missions";
 import { tickMine } from "./game/mine";
@@ -16,6 +17,7 @@ import type { GameState, Rng } from "./game/types";
 import { initAchievementsPanel } from "./ui/achievementsPanel";
 import { initArenaPanel, renderArenaPanel } from "./ui/arenaPanel";
 import { initCraftingMenu } from "./ui/craftingMenu";
+import { initExpeditionPanel } from "./ui/expeditionPanel";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
 import { initInventoryMenu } from "./ui/inventoryMenu";
@@ -95,6 +97,7 @@ initShopModal(state, rng, {
 initInventoryMenu(state);
 initAchievementsPanel(state);
 initCraftingMenu(state, rng);
+initExpeditionPanel(state, rng);
 initHud(app.querySelector("header.hud")!);
 initTheme(state, app.querySelector<HTMLElement>("#hud-theme")!);
 initMinePanel(minePanelEl, state);
@@ -165,6 +168,7 @@ function frame(now: number): void {
   }
 
   tickLeaves(state, Date.now(), rng, getStats(state));
+  checkExpeditions(state, Date.now());
   render(state);
   requestAnimationFrame(frame);
 }

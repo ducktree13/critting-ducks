@@ -941,6 +941,15 @@ main.panels {
   color: var(--muted);
 }
 
+.picker-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.picker-disabled:hover {
+  border-color: var(--card-border);
+}
+
 .duck-slot {
   cursor: pointer;
 }
@@ -1398,6 +1407,99 @@ main.panels {
 
 .crafting-result {
   margin-top: 12px;
+}
+
+/* ---- Expeditions ---- */
+
+.expedition-box {
+  width: min(420px, 94vw);
+}
+
+.expedition-box h4 {
+  margin: 14px 0 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.expedition-active {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+
+.expedition-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 4px 0;
+}
+
+.expedition-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.expedition-row.ready {
+  border-color: var(--accent);
+}
+
+.expedition-ducks {
+  display: flex;
+  gap: 2px;
+}
+
+.expedition-label {
+  flex: 1;
+  font-size: 0.8rem;
+}
+
+.expedition-countdown {
+  font-size: 0.78rem;
+  color: var(--muted);
+  min-width: 56px;
+  text-align: right;
+}
+
+.expedition-durations {
+  display: flex;
+  gap: 6px;
+}
+
+.expedition-durations .settings-btn.active {
+  border-color: var(--accent);
+  color: var(--fg);
+}
+
+.expedition-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 30vh;
+  overflow-y: auto;
+  margin: 8px 0;
+}
+
+.expedition-selected {
+  border-color: var(--accent);
+}
+
+.expedition-summary {
+  margin: 6px 0 10px;
+  color: var(--muted);
+}
+
+.expedition-result-ok {
+  color: var(--accent);
+}
+
+.expedition-result-fail {
+  color: var(--crit);
 }
 
 /* ---- Mission trackers ---- */

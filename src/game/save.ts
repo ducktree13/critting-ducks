@@ -42,6 +42,7 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
     chapter: partial.chapter ?? base.chapter,
     leaves: partial.leaves ?? base.leaves,
     nextLeafAt: partial.nextLeafAt ?? base.nextLeafAt,
+    expeditions: partial.expeditions ?? base.expeditions,
     packCredits: { ...base.packCredits, ...partial.packCredits },
     unlockedDucks: partial.unlockedDucks ?? base.unlockedDucks,
     materials: { ...base.materials, ...partial.materials },

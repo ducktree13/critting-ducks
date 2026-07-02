@@ -1,4 +1,4 @@
-import { ASCENSION, DUCK_LEVEL_STAT_BONUS, POND } from "./balance";
+import { ASCENSION, DUCK_LEVEL_STAT_BONUS, EXPEDITION_POWER, POND } from "./balance";
 import { GENERATED_DUCKS } from "./duckgen";
 import { TRAITS } from "./traits";
 import type { DuckDef, EquipSlot, EquipmentStats, GameState, OwnedDuck } from "./types";
@@ -114,6 +114,22 @@ export function goldMultOf(state: GameState, duck: OwnedDuck): number {
 export function passivePowerOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
   return hpOf(state, duck) * POND.passivePowerFromHp * (traitEffect(def).passivePowerMult ?? 1);
+}
+
+// Expedition contribution (PLAN2.md §11): folds attack, mining, and a
+// slice of hp into one number, so both fighter and miner ducks are worth
+// sending — same effective-stat helpers as everywhere else, so gear and
+// ascension scale it for free.
+export function expeditionPowerOf(state: GameState, duck: OwnedDuck): number {
+  return (
+    attackDamageOf(state, duck) * EXPEDITION_POWER.attackWeight +
+    miningPowerOf(duck) * EXPEDITION_POWER.miningWeight +
+    hpOf(state, duck) * EXPEDITION_POWER.hpWeight
+  );
+}
+
+export function expeditionFailReductionOf(duck: OwnedDuck): number {
+  return traitEffect(getDuckDef(duck.defId)).expeditionFailReduction ?? 0;
 }
 
 export function makeOwnedDuck(defId: string): OwnedDuck {
