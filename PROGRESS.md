@@ -12,7 +12,7 @@ One checkbox per build phase. Work top to bottom — the game is playable at the
   *Playable check: hover anything meaningful and learn what it does; minimize mine → tree+arena widen.*
 - [x] **V2-3 — Tutorial + missions/achievements**: frameworks + pinned mission per section + 5-minute tutorial chain ending in a guaranteed-rare pack + locked-duck hooks.
   *Playable check: fresh save completes the tutorial in ≤5 min and holds a rare+ duck.*
-- [ ] **V2-4 — Duck expansion**: duckgen to ~160 ducks, personality traits, Bill-only start, level-gated pools. Tests.
+- [x] **V2-4 — Duck expansion**: duckgen to ~160 ducks, personality traits, Bill-only start, level-gated pools. Tests.
   *Playable check: collection shows ~160 entries; traits visibly change stats; new game starts with just Bill.*
 - [ ] **V2-5 — Gear & crafting**: enemy materials, equipment drops with rarities, crafting menu, 3 equip slots, selling. Tests.
   *Playable check: kill enemies → materials/gear; craft an item; equip it; duck card reflects stats.*

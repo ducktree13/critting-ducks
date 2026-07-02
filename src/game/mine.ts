@@ -1,5 +1,5 @@
 import { BASE_STATS, MINE_XP_PER_HIT, ORE_VALUES, PASSIVES } from "./balance";
-import { getDuckDef, miningPowerOf } from "./ducks";
+import { attackSpeedOf, critChanceBonusOf, getDuckDef, goldMultOf, miningPowerOf, xpMultOf } from "./ducks";
 import { emit } from "./events";
 import { getStats, grantXp } from "./state";
 import { registerHitResult } from "./streak";
@@ -22,7 +22,7 @@ export function tickMine(state: GameState, dt: number, rng: Rng): void {
     if (!duck) continue;
     const def = getDuckDef(defId);
 
-    const hitsPerSec = def.attacksPerSecond * stats.attackSpeedMult * stats.mineSpeedMult;
+    const hitsPerSec = attackSpeedOf(duck) * stats.attackSpeedMult * stats.mineSpeedMult;
     if (hitsPerSec <= 0) continue;
 
     duck.nextHitIn -= dt;
@@ -30,7 +30,7 @@ export function tickMine(state: GameState, dt: number, rng: Rng): void {
       duck.nextHitIn += 1 / hitsPerSec;
 
       const critChance = Math.min(
-        Math.max(stats.critChance + def.critChanceBonus, 0),
+        Math.max(stats.critChance + critChanceBonusOf(duck), 0),
         BASE_STATS.critChanceCap,
       );
       const isCrit = rng.next() < critChance;
@@ -38,9 +38,9 @@ export function tickMine(state: GameState, dt: number, rng: Rng): void {
 
       const ore =
         (stats.orePerHit + miningPowerOf(duck)) * stats.oreMult * (isCrit ? critMult : 1);
-      let gold = ore * ORE_VALUES[state.selectedOre] * stats.goldMult;
+      let gold = ore * ORE_VALUES[state.selectedOre] * stats.goldMult * goldMultOf(duck);
       if (isCrit && goldenCritRostered) gold *= PASSIVES.goldenCritGoldMult;
-      const xp = MINE_XP_PER_HIT * stats.xpMult;
+      const xp = MINE_XP_PER_HIT * stats.xpMult * xpMultOf(duck);
 
       state.gold += gold;
       state.lifetime.gold += gold;

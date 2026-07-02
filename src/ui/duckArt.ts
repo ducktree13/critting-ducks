@@ -1,4 +1,5 @@
-import { attackDamageOf, getDuckDef, miningPowerOf } from "../game/ducks";
+import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
+import { TRAITS } from "../game/traits";
 import type { OwnedDuck, Rarity } from "../game/types";
 
 const RARITY_RING: Record<Rarity, string> = {
@@ -33,11 +34,33 @@ const LOOKS: Record<string, DuckLook> = {
   deathbill: { body: "#3a3a44", beak: "#c04040", accessory: "scythe" },
 };
 
+// Deterministic body/beak palette for the ~147 generated ducks that have no
+// hand-authored LOOKS entry, so they don't all render as copies of Bill.
+const BODY_PALETTE = [
+  "#f5c542", "#8fce5a", "#6fb7d9", "#e8b04a", "#c98fd9", "#7ecfc0",
+  "#d97e7e", "#a8b84a", "#5aa8d9", "#e0a03c", "#9a7ad9", "#4ec9a0",
+];
+const BEAK_PALETTE = ["#f5892e", "#e8a13c", "#ef9040", "#d97e2e", "#f0a03c", "#c04040"];
+
+function hashString(s: string): number {
+  let h = 2166136261;
+  for (const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
+  return h >>> 0;
+}
+
+function proceduralLook(defId: string): DuckLook {
+  const h = hashString(defId);
+  return {
+    body: BODY_PALETTE[h % BODY_PALETTE.length],
+    beak: BEAK_PALETTE[(h >> 8) % BEAK_PALETTE.length],
+  };
+}
+
 // One parametric duck: body ellipse, wing arc, head circle, beak triangle,
 // eye dot, rarity ring, optional accessory.
 export function duckSvg(defId: string, size: number): string {
   const def = getDuckDef(defId);
-  const look = LOOKS[defId] ?? LOOKS.bill;
+  const look = LOOKS[defId] ?? proceduralLook(defId);
   const ring = RARITY_RING[def.rarity];
 
   const accessory =
@@ -72,18 +95,20 @@ const ROLE_LABEL: Record<string, string> = {
 // role, level, and its current effective stats.
 export function duckTooltipHtml(duck: OwnedDuck): string {
   const def = getDuckDef(duck.defId);
+  const trait = TRAITS[def.trait];
   const parts = [`<b>${def.name}</b> <span class="tt-rarity rarity-${def.rarity}">${def.rarity}</span>`];
-  parts.push(`<div class="tt-meta">${ROLE_LABEL[def.role]} · Level ${duck.level}</div>`);
+  parts.push(`<div class="tt-meta">${ROLE_LABEL[def.role]} · Level ${duck.level} · ${trait.name}</div>`);
   const stats: string[] = [];
   if (def.role !== "fighter") stats.push(`Mining ${miningPowerOf(duck).toFixed(2)}`);
   if (def.role !== "miner") {
     stats.push(`Attack ${attackDamageOf(duck).toFixed(2)}`);
-    stats.push(`HP ${def.hp}`);
-    stats.push(`Defense ${def.defense}`);
+    stats.push(`HP ${hpOf(duck).toFixed(0)}`);
+    stats.push(`Defense ${defenseOf(duck).toFixed(1)}`);
   }
   if (def.critChanceBonus) stats.push(`Crit +${Math.round(def.critChanceBonus * 100)}%`);
   if (def.critDamageBonus) stats.push(`Crit dmg +${def.critDamageBonus.toFixed(2)}x`);
   parts.push(`<div class="tt-stats">${stats.join(" · ")}</div>`);
+  parts.push(`<div class="tt-meta">${trait.desc}</div>`);
   if (def.passive) parts.push(`<div class="tt-passive">Passive: ${def.passive}</div>`);
   return parts.join("");
 }

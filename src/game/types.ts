@@ -9,12 +9,26 @@ export interface Rng {
 }
 
 export type LockKind = "mission" | "achievement" | "leaf" | "shop";
+export type TraitId =
+  | "brave"
+  | "cowardly"
+  | "intelligent"
+  | "efficient"
+  | "greedy"
+  | "lazy"
+  | "lucky"
+  | "loyal"
+  | "energetic"
+  | "stoic"
+  | "curious"
+  | "radiant";
 
 export interface DuckDef {
   id: string;
   name: string;
   rarity: Rarity;
   role: "miner" | "fighter" | "hybrid";
+  trait: TraitId;
   miningPower: number;
   attackDamage: number;
   attacksPerSecond: number;

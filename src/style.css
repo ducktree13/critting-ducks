@@ -1080,9 +1080,15 @@ main.panels {
 }
 
 .inv-card-shards,
-.inv-card-roster {
+.inv-card-roster,
+.inv-card-trait {
   color: var(--muted);
   font-size: 0.78rem;
+}
+
+.inv-card-trait {
+  margin-bottom: 6px;
+  font-style: italic;
 }
 
 .fav-btn,

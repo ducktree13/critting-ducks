@@ -41,9 +41,9 @@ describe("wave scaling", () => {
 
 describe("combat", () => {
   it("duck hits damage the enemy and grant xp", () => {
-    // Quackers: 1.5 atk, 1.0/s; never crit → 1.5 dmg per hit
+    // Quackers: 1.5 atk * 1.1 (brave trait), 1.0/s; never crit → 1.65 dmg per hit
     tickArena(state, 1.0, neverCrit);
-    expect(state.arena.enemyHp).toBeCloseTo(24 - 1.5);
+    expect(state.arena.enemyHp).toBeCloseTo(24 - 1.65);
     expect(state.xp).toBeCloseTo(ARENA_BASE.xpPerHit + 0);
     expect(state.lifetime.hits).toBe(1);
   });

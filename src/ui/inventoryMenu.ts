@@ -1,6 +1,7 @@
-import { attackDamageOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
+import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
 import { upgradeCost } from "../game/packs";
 import { toggleFavorite } from "../game/state";
+import { TRAITS } from "../game/traits";
 import type { GameState, Rarity } from "../game/types";
 import { duckSvg } from "./duckArt";
 
@@ -125,7 +126,7 @@ function renderCard(): void {
   if (def.role !== "miner") {
     statLine.push(`Attack ${attackDamageOf(duck).toFixed(2)}`);
     statLine.push(`HP ${hpOf(duck).toFixed(0)}`);
-    statLine.push(`Defense ${def.defense}`);
+    statLine.push(`Defense ${defenseOf(duck).toFixed(1)}`);
   }
   if (def.critChanceBonus) statLine.push(`Crit +${Math.round(def.critChanceBonus * 100)}%`);
 
@@ -136,7 +137,8 @@ function renderCard(): void {
         <b>${def.name}</b>
         <button class="fav-btn" id="inv-fav-btn">${duck.favorite ? "♥" : "♡"}</button>
       </div>
-      <div class="inv-card-sub">${def.rarity} · ${def.role} · Lv ${duck.level}</div>
+      <div class="inv-card-sub">${def.rarity} · ${def.role} · Lv ${duck.level} · ${TRAITS[def.trait].name}</div>
+      <div class="inv-card-trait">${TRAITS[def.trait].desc}</div>
       <div class="inv-card-stats">${statLine.join(" · ")}</div>
       <div class="inv-card-shards">${duck.shards} shard${duck.shards === 1 ? "" : "s"}${duck.level < 10 ? ` (upgrade costs ${cost})` : " (max level)"}</div>
       <div class="inv-card-roster">${rosterLabel}</div>

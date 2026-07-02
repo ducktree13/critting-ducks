@@ -1,5 +1,5 @@
 import { ARENA_BASE, BASE_STATS } from "./balance";
-import { attackDamageOf, getDuckDef, hpOf } from "./ducks";
+import { attackDamageOf, attackSpeedOf, critChanceBonusOf, defenseOf, getDuckDef, hpOf, xpMultOf } from "./ducks";
 import { emit } from "./events";
 import { getStats, grantXp } from "./state";
 import { registerHitResult } from "./streak";
@@ -87,7 +87,7 @@ export function tickArena(state: GameState, dt: number, rng: Rng): void {
   for (const duck of fighters) {
     if (arena.enemyHp <= 0) break;
     const def = getDuckDef(duck.defId);
-    const hitsPerSec = def.attacksPerSecond * stats.attackSpeedMult * stats.arenaSpeedMult;
+    const hitsPerSec = attackSpeedOf(duck) * stats.attackSpeedMult * stats.arenaSpeedMult;
     if (hitsPerSec <= 0) continue;
 
     duck.nextHitIn -= dt;
@@ -95,7 +95,7 @@ export function tickArena(state: GameState, dt: number, rng: Rng): void {
       duck.nextHitIn += 1 / hitsPerSec;
 
       const critChance = Math.min(
-        Math.max(stats.critChance + def.critChanceBonus, 0),
+        Math.max(stats.critChance + critChanceBonusOf(duck), 0),
         BASE_STATS.critChanceCap,
       );
       const isCrit = rng.next() < critChance;
@@ -107,7 +107,7 @@ export function tickArena(state: GameState, dt: number, rng: Rng): void {
         (isCrit ? critMult : 1);
       arena.enemyHp -= dmg;
 
-      const xp = ARENA_BASE.xpPerHit * stats.xpMult;
+      const xp = ARENA_BASE.xpPerHit * stats.xpMult * xpMultOf(duck);
       grantXp(state, xp);
       state.lifetime.hits += 1;
       if (isCrit) state.lifetime.crits += 1;
@@ -123,7 +123,7 @@ export function tickArena(state: GameState, dt: number, rng: Rng): void {
 
   // Enemy attacks.
   const teamDefense =
-    (fighters.reduce((sum, d) => sum + getDuckDef(d.defId).defense, 0) + stats.flatDefense) *
+    (fighters.reduce((sum, d) => sum + defenseOf(d), 0) + stats.flatDefense) *
     stats.defenseMult;
   const enemyAttack = enemyAttackAt(arena.wave);
 
