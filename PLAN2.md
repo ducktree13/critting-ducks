@@ -53,9 +53,9 @@ Guarantee rule: if no roll in the pack met the bar naturally, the final roll's r
 | **Voidstone** | **60** | **Void Fissure** (Act 2 mining tree) | **30** |
 | **Aurorium** | **150** | **Aurorium Heart** (Act 2 mining tree) | **40** |
 
-**XP:** mine hit 1 XP, arena hit 2 XP (unchanged); `xpToNext(level) = 80 * 1.40^(level-1)`. Level gates: crit5 at L14 remains the deepest Act-1 gate.
+**XP:** mine hit 1 XP, arena hit 2 XP (unchanged); `xpToNext(level) = 100 * 1.6^(level-1)` (L5 ≈ 5 min, L14 ≈ 4–5 h, L20 ≈ a day+, L30/L40 deep Act-2). Level gates: crit5 at L14 remains the deepest Act-1 gate.
 
-**Act-1 node costs** rescaled to sum ≈ 45K gold (~6–8h of the new income curve). Same 30 nodes, same effects (ore adds rescaled: ore1 +0.1, ore2 +0.2; ore3 stays ×1.5):
+**Act-1 node costs** rescaled to sum ≈ 68K gold (~6–8h of the new income curve). Same 30 nodes, same effects (flat adds rescaled with the stat cut: ore1 +0.1, ore2 +0.2, atk1 +1, def1 +1; multipliers unchanged):
 
 - Trunk: crit1 30, speed1 60, crit2 150
 - Left: ore1 50, ore2 200, mineslot2 350, oresilver 550, minespeed 2000, ore3 1000, offline1 1600, orecrystal 2600, mineslot3 3800, offline2 6000, orestar 9000

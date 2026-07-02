@@ -1,4 +1,4 @@
-import { ARENA_BASE, BASE_STATS, PASSIVES, STREAK_BALANCE, XP_CURVE } from "./balance";
+import { ARENA_BASE, BASE_STATS, LEVEL_REWARDS, ORE_LEVEL_GATES, PASSIVES, STREAK_BALANCE, XP_CURVE } from "./balance";
 import { getDuckDef, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getSkillNode } from "./skilltree";
@@ -6,7 +6,14 @@ import type { DerivedStats, GameState, OreId } from "./types";
 
 export function createInitialState(): GameState {
   const now = Date.now();
-  const ores: Record<OreId, number> = { copper: 0, silver: 0, crystal: 0, starmetal: 0 };
+  const ores: Record<OreId, number> = {
+    copper: 0,
+    silver: 0,
+    crystal: 0,
+    starmetal: 0,
+    voidstone: 0,
+    aurorium: 0,
+  };
   return {
     version: 2,
     gold: 0,
@@ -18,6 +25,8 @@ export function createInitialState(): GameState {
     ducks: [makeOwnedDuck("bill"), makeOwnedDuck("quackers")],
     rosters: { mine: ["bill"], arena: ["quackers"] },
     skillNodes: [],
+    shardPoints: 0,
+    packCredits: { standard: 0, five: 0, pack25: 0, pack100: 0 },
     streak: {
       current: 0,
       best: 0,
@@ -43,12 +52,25 @@ export function xpToNext(level: number): number {
   return XP_CURVE.base * Math.pow(XP_CURVE.growth, level - 1);
 }
 
-// Adds XP and resolves level-ups (possibly several at once).
+// Adds XP and resolves level-ups (possibly several at once), granting the
+// level rewards: scaling gold every level, a free pack every Nth level.
 export function grantXp(state: GameState, amount: number): void {
   state.xp += amount;
   while (state.xp >= xpToNext(state.level)) {
     state.xp -= xpToNext(state.level);
     state.level += 1;
+
+    const gold = LEVEL_REWARDS.goldPerLevel * state.level;
+    state.gold += gold;
+    state.lifetime.gold += gold;
+    if (state.level % LEVEL_REWARDS.packEveryLevels === 0) {
+      if ((LEVEL_REWARDS.fivePackLevels as readonly number[]).includes(state.level)) {
+        state.packCredits.five += 1;
+      } else {
+        state.packCredits.standard += 1;
+      }
+    }
+
     emit("levelup", { level: state.level });
   }
 }
@@ -111,7 +133,8 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
     unlockedOres: ["copper"],
   };
 
-  // Purchased skill nodes fold in declaratively by effect kind.
+  // Purchased skill nodes fold in declaratively by effect kind. Ore unlock
+  // nodes only take effect once the player also meets the ore's level gate.
   for (const id of state.skillNodes) {
     const effect = getSkillNode(id).effect;
     switch (effect.kind) {
@@ -124,7 +147,7 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
         else stats.arenaSlots += 1;
         break;
       case "oreUnlock":
-        stats.unlockedOres.push(effect.ore);
+        if (state.level >= ORE_LEVEL_GATES[effect.ore]) stats.unlockedOres.push(effect.ore);
         break;
       case "offline":
         stats.offlineRate = Math.max(stats.offlineRate, effect.rate);

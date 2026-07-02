@@ -659,6 +659,30 @@ main.panels {
 .reveal-card.rarity-rare { border-color: #2196f3; }
 .reveal-card.rarity-epic { border-color: #9c27b0; box-shadow: 0 0 10px #9c27b055; }
 .reveal-card.rarity-legendary { border-color: #f5c518; box-shadow: 0 0 14px #f5c51888; }
+.reveal-card.rarity-mythic { border-color: #c0392b; box-shadow: 0 0 16px #c0392baa; }
+.reveal-card.rarity-divine {
+  border-color: #e8f4ff;
+  box-shadow: 0 0 18px #e8f4ffcc, 0 0 34px #9ad9ff88;
+}
+
+.shop-sp {
+  margin-left: auto;
+  margin-right: 14px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.shop-crit-banner {
+  color: var(--crit);
+  font-weight: 700;
+  min-height: 1.2em;
+  margin-bottom: 6px;
+}
+
+.shop-reveal {
+  max-height: 260px;
+  overflow-y: auto;
+}
 
 .new-tag {
   color: var(--crit);

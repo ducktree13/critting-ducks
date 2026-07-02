@@ -48,7 +48,7 @@ describe("save/load", () => {
     expect(loaded).not.toBeNull();
     expect(loaded!.gold).toBe(500);
     expect(loaded!.level).toBe(1);
-    expect(loaded!.ores).toEqual({ copper: 0, silver: 0, crystal: 0, starmetal: 0 });
+    expect(loaded!.ores).toEqual({ copper: 0, silver: 0, crystal: 0, starmetal: 0, voidstone: 0, aurorium: 0 });
     expect(loaded!.streak.buffExpiry).toEqual({ t10: 0, t25: 0, t50: 0, t100: 0 });
   });
 

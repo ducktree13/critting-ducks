@@ -11,6 +11,12 @@ export function tickMine(state: GameState, dt: number, rng: Rng): void {
     (defId) => getDuckDef(defId).passive === "goldenCrit",
   );
 
+  // A selected vein can fall behind its level gate (e.g. a migrated save);
+  // mine the best still-unlocked vein instead.
+  if (!stats.unlockedOres.includes(state.selectedOre)) {
+    state.selectedOre = stats.unlockedOres[stats.unlockedOres.length - 1] ?? "copper";
+  }
+
   for (const defId of state.rosters.mine) {
     const duck = state.ducks.find((d) => d.defId === defId);
     if (!duck) continue;

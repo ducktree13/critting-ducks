@@ -7,9 +7,9 @@ let state: GameState;
 
 const noBuffStats = () => computeStats(state, Number.MAX_SAFE_INTEGER);
 
-// Bill on copper: 1 hit/s, (1 + 1 MP) ore, 1g/ore, expected crit factor
-// 1 + 0.3 * (2.0 - 1) = 1.3 → 2.6 gold/sec, 1 xp/sec.
-const BILL_GOLD_PER_SEC = 2 * 1 * 1.3;
+// Bill on copper: 1 hit/s, (0.1 + 0.1 MP) ore, 1g/ore, expected crit factor
+// 1 + 0.3 * (2.0 - 1) = 1.3 → 0.26 gold/sec, 1 xp/sec.
+const BILL_GOLD_PER_SEC = 0.2 * 1 * 1.3;
 
 beforeEach(() => {
   state = createInitialState();
@@ -31,9 +31,9 @@ describe("offlineIncomePerSec", () => {
 
   it("uses the selected vein's value and node effects", () => {
     state.selectedOre = "silver";
-    state.skillNodes = ["ore1"]; // +1 ore per hit
+    state.skillNodes = ["ore1"]; // +0.1 ore per hit
     const { goldPerSec } = offlineIncomePerSec(state, noBuffStats());
-    expect(goldPerSec).toBeCloseTo(3 * 3 * 1.3); // (2 base + 1 MP) ore * 3g * crit EV
+    expect(goldPerSec).toBeCloseTo(0.3 * 3 * 1.3); // (0.2 base + 0.1 MP) ore * 3g * crit EV
   });
 
   it("ignores streak buffs", () => {
@@ -48,7 +48,8 @@ describe("computeOfflineProgress", () => {
     const report = computeOfflineProgress(state, 3600, noBuffStats());
     expect(report.rate).toBeCloseTo(0.5);
     expect(report.goldGained).toBeCloseTo(BILL_GOLD_PER_SEC * 3600 * 0.5);
-    expect(state.gold).toBeCloseTo(report.goldGained);
+    // State gold also includes the gold rewards for the levels gained.
+    expect(state.gold).toBeGreaterThanOrEqual(report.goldGained);
   });
 
   it("caps elapsed time at 8 hours", () => {
@@ -74,12 +75,12 @@ describe("computeOfflineProgress", () => {
   });
 
   it("rolls XP into level-ups", () => {
-    // 1 xp/sec at 50% for 3600s → 1800 xp clears the 100/150/225/337.5/506.25
-    // thresholds: level 1 → 6 with 481.25 left over
+    // 1 xp/sec at 50% for 3600s → 1800 xp clears the 100/160/256/409.6/655.36
+    // thresholds (growth 1.6): level 1 → 6 with ~219 left over
     const report = computeOfflineProgress(state, 3600, noBuffStats());
     expect(report.xpGained).toBeCloseTo(1800);
     expect(report.levelsGained).toBe(5);
     expect(state.level).toBe(6);
-    expect(state.xp).toBeCloseTo(481.25);
+    expect(state.xp).toBeCloseTo(1800 - 100 - 160 - 256 - 409.6 - 655.36);
   });
 });

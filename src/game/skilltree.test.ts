@@ -11,12 +11,12 @@ beforeEach(() => {
 
 describe("purchase gating", () => {
   it("root node is buyable with enough gold at level 1", () => {
-    state.gold = 50;
+    state.gold = 30;
     expect(canBuy(state, "crit1")).toBe(true);
   });
 
   it("blocks purchase without enough gold", () => {
-    state.gold = 49;
+    state.gold = 29;
     expect(canBuy(state, "crit1")).toBe(false);
     expect(buy(state, "crit1")).toBe(false);
     expect(state.skillNodes).toEqual([]);
@@ -43,7 +43,7 @@ describe("purchase gating", () => {
   it("deducts gold and records the node on purchase", () => {
     state.gold = 120;
     expect(buy(state, "crit1")).toBe(true);
-    expect(state.gold).toBe(70);
+    expect(state.gold).toBe(90);
     expect(state.skillNodes).toEqual(["crit1"]);
     expect(buy(state, "crit1")).toBe(false); // no double-buy
   });
@@ -63,7 +63,7 @@ describe("effect folding in computeStats", () => {
   it("adds ore per hit and multiplies ore", () => {
     state.skillNodes = ["ore1", "ore2", "ore3"];
     const s = refreshStats(state, 0);
-    expect(s.orePerHit).toBe(4); // 1 base + 1 + 2
+    expect(s.orePerHit).toBeCloseTo(0.4); // 0.1 base + 0.1 + 0.2
     expect(s.oreMult).toBeCloseTo(1.5);
   });
 
@@ -74,9 +74,16 @@ describe("effect folding in computeStats", () => {
     expect(s.arenaSlots).toBe(2);
   });
 
-  it("unlocks ores", () => {
+  it("unlocks ores once both the node and the level gate are met", () => {
     state.skillNodes = ["oresilver", "orecrystal"];
+    state.level = 12;
     expect(refreshStats(state, 0).unlockedOres).toEqual(["copper", "silver", "crystal"]);
+  });
+
+  it("holds ore unlocks behind their level gates", () => {
+    state.skillNodes = ["oresilver", "orecrystal"];
+    state.level = 5; // silver's gate met, crystal's (12) not
+    expect(refreshStats(state, 0).unlockedOres).toEqual(["copper", "silver"]);
   });
 
   it("raises the offline rate by tier", () => {
@@ -95,9 +102,9 @@ describe("effect folding in computeStats", () => {
     state.skillNodes = ["critdmg1", "critdmg2", "critdmg3", "atk1", "atk2", "def1", "def2", "atkspeed1"];
     const s = refreshStats(state, 0);
     expect(s.critMult).toBeCloseTo(3.0); // 2.0 + 0.25 + 0.25 + 0.5
-    expect(s.flatAttack).toBe(2);
+    expect(s.flatAttack).toBe(1);
     expect(s.attackDamageMult).toBeCloseTo(1.25);
-    expect(s.flatDefense).toBe(2);
+    expect(s.flatDefense).toBe(1);
     expect(s.defenseMult).toBeCloseTo(1.5);
     expect(s.arenaSpeedMult).toBeCloseTo(1.25);
   });

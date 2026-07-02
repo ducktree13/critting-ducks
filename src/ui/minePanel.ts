@@ -1,4 +1,4 @@
-import { ORE_VALUES } from "../game/balance";
+import { ORE_LEVEL_GATES, ORE_VALUES } from "../game/balance";
 import { getDuckDef } from "../game/ducks";
 import { on } from "../game/events";
 import { getStats, refreshStats } from "../game/state";
@@ -12,6 +12,8 @@ const ORE_COLORS: Record<OreId, string> = {
   silver: "#b8bec9",
   crystal: "#7ad0e0",
   starmetal: "#8a7ae0",
+  voidstone: "#4a3a6a",
+  aurorium: "#ffd75e",
 };
 
 const ORE_NAMES: Record<OreId, string> = {
@@ -19,6 +21,8 @@ const ORE_NAMES: Record<OreId, string> = {
   silver: "Silver",
   crystal: "Crystal",
   starmetal: "Starmetal",
+  voidstone: "Voidstone",
+  aurorium: "Aurorium",
 };
 
 const ORE_UNLOCK_HINT: Record<OreId, string> = {
@@ -26,6 +30,8 @@ const ORE_UNLOCK_HINT: Record<OreId, string> = {
   silver: "Silver Vein node",
   crystal: "Crystal Cavern node",
   starmetal: "Starmetal Seam node",
+  voidstone: "Void Fissure node (Act 2)",
+  aurorium: "Aurorium Heart node (Act 2)",
 };
 
 let panel: HTMLElement;
@@ -54,9 +60,13 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
   renderVeins(state);
   renderRoster(state);
 
-  // Ore unlock nodes change which veins are selectable; the tick-cached
-  // stats snapshot doesn't include the new node yet, so refresh first.
+  // Ore unlock nodes and level-ups change which veins are selectable; the
+  // tick-cached stats snapshot doesn't include the change yet, so refresh.
   on("buy", () => {
+    refreshStats(state, Date.now());
+    renderVeins(state);
+  });
+  on("levelup", () => {
     refreshStats(state, Date.now());
     renderVeins(state);
   });
@@ -92,7 +102,11 @@ function renderVeins(state: GameState): void {
       const unlocked = stats.unlockedOres.includes(ore);
       const active = state.selectedOre === ore;
       if (!unlocked) {
-        return `<button class="vein locked" disabled title="Unlock: ${ORE_UNLOCK_HINT[ore]}">🔒 ${ORE_NAMES[ore]}</button>`;
+        const levelGated = state.level < ORE_LEVEL_GATES[ore];
+        const hint = [ORE_UNLOCK_HINT[ore], levelGated ? `level ${ORE_LEVEL_GATES[ore]}` : ""]
+          .filter(Boolean)
+          .join(" + ");
+        return `<button class="vein locked" disabled title="Unlock: ${hint}">🔒 ${ORE_NAMES[ore]}${levelGated ? ` <small>Lv ${ORE_LEVEL_GATES[ore]}</small>` : ""}</button>`;
       }
       return `<button class="vein${active ? " active" : ""}" data-ore="${ore}">${ORE_NAMES[ore]} <small>${ORE_VALUES[ore]}g</small></button>`;
     })

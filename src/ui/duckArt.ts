@@ -7,6 +7,8 @@ const RARITY_RING: Record<Rarity, string> = {
   rare: "#2196f3",
   epic: "#9c27b0",
   legendary: "#f5c518",
+  mythic: "#c0392b",
+  divine: "#e8f4ff",
 };
 
 interface DuckLook {

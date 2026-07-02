@@ -39,6 +39,7 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
       buffExpiry: { ...base.streak.buffExpiry, ...partial.streak?.buffExpiry },
     },
     arena: { ...base.arena, ...partial.arena },
+    packCredits: { ...base.packCredits, ...partial.packCredits },
     settings: { ...base.settings, ...partial.settings },
   };
 }

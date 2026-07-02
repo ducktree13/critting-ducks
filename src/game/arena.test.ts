@@ -23,32 +23,32 @@ afterEach(() => {
 
 describe("wave scaling", () => {
   it("scales enemy hp and attack exponentially", () => {
-    expect(enemyMaxHpAt(1)).toBeCloseTo(30);
-    expect(enemyMaxHpAt(2)).toBeCloseTo(30 * 1.18);
-    expect(enemyAttackAt(1)).toBeCloseTo(3);
-    expect(enemyAttackAt(5)).toBeCloseTo(3 * Math.pow(1.15, 4));
+    expect(enemyMaxHpAt(1)).toBeCloseTo(24);
+    expect(enemyMaxHpAt(2)).toBeCloseTo(24 * 1.16);
+    expect(enemyAttackAt(1)).toBeCloseTo(2.5);
+    expect(enemyAttackAt(5)).toBeCloseTo(2.5 * Math.pow(1.13, 4));
   });
 
   it("marks every 10th wave as a boss with 3x hp", () => {
     expect(isBossWave(10)).toBe(true);
     expect(isBossWave(11)).toBe(false);
-    expect(enemyMaxHpAt(10)).toBeCloseTo(30 * Math.pow(1.18, 9) * 3);
+    expect(enemyMaxHpAt(10)).toBeCloseTo(24 * Math.pow(1.16, 9) * 3);
   });
 });
 
 describe("combat", () => {
   it("duck hits damage the enemy and grant xp", () => {
-    // Quackers: 3 atk, 1.0/s; never crit → 3 dmg per hit
+    // Quackers: 1.5 atk, 1.0/s; never crit → 1.5 dmg per hit
     tickArena(state, 1.0, neverCrit);
-    expect(state.arena.enemyHp).toBeCloseTo(30 - 3);
+    expect(state.arena.enemyHp).toBeCloseTo(24 - 1.5);
     expect(state.xp).toBeCloseTo(ARENA_BASE.xpPerHit + 0);
     expect(state.lifetime.hits).toBe(1);
   });
 
   it("enemy hits the team for max(1, atk - defense)", () => {
-    // Wave 1 enemy: 3 atk at 0.8/s (first hit at 1.25s); Quackers def 1
+    // Wave 1 enemy: 2.5 atk at 0.8/s (first hit at 1.25s); Quackers def 1
     tickArena(state, 1.25, neverCrit);
-    expect(state.arena.teamHp).toBeCloseTo(30 - (3 - 1));
+    expect(state.arena.teamHp).toBeCloseTo(30 - (2.5 - 1));
   });
 
   it("victory pays gold and xp, increments the wave, and pauses 1s", () => {
@@ -57,8 +57,8 @@ describe("combat", () => {
     const xp0 = state.xp;
     tickArena(state, 1.0, neverCrit);
     expect(state.arena.wave).toBe(2);
-    expect(state.gold - gold0).toBeCloseTo(10); // 10 * 1.15^0
-    expect(state.xp - xp0).toBeCloseTo(15 + ARENA_BASE.xpPerHit); // reward + the killing hit
+    expect(state.gold - gold0).toBeCloseTo(2); // 2 * 1.12^0
+    expect(state.xp - xp0).toBeCloseTo(5 + ARENA_BASE.xpPerHit); // reward + the killing hit
     expect(state.arena.retryAt).toBe(Date.now() + 1000);
   });
 
@@ -67,7 +67,7 @@ describe("combat", () => {
     tickArena(state, 1.0, neverCrit); // victory → wave 2
     vi.setSystemTime(Date.now() + 1001);
     tickArena(state, 0.1, neverCrit);
-    expect(state.arena.enemyMaxHp).toBeCloseTo(30 * 1.18);
+    expect(state.arena.enemyMaxHp).toBeCloseTo(24 * 1.16);
     expect(state.arena.enemyHp).toBeCloseTo(state.arena.enemyMaxHp);
     expect(state.arena.teamHp).toBe(state.arena.teamMaxHp); // healed
   });
@@ -84,14 +84,14 @@ describe("combat", () => {
     vi.setSystemTime(Date.now() + 3001);
     tickArena(state, 0.05, neverCrit);
     expect(state.arena.teamHp).toBe(state.arena.teamMaxHp);
-    expect(state.arena.enemyHp).toBeCloseTo(30); // same wave, fresh enemy
+    expect(state.arena.enemyHp).toBeCloseTo(24); // same wave, fresh enemy
   });
 
   it("idles with an empty arena roster", () => {
     state.rosters.arena = [];
     tickArena(state, 5.0, neverCrit);
     expect(state.arena.wave).toBe(1);
-    expect(state.arena.enemyHp).toBeCloseTo(30);
+    expect(state.arena.enemyHp).toBeCloseTo(24);
     expect(state.lifetime.hits).toBe(0);
     expect(state.arena.teamMaxHp).toBe(0);
   });
@@ -104,7 +104,7 @@ describe("rewards", () => {
     state.arena.enemyMaxHp = enemyMaxHpAt(10);
     const gold0 = state.gold;
     tickArena(state, 1.0, neverCrit); // kill: rng.next()=0.999 → no random shard, but boss guarantees
-    expect(state.gold - gold0).toBeCloseTo(10 * Math.pow(1.15, 9) * 2);
+    expect(state.gold - gold0).toBeCloseTo(2 * Math.pow(1.12, 9) * 2);
     expect(state.ducks.find((d) => d.defId === "quackers")!.shards).toBe(1);
     expect(state.arena.wave).toBe(11);
   });

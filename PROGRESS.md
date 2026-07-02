@@ -6,7 +6,7 @@ One checkbox per build phase. Work top to bottom — the game is playable at the
 
 - [x] **V2-0 — Design doc & save v2**: PLAN2.md, PROGRESS reset, CLAUDE.md pointer, save `version: 2` + migration ladder.
   *Playable check: game runs unchanged; a v1 save loads with all progress intact.*
-- [ ] **V2-1 — Economy core**: 7 rarities, pack tiers (5/25/100) with guarantees + pack crits + level gates, slowed progression curve, rescaled node costs, Voidstone/Aurorium defs, ore level gates, level-up rewards, shard cap + Shard Points. Pacing audit. Tests.
+- [x] **V2-1 — Economy core**: 7 rarities, pack tiers (5/25/100) with guarantees + pack crits + level gates, slowed progression curve, rescaled node costs, Voidstone/Aurorium defs, ore level gates, level-up rewards, shard cap + Shard Points. Pacing audit. Tests.
   *Playable check: first pack ≈10 min of expected income; pack crit grants a bonus pack; ores respect level gates.*
 - [ ] **V2-2 — UX layer**: shared hover tooltips (nodes, ducks, pips, veins, packs), panel minimize/expand, favorite toggle, duck inventory menu.
   *Playable check: hover anything meaningful and learn what it does; minimize mine → tree+arena widen.*

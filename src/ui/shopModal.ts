@@ -1,8 +1,7 @@
-import { DUCK_MAX_LEVEL } from "../game/balance";
+import { DUCK_MAX_LEVEL, GACHA } from "../game/balance";
 import { DUCK_DEFS, getDuckDef } from "../game/ducks";
-import { canUpgrade, openPack, packPrice, upgradeCost, type PackType } from "../game/shop";
-import { upgradeDuck } from "../game/shop";
-import type { GameState, Rng } from "../game/types";
+import { canUpgrade, openPack, packPrice, packUnlocked, upgradeCost, upgradeDuck } from "../game/packs";
+import type { GameState, PackId, Rng } from "../game/types";
 import { duckSvg } from "./duckArt";
 import { fmt } from "./format";
 
@@ -11,6 +10,15 @@ export interface SaveActions {
   onImport(): void;
   onReset(): void;
 }
+
+const PACK_LABELS: Record<PackId, { name: string; blurb: string }> = {
+  standard: { name: "Standard Pack", blurb: "1 duck" },
+  five: { name: "Five-Pack", blurb: "5 ducks · uncommon+ guaranteed" },
+  pack25: { name: "25-Pack", blurb: "25 ducks · rare+ guaranteed" },
+  pack100: { name: "100-Pack", blurb: "100 ducks · epic+ guaranteed" },
+};
+
+const PACK_IDS: PackId[] = ["standard", "five", "pack25", "pack100"];
 
 let overlay: HTMLElement;
 let gameState: GameState;
@@ -26,12 +34,13 @@ export function initShopModal(state: GameState, rng: Rng, actions: SaveActions):
     <div class="shop-box">
       <div class="shop-head">
         <h3>Duck Shop</h3>
+        <span class="shop-sp" id="shop-sp"></span>
         <button class="shop-close" id="shop-close">✕</button>
       </div>
       <div class="shop-packs">
-        <button class="pack-btn" id="pack-standard"></button>
-        <button class="pack-btn" id="pack-five"></button>
+        ${PACK_IDS.map((id) => `<button class="pack-btn" id="pack-${id}" data-pack="${id}"></button>`).join("")}
       </div>
+      <div class="shop-crit-banner" id="shop-crit-banner"></div>
       <div class="shop-reveal" id="shop-reveal"></div>
       <div class="shop-collection" id="shop-collection"></div>
       <div class="shop-settings">
@@ -46,8 +55,9 @@ export function initShopModal(state: GameState, rng: Rng, actions: SaveActions):
     if (e.target === overlay) closeShop();
   });
   overlay.querySelector("#shop-close")!.addEventListener("click", closeShop);
-  overlay.querySelector("#pack-standard")!.addEventListener("click", () => buyPack("standard"));
-  overlay.querySelector("#pack-five")!.addEventListener("click", () => buyPack("five"));
+  overlay.querySelectorAll<HTMLButtonElement>(".pack-btn").forEach((btn) => {
+    btn.addEventListener("click", () => buyPack(btn.dataset.pack as PackId));
+  });
 
   const note = overlay.querySelector<HTMLElement>("#settings-note")!;
   overlay.querySelector("#save-export")!.addEventListener("click", () => {
@@ -65,6 +75,7 @@ export function openShop(): void {
   renderPackButtons();
   renderCollection();
   overlay.querySelector("#shop-reveal")!.innerHTML = "";
+  overlay.querySelector("#shop-crit-banner")!.textContent = "";
   overlay.classList.add("open");
 }
 
@@ -74,25 +85,45 @@ function closeShop(): void {
 
 function renderPackButtons(): void {
   const now = Date.now();
-  const std = packPrice("standard", gameState, now);
-  const five = packPrice("five", gameState, now);
-  const label = (price: number) =>
-    price === 0 ? `<b class="free">FREE</b>` : `${fmt(price)} gold`;
-  overlay.querySelector("#pack-standard")!.innerHTML = `Standard Pack<br><small>1 duck · ${label(std)}</small>`;
-  overlay.querySelector("#pack-five")!.innerHTML = `Five-Pack<br><small>5 ducks, uncommon+ guaranteed · ${label(five)}</small>`;
+  overlay.querySelector("#shop-sp")!.textContent = `Shard Points: ${fmt(gameState.shardPoints)}`;
+  for (const id of PACK_IDS) {
+    const btn = overlay.querySelector<HTMLButtonElement>(`#pack-${id}`)!;
+    const { name, blurb } = PACK_LABELS[id];
+    if (!packUnlocked(id, gameState)) {
+      btn.disabled = true;
+      btn.innerHTML = `${name}<br><small>🔒 Unlocks at level ${GACHA.packs[id].minLevel}</small>`;
+      continue;
+    }
+    btn.disabled = false;
+    const credits = gameState.packCredits[id];
+    const price = packPrice(id, gameState, now);
+    const label =
+      credits > 0
+        ? `<b class="free">${credits} FREE</b>`
+        : price === 0
+          ? `<b class="free">FREE</b>`
+          : `${fmt(price)} gold`;
+    btn.innerHTML = `${name}<br><small>${blurb} · ${label}</small>`;
+  }
 }
 
-function buyPack(pack: PackType): void {
-  const results = openPack(gameState, gameRng, pack, Date.now());
+function buyPack(pack: PackId): void {
+  const opened = openPack(gameState, gameRng, pack, Date.now());
   const reveal = overlay.querySelector("#shop-reveal")!;
-  if (!results) {
+  const banner = overlay.querySelector("#shop-crit-banner")!;
+  if (!opened) {
     reveal.innerHTML = `<span class="shop-error">Not enough gold.</span>`;
+    banner.textContent = "";
     return;
   }
-  reveal.innerHTML = results
+  banner.textContent =
+    opened.bonusPacks > 0
+      ? `💥 PACK CRIT! +${opened.bonusPacks} free ${PACK_LABELS[pack].name}${opened.bonusPacks > 1 ? "s" : ""}!`
+      : "";
+  reveal.innerHTML = opened.results
     .map(
       (r, i) => `
-      <div class="reveal-card rarity-${r.rarity}" style="animation-delay: ${i * 180}ms">
+      <div class="reveal-card rarity-${r.rarity}" style="animation-delay: ${Math.min(i * 140, 2000)}ms">
         ${duckSvg(r.defId, 64)}
         <b>${getDuckDef(r.defId).name}</b>
         <small>${r.isNew ? `<span class="new-tag">NEW!</span>` : `+${r.shardsGained} shard${r.shardsGained === 1 ? "" : "s"}`}</small>
