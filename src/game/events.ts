@@ -1,5 +1,5 @@
 export interface GameEventMap {
-  hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; amount: number };
+  hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; gold: number; xp: number; ore: number };
   crit: { panel: "mine" | "arena"; duckId: string };
   levelup: { level: number };
   wave: { wave: number; boss: boolean };

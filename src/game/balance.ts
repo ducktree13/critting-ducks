@@ -1,5 +1,7 @@
 // Every tunable number in the game lives here. No magic numbers in logic files.
 
+import type { OreId } from "./types";
+
 export const TICK_SEC = 0.1; // fixed simulation timestep, in game-seconds
 export const MAX_ACCUMULATOR_SEC = 1.0; // clamp so a slow frame can't spiral
 export const FRAME_GAP_THRESHOLD_SEC = 5; // beyond this, treat as a hidden-tab gap
@@ -14,6 +16,28 @@ export const BASE_STATS = {
   mineSlots: 1,
   arenaSlots: 1,
   buffDurationSec: 10,
+} as const;
+
+export const ORE_VALUES: Record<OreId, number> = {
+  copper: 1,
+  silver: 3,
+  crystal: 8,
+  starmetal: 20,
+};
+
+export const DUCK_LEVEL_STAT_BONUS = 0.1; // +10% base stats per level above 1
+export const DUCK_MAX_LEVEL = 10;
+
+export const XP_CURVE = { base: 100, growth: 1.5 } as const; // xpToNext(level) = base * growth^(level-1)
+export const MINE_XP_PER_HIT = 1;
+
+export const RATE_WINDOW_SEC = 120; // rolling window for gold/hr and xp/hr
+
+export const PASSIVES = {
+  teamOreMult: 1.1, // Drillbert: +10% team ore per hit (mine)
+  teamDmgMult: 1.1, // Thunderquack: +10% team damage (arena)
+  goldenCritGoldMult: 2, // Golden Goose: mine crits pay +100% gold
+  streakShieldCooldownMs: 60_000, // Deathbill: 1 non-crit forgiven per 60s
 } as const;
 
 export const ARENA_BASE = {

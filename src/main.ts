@@ -1,22 +1,23 @@
 import "./style.css";
 import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, TICK_SEC } from "./game/balance";
+import { tickMine } from "./game/mine";
+import { mulberry32 } from "./game/rng";
 import { load, save } from "./game/save";
-import { createInitialState } from "./game/state";
+import { createInitialState, refreshStats } from "./game/state";
 import type { GameState, Rng } from "./game/types";
+import { initFloaters } from "./ui/floaters";
+import { initHud, renderHud } from "./ui/hud";
+import { initMinePanel, renderMinePanel } from "./ui/minePanel";
 
 const storage = window.localStorage;
 const state: GameState = load(storage) ?? createInitialState();
+const rng: Rng = mulberry32(Date.now() >>> 0);
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
-  <header class="hud">
-    <span class="hud-title">Critting Ducks</span>
-  </header>
+  <header class="hud"></header>
   <main class="panels">
-    <section class="panel" id="mine-panel">
-      <h2>Mine</h2>
-      <div class="panel-body">Ducks will mine here soon.</div>
-    </section>
+    <section class="panel" id="mine-panel"></section>
     <section class="panel" id="tree-panel">
       <h2>Skill Tree</h2>
       <div class="panel-body">The tree will grow here soon.</div>
@@ -28,11 +29,23 @@ app.innerHTML = `
   </main>
 `;
 
-function simTick(_state: GameState, _dt: number, _rng: Rng): void {
-  // No systems to tick yet — mine/arena land in later phases.
+const minePanelEl = app.querySelector<HTMLElement>("#mine-panel")!;
+const arenaPanelEl = app.querySelector<HTMLElement>("#arena-panel")!;
+
+initHud(app.querySelector("header.hud")!);
+initMinePanel(minePanelEl, state);
+initFloaters({ mine: minePanelEl, arena: arenaPanelEl });
+
+function simTick(s: GameState, dt: number, r: Rng): void {
+  refreshStats(s, Date.now());
+  tickMine(s, dt, r);
 }
 
-const rng: Rng = { next: () => Math.random() };
+function render(s: GameState): void {
+  renderHud(s);
+  renderMinePanel(s);
+}
+
 let lastFrame = performance.now();
 let accumulator = 0;
 
@@ -52,6 +65,7 @@ function frame(now: number): void {
     }
   }
 
+  render(state);
   requestAnimationFrame(frame);
 }
 
