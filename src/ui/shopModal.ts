@@ -1,9 +1,13 @@
 import { DUCK_MAX_LEVEL, GACHA } from "../game/balance";
 import { DUCK_DEFS, getDuckDef } from "../game/ducks";
 import { canUpgrade, openPack, packPrice, packUnlocked, upgradeCost, upgradeDuck } from "../game/packs";
-import type { GameState, PackId, Rng } from "../game/types";
-import { duckSvg } from "./duckArt";
+import { toggleFavorite } from "../game/state";
+import type { GameState, PackId, Rarity, Rng } from "../game/types";
+import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { fmt } from "./format";
+import { attachTooltip } from "./tooltip";
+
+const RARITY_ORDER: Rarity[] = ["common", "uncommon", "rare", "epic", "legendary", "mythic", "divine"];
 
 export interface SaveActions {
   onExport(): Promise<boolean>;
@@ -104,7 +108,18 @@ function renderPackButtons(): void {
           ? `<b class="free">FREE</b>`
           : `${fmt(price)} gold`;
     btn.innerHTML = `${name}<br><small>${blurb} · ${label}</small>`;
+    attachTooltip(btn, () => oddsTooltipHtml(id));
   }
+}
+
+function oddsTooltipHtml(pack: PackId): string {
+  const { guarantee } = GACHA.packs[pack];
+  const rows = RARITY_ORDER.map(
+    (r) => `<span>${r}: ${(GACHA.odds[r] * 100).toFixed(2)}%</span>`,
+  ).join("");
+  return `<b>${PACK_LABELS[pack].name} odds</b><div class="tt-odds">${rows}</div>${
+    guarantee ? `<div class="tt-meta">Guarantees ${guarantee}-or-better</div>` : ""
+  }`;
 }
 
 function buyPack(pack: PackId): void {
@@ -149,7 +164,8 @@ function renderCollection(): void {
     const maxed = owned.level >= DUCK_MAX_LEVEL;
     const cost = upgradeCost(owned);
     return `
-      <div class="duck-card">
+      <div class="duck-card" data-duck="${def.id}">
+        <button class="fav-toggle" data-duck="${def.id}" aria-label="Toggle favorite">${owned.favorite ? "♥" : "♡"}</button>
         ${duckSvg(def.id, 56)}
         <b>${def.name}</b>
         <small>Lv ${owned.level}${maxed ? " (max)" : ""} · ${owned.shards} shard${owned.shards === 1 ? "" : "s"}</small>
@@ -161,5 +177,16 @@ function renderCollection(): void {
     btn.addEventListener("click", () => {
       if (upgradeDuck(gameState, btn.dataset.duck!)) renderCollection();
     });
+  });
+  grid.querySelectorAll<HTMLButtonElement>(".fav-toggle").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleFavorite(gameState, btn.dataset.duck!);
+      renderCollection();
+    });
+  });
+  grid.querySelectorAll<HTMLElement>(".duck-card[data-duck]").forEach((card) => {
+    const duck = gameState.ducks.find((d) => d.defId === card.dataset.duck);
+    if (duck) attachTooltip(card, () => duckTooltipHtml(duck));
   });
 }

@@ -11,6 +11,8 @@ import type { GameState, Rng } from "./game/types";
 import { initArenaPanel, renderArenaPanel } from "./ui/arenaPanel";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
+import { initInventoryMenu } from "./ui/inventoryMenu";
+import { initLayout } from "./ui/layout";
 import { initMinePanel, renderMinePanel } from "./ui/minePanel";
 import { initShopModal } from "./ui/shopModal";
 import { initTheme } from "./ui/theme";
@@ -52,6 +54,7 @@ app.innerHTML = `
 `;
 
 const minePanelEl = app.querySelector<HTMLElement>("#mine-panel")!;
+const treePanelEl = app.querySelector<HTMLElement>("#tree-panel")!;
 const arenaPanelEl = app.querySelector<HTMLElement>("#arena-panel")!;
 
 // Set when importing/resetting so the unload handler can't clobber the
@@ -81,12 +84,18 @@ initShopModal(state, rng, {
     location.reload();
   },
 });
+initInventoryMenu(state);
 initHud(app.querySelector("header.hud")!);
 initTheme(state, app.querySelector<HTMLElement>("#hud-theme")!);
 initMinePanel(minePanelEl, state);
-initTreePanel(app.querySelector<HTMLElement>("#tree-panel")!, state);
+initTreePanel(treePanelEl, state);
 initArenaPanel(arenaPanelEl, state);
 initFloaters({ mine: minePanelEl, arena: arenaPanelEl });
+initLayout(app.querySelector<HTMLElement>("main.panels")!, state, {
+  mine: minePanelEl,
+  tree: treePanelEl,
+  arena: arenaPanelEl,
+});
 
 function simTick(s: GameState, dt: number, r: Rng): void {
   refreshStats(s, Date.now());

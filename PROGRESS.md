@@ -8,7 +8,7 @@ One checkbox per build phase. Work top to bottom — the game is playable at the
   *Playable check: game runs unchanged; a v1 save loads with all progress intact.*
 - [x] **V2-1 — Economy core**: 7 rarities, pack tiers (5/25/100) with guarantees + pack crits + level gates, slowed progression curve, rescaled node costs, Voidstone/Aurorium defs, ore level gates, level-up rewards, shard cap + Shard Points. Pacing audit. Tests.
   *Playable check: first pack ≈10 min of expected income; pack crit grants a bonus pack; ores respect level gates.*
-- [ ] **V2-2 — UX layer**: shared hover tooltips (nodes, ducks, pips, veins, packs), panel minimize/expand, favorite toggle, duck inventory menu.
+- [x] **V2-2 — UX layer**: shared hover tooltips (nodes, ducks, pips, veins, packs), panel minimize/expand, favorite toggle, duck inventory menu.
   *Playable check: hover anything meaningful and learn what it does; minimize mine → tree+arena widen.*
 - [ ] **V2-3 — Tutorial + missions/achievements**: frameworks + pinned mission per section + 5-minute tutorial chain ending in a guaranteed-rare pack + locked-duck hooks.
   *Playable check: fresh save completes the tutorial in ≤5 min and holds a rare+ duck.*

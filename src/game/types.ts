@@ -28,6 +28,7 @@ export interface OwnedDuck {
   level: number;
   shards: number;
   nextHitIn: number;
+  favorite?: boolean;
 }
 
 export interface StreakState {
@@ -62,7 +63,10 @@ export interface GameState {
   packCredits: Record<PackId, number>;       // free packs from level rewards etc.
   streak: StreakState;
   arena: ArenaState;
-  settings: { darkMode: boolean };
+  settings: {
+    darkMode: boolean;
+    panelsMinimized: { mine: boolean; tree: boolean; arena: boolean };
+  };
   lastSaved: number;
   createdAt: number;
 }

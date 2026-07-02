@@ -4,10 +4,19 @@ import { RateTracker } from "../game/rates";
 import { getStats, xpToNext } from "../game/state";
 import type { GameState } from "../game/types";
 import { fmt } from "./format";
+import { openInventory } from "./inventoryMenu";
 import { openShop } from "./shopModal";
+import { attachTooltip } from "./tooltip";
 
 type TierKey = keyof typeof STREAK_BALANCE.tiers;
 const TIER_KEYS: TierKey[] = ["t10", "t25", "t50", "t100"];
+
+const TIER_INFO: Record<TierKey, { name: string; desc: string }> = {
+  t10: { name: "Gold Rush", desc: "+50% gold income" },
+  t25: { name: "Enlightened", desc: "+50% XP gain" },
+  t50: { name: "Bloodlust", desc: "+50% arena attack damage" },
+  t100: { name: "QUACKENING", desc: "+25% to all stats, +10% crit chance, free packs" },
+};
 
 const goldRate = new RateTracker();
 const xpRate = new RateTracker();
@@ -19,6 +28,7 @@ let xpLabelEl: HTMLElement;
 let xpRateEl: HTMLElement;
 let streakEl: HTMLElement;
 let pipEls: HTMLElement[] = [];
+let latestState: GameState | null = null;
 
 export function initHud(header: HTMLElement): void {
   header.innerHTML = `
@@ -44,6 +54,7 @@ export function initHud(header: HTMLElement): void {
       </span>
     </div>
     <div class="hud-right">
+      <button class="shop-btn" id="hud-ducks">Ducks</button>
       <button class="shop-btn" id="hud-shop">Shop</button>
       <button class="icon-btn" id="hud-theme" aria-label="Toggle dark mode"></button>
       <span class="hud-title">Critting Ducks</span>
@@ -51,6 +62,7 @@ export function initHud(header: HTMLElement): void {
   `;
 
   header.querySelector("#hud-shop")!.addEventListener("click", openShop);
+  header.querySelector("#hud-ducks")!.addEventListener("click", openInventory);
 
   goldEl = header.querySelector("#hud-gold-amount")!;
   goldRateEl = header.querySelector("#hud-gold-rate")!;
@@ -59,6 +71,16 @@ export function initHud(header: HTMLElement): void {
   xpRateEl = header.querySelector("#hud-xp-rate")!;
   streakEl = header.querySelector("#hud-streak")!;
   pipEls = Array.from(header.querySelectorAll<HTMLElement>(".pip"));
+  for (const pip of pipEls) {
+    const tier = pip.dataset.tier as TierKey;
+    attachTooltip(pip, () => {
+      const info = TIER_INFO[tier];
+      const remainingMs = latestState ? latestState.streak.buffExpiry[tier] - Date.now() : 0;
+      const status =
+        remainingMs > 0 ? `Active — ${(remainingMs / 1000).toFixed(1)}s left` : "Not active";
+      return `<b>${info.name}</b> (${STREAK_BALANCE.tiers[tier]}-streak)<div class="tt-meta">${info.desc}</div><div class="tt-meta">${status}</div>`;
+    });
+  }
 
   on("wave", (e) => {
     const now = Date.now();
@@ -79,6 +101,7 @@ export function initHud(header: HTMLElement): void {
 }
 
 export function renderHud(state: GameState): void {
+  latestState = state;
   const now = Date.now();
   goldEl.textContent = fmt(state.gold);
   goldRateEl.textContent = `${fmt(goldRate.perHour(now))}/hr`;

@@ -40,7 +40,11 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
     },
     arena: { ...base.arena, ...partial.arena },
     packCredits: { ...base.packCredits, ...partial.packCredits },
-    settings: { ...base.settings, ...partial.settings },
+    settings: {
+      ...base.settings,
+      ...partial.settings,
+      panelsMinimized: { ...base.settings.panelsMinimized, ...partial.settings?.panelsMinimized },
+    },
   };
 }
 

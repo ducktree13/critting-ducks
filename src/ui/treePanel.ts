@@ -2,12 +2,12 @@ import { on } from "../game/events";
 import { buy, canBuy, getSkillNode, isOwned, isVisible, SKILL_NODES } from "../game/skilltree";
 import type { GameState, NodeEffect, SkillNode } from "../game/types";
 import { fmt } from "./format";
+import { attachTooltip } from "./tooltip";
 
 let panel: HTMLElement;
 let svgEl: SVGSVGElement;
-let tooltipEl: HTMLElement;
+let tickerEl: HTMLElement;
 let gameState: GameState;
-let openNodeId: string | null = null;
 let freshNodeId: string | null = null; // most recently bought — its leaves pop
 
 function glyph(effect: NodeEffect): string {
@@ -112,64 +112,44 @@ function rebuild(): void {
   `;
 
   svgEl.querySelectorAll<SVGGElement>(".tree-node:not(.silhouette)").forEach((g) => {
+    const nodeId = g.dataset.node!;
+    attachTooltip(g, () => nodeTooltipHtml(nodeId));
     g.addEventListener("click", (e) => {
       e.stopPropagation();
-      openTooltip(g.dataset.node!);
+      if (!buy(gameState, nodeId)) {
+        g.classList.remove("denied");
+        void g.getBoundingClientRect();
+        g.classList.add("denied");
+      }
     });
   });
 }
 
-function openTooltip(nodeId: string): void {
-  openNodeId = nodeId;
+function nodeTooltipHtml(nodeId: string): string {
   const node = getSkillNode(nodeId);
   const owned = isOwned(gameState, nodeId);
   const levelGated = gameState.level < node.minLevel;
-
-  tooltipEl.innerHTML = `
+  return `
     <b>${node.name}</b>
     <div class="tt-desc">${node.desc}</div>
     <div class="tt-meta">
       ${owned ? "Owned" : `Cost: ${fmt(node.cost)} gold`}
       ${!owned && node.minLevel > 1 ? ` · Level ${node.minLevel}${levelGated ? " required" : ""}` : ""}
     </div>
-    ${owned ? "" : `<button class="tt-buy" id="tt-buy">Buy</button>`}
   `;
-  tooltipEl.style.left = `${(node.x / 400) * 100}%`;
-  tooltipEl.style.top = `${(node.y / 600) * 100}%`;
-  tooltipEl.classList.add("open");
-
-  tooltipEl.querySelector<HTMLButtonElement>("#tt-buy")?.addEventListener("click", () => {
-    if (buy(gameState, nodeId)) closeTooltip();
-  });
-  updateTooltipBuyState();
-}
-
-function closeTooltip(): void {
-  openNodeId = null;
-  tooltipEl.classList.remove("open");
-}
-
-function updateTooltipBuyState(): void {
-  if (!openNodeId) return;
-  const btn = tooltipEl.querySelector<HTMLButtonElement>("#tt-buy");
-  if (btn) btn.disabled = !canBuy(gameState, openNodeId);
 }
 
 export function initTreePanel(root: HTMLElement, state: GameState): void {
   panel = root;
   gameState = state;
   panel.innerHTML = `
-    <h2>Skill Tree</h2>
+    <h2>Skill Tree <span class="panel-ticker" id="tree-ticker"></span></h2>
     <div class="panel-body tree-body">
       <svg id="tree-svg" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet"></svg>
-      <div class="tree-tooltip" id="tree-tooltip"></div>
     </div>
   `;
   svgEl = panel.querySelector<SVGSVGElement>("#tree-svg")!;
-  tooltipEl = panel.querySelector<HTMLElement>("#tree-tooltip")!;
-
-  panel.addEventListener("click", closeTooltip);
-  tooltipEl.addEventListener("click", (e) => e.stopPropagation());
+  tickerEl = panel.querySelector<HTMLElement>("#tree-ticker")!;
 
   on("buy", (e) => {
     freshNodeId = e.nodeId;
@@ -184,5 +164,5 @@ export function renderTreePanel(state: GameState): void {
   svgEl.querySelectorAll<SVGGElement>(".tree-node:not(.silhouette):not(.owned)").forEach((g) => {
     g.classList.toggle("affordable", canBuy(state, g.dataset.node!));
   });
-  updateTooltipBuyState();
+  tickerEl.textContent = `${state.skillNodes.length}/${SKILL_NODES.length} nodes`;
 }

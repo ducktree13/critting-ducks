@@ -1,7 +1,8 @@
 import { getDuckDef } from "../game/ducks";
 import { assignToRoster } from "../game/state";
 import type { GameState, Panel } from "../game/types";
-import { duckSvg } from "./duckArt";
+import { duckSvg, duckTooltipHtml } from "./duckArt";
+import { attachTooltip } from "./tooltip";
 
 // Overlay listing owned ducks; clicking one assigns it to the slot.
 export function openRosterPicker(state: GameState, panel: Panel, slotIndex: number): void {
@@ -49,6 +50,11 @@ export function openRosterPicker(state: GameState, panel: Panel, slotIndex: numb
       assignToRoster(state, panel, slotIndex, btn.dataset.clear ? null : btn.dataset.duck!);
       overlay.remove();
     });
+    const defId = btn.dataset.duck;
+    if (defId) {
+      const duck = state.ducks.find((d) => d.defId === defId);
+      if (duck) attachTooltip(btn, () => duckTooltipHtml(duck));
+    }
   });
 
   document.body.appendChild(overlay);

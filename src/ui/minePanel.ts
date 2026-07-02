@@ -1,11 +1,11 @@
 import { ORE_LEVEL_GATES, ORE_VALUES } from "../game/balance";
-import { getDuckDef } from "../game/ducks";
 import { on } from "../game/events";
 import { getStats, refreshStats } from "../game/state";
 import type { GameState, OreId } from "../game/types";
-import { duckSvg } from "./duckArt";
+import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { fmt } from "./format";
 import { openRosterPicker } from "./rosterPicker";
+import { attachTooltip } from "./tooltip";
 
 const ORE_COLORS: Record<OreId, string> = {
   copper: "#c77b4a",
@@ -39,12 +39,13 @@ let rockEl: HTMLElement;
 let duckRowEl: HTMLElement;
 let oreCountersEl: HTMLElement;
 let veinsEl: HTMLElement;
+let tickerEl: HTMLElement;
 let lastRosterKey = "";
 
 export function initMinePanel(root: HTMLElement, state: GameState): void {
   panel = root;
   panel.innerHTML = `
-    <h2>Mine</h2>
+    <h2>Mine <span class="panel-ticker" id="mine-ticker"></span></h2>
     <div class="panel-body mine-body">
       <div class="mine-rock" id="mine-rock"></div>
       <div class="vein-row" id="vein-row"></div>
@@ -56,6 +57,7 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
   duckRowEl = panel.querySelector("#mine-ducks")!;
   oreCountersEl = panel.querySelector("#ore-counters")!;
   veinsEl = panel.querySelector("#vein-row")!;
+  tickerEl = panel.querySelector("#mine-ticker")!;
 
   renderVeins(state);
   renderRoster(state);
@@ -106,18 +108,26 @@ function renderVeins(state: GameState): void {
         const hint = [ORE_UNLOCK_HINT[ore], levelGated ? `level ${ORE_LEVEL_GATES[ore]}` : ""]
           .filter(Boolean)
           .join(" + ");
-        return `<button class="vein locked" disabled title="Unlock: ${hint}">🔒 ${ORE_NAMES[ore]}${levelGated ? ` <small>Lv ${ORE_LEVEL_GATES[ore]}</small>` : ""}</button>`;
+        return `<button class="vein locked" disabled data-ore="${ore}" data-hint="${hint}">🔒 ${ORE_NAMES[ore]}${levelGated ? ` <small>Lv ${ORE_LEVEL_GATES[ore]}</small>` : ""}</button>`;
       }
       return `<button class="vein${active ? " active" : ""}" data-ore="${ore}">${ORE_NAMES[ore]} <small>${ORE_VALUES[ore]}g</small></button>`;
     })
     .join("");
 
-  veinsEl.querySelectorAll<HTMLButtonElement>(".vein[data-ore]").forEach((btn) => {
+  veinsEl.querySelectorAll<HTMLButtonElement>(".vein[data-ore]:not(.locked)").forEach((btn) => {
     btn.addEventListener("click", () => {
       state.selectedOre = btn.dataset.ore as OreId;
       renderVeins(state);
       rockEl.innerHTML = rockSvg(state.selectedOre);
     });
+  });
+  veinsEl.querySelectorAll<HTMLButtonElement>(".vein[data-ore]").forEach((btn) => {
+    const ore = btn.dataset.ore as OreId;
+    attachTooltip(btn, () =>
+      btn.classList.contains("locked")
+        ? `<b>${ORE_NAMES[ore]}</b><div class="tt-meta">Unlock: ${btn.dataset.hint}</div>`
+        : `<b>${ORE_NAMES[ore]}</b><div class="tt-meta">${ORE_VALUES[ore]} gold per ore</div>`,
+    );
   });
 
   rockEl.innerHTML = rockSvg(state.selectedOre);
@@ -130,7 +140,7 @@ function renderRoster(state: GameState): void {
     const defId = state.rosters.mine[i];
     if (defId) {
       slots.push(
-        `<div class="duck-slot" data-duck="${defId}" data-slot="${i}" title="${getDuckDef(defId).name} — click to change">${duckSvg(defId, 64)}</div>`,
+        `<div class="duck-slot" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64)}</div>`,
       );
     } else {
       slots.push(`<div class="duck-slot empty" data-slot="${i}" title="Assign a duck">+</div>`);
@@ -141,6 +151,11 @@ function renderRoster(state: GameState): void {
     slot.addEventListener("click", () =>
       openRosterPicker(state, "mine", Number(slot.dataset.slot)),
     );
+    const defId = slot.dataset.duck;
+    if (defId) {
+      const duck = state.ducks.find((d) => d.defId === defId);
+      if (duck) attachTooltip(slot, () => duckTooltipHtml(duck));
+    }
   });
   lastRosterKey = rosterKey(state);
 }
@@ -155,4 +170,5 @@ export function renderMinePanel(state: GameState): void {
     .filter((ore) => state.ores[ore] > 0)
     .map((ore) => `<span class="ore-counter">${ORE_NAMES[ore]}: ${fmt(state.ores[ore])}</span>`)
     .join("");
+  tickerEl.textContent = `${state.rosters.mine.length} mining`;
 }

@@ -42,7 +42,10 @@ export function createInitialState(): GameState {
       teamMaxHp: 0,
       retryAt: 0,
     },
-    settings: { darkMode: false },
+    settings: {
+      darkMode: false,
+      panelsMinimized: { mine: false, tree: false, arena: false },
+    },
     lastSaved: now,
     createdAt: now,
   };
@@ -106,6 +109,11 @@ export function assignToRoster(
   }
   emit("roster", {});
   return true;
+}
+
+export function toggleFavorite(state: GameState, defId: string): void {
+  const duck = state.ducks.find((d) => d.defId === defId);
+  if (duck) duck.favorite = !duck.favorite;
 }
 
 // Aggregates base values, purchased skill nodes, rostered duck passives, and

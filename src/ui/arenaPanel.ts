@@ -1,11 +1,11 @@
 import { enemyAttackAt, isBossWave } from "../game/arena";
-import { getDuckDef } from "../game/ducks";
 import { on } from "../game/events";
 import { getStats } from "../game/state";
 import type { GameState } from "../game/types";
-import { duckSvg } from "./duckArt";
+import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { fmt } from "./format";
 import { openRosterPicker } from "./rosterPicker";
+import { attachTooltip } from "./tooltip";
 
 const ENEMY_NAMES = ["Pond Slime", "Angry Goose", "Breadcrumb Golem", "Rubber Shark"];
 const BOSS_NAME = "The Pondlord";
@@ -21,13 +21,14 @@ let teamBarEl: HTMLElement;
 let teamBarLabelEl: HTMLElement;
 let duckRowEl: HTMLElement;
 let overlayEl: HTMLElement;
+let tickerEl: HTMLElement;
 let lastRosterKey = "";
 let lastEnemyKey = "";
 
 export function initArenaPanel(root: HTMLElement, state: GameState): void {
   panel = root;
   panel.innerHTML = `
-    <h2>Arena</h2>
+    <h2>Arena <span class="panel-ticker" id="arena-ticker"></span></h2>
     <div class="panel-body arena-body">
       <div class="arena-enemy">
         <div class="enemy-name" id="enemy-name"></div>
@@ -49,6 +50,7 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
   teamBarLabelEl = panel.querySelector("#team-hp-label")!;
   duckRowEl = panel.querySelector("#arena-ducks")!;
   overlayEl = panel.querySelector("#arena-overlay")!;
+  tickerEl = panel.querySelector("#arena-ticker")!;
 
   renderRoster(state);
   renderEnemy(state);
@@ -104,7 +106,7 @@ function renderRoster(state: GameState): void {
     const defId = state.rosters.arena[i];
     if (defId) {
       slots.push(
-        `<div class="duck-slot fighter" data-duck="${defId}" data-slot="${i}" title="${getDuckDef(defId).name} — click to change">${duckSvg(defId, 64)}</div>`,
+        `<div class="duck-slot fighter" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64)}</div>`,
       );
     } else {
       slots.push(`<div class="duck-slot empty" data-slot="${i}" title="Assign a duck">+</div>`);
@@ -115,6 +117,11 @@ function renderRoster(state: GameState): void {
     slot.addEventListener("click", () =>
       openRosterPicker(state, "arena", Number(slot.dataset.slot)),
     );
+    const defId = slot.dataset.duck;
+    if (defId) {
+      const duck = state.ducks.find((d) => d.defId === defId);
+      if (duck) attachTooltip(slot, () => duckTooltipHtml(duck));
+    }
   });
   lastRosterKey = rosterKey(state);
 }
@@ -122,6 +129,7 @@ function renderRoster(state: GameState): void {
 export function renderArenaPanel(state: GameState): void {
   if (rosterKey(state) !== lastRosterKey) renderRoster(state);
   if (String(state.arena.wave) !== lastEnemyKey) renderEnemy(state);
+  tickerEl.textContent = `Wave ${state.arena.wave}`;
 
   const a = state.arena;
   enemyBarEl.style.width = `${a.enemyMaxHp > 0 ? Math.max((a.enemyHp / a.enemyMaxHp) * 100, 0) : 0}%`;

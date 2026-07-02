@@ -1,5 +1,5 @@
-import { getDuckDef } from "../game/ducks";
-import type { Rarity } from "../game/types";
+import { attackDamageOf, getDuckDef, miningPowerOf } from "../game/ducks";
+import type { OwnedDuck, Rarity } from "../game/types";
 
 const RARITY_RING: Record<Rarity, string> = {
   common: "#9e9e9e",
@@ -60,4 +60,30 @@ export function duckSvg(defId: string, size: number): string {
     <circle cx="84" cy="44" r="2.4" fill="#1a1a1a"/>
     ${accessory}
   </svg>`;
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  miner: "Miner",
+  fighter: "Fighter",
+  hybrid: "Hybrid",
+};
+
+// Shared tooltip body for every place a duck is rendered: name, rarity,
+// role, level, and its current effective stats.
+export function duckTooltipHtml(duck: OwnedDuck): string {
+  const def = getDuckDef(duck.defId);
+  const parts = [`<b>${def.name}</b> <span class="tt-rarity rarity-${def.rarity}">${def.rarity}</span>`];
+  parts.push(`<div class="tt-meta">${ROLE_LABEL[def.role]} · Level ${duck.level}</div>`);
+  const stats: string[] = [];
+  if (def.role !== "fighter") stats.push(`Mining ${miningPowerOf(duck).toFixed(2)}`);
+  if (def.role !== "miner") {
+    stats.push(`Attack ${attackDamageOf(duck).toFixed(2)}`);
+    stats.push(`HP ${def.hp}`);
+    stats.push(`Defense ${def.defense}`);
+  }
+  if (def.critChanceBonus) stats.push(`Crit +${Math.round(def.critChanceBonus * 100)}%`);
+  if (def.critDamageBonus) stats.push(`Crit dmg +${def.critDamageBonus.toFixed(2)}x`);
+  parts.push(`<div class="tt-stats">${stats.join(" · ")}</div>`);
+  if (def.passive) parts.push(`<div class="tt-passive">Passive: ${def.passive}</div>`);
+  return parts.join("");
 }
