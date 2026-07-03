@@ -515,3 +515,121 @@ button:disabled {
   border-image: var(--rarity-divine-grad) 1;
   box-shadow: 0 3px 0 var(--shadow-drop), 0 0 18px color-mix(in srgb, var(--rarity-divine) 65%, transparent);
 }
+
+/* ================= Rarity shape signatures (§4, §9) =================
+   duckArt.ts's duckSvg() wraps its <svg> in a `.duck-svg-wrap` span so the
+   glow (a CSS filter, not an SVG filter) and the divine spin can be applied
+   without touching per-frame SVG attributes. Ring geometry itself (extra
+   rings, studs, crown, flame scallops, rays) is built in duckArt.ts and
+   colored via the --rarity-* tokens directly on SVG fill/stroke — this
+   block only owns glue: glow classes, reveal-only animations, and the
+   crest badge / ray-burst chrome that lives outside the SVG. */
+
+.duck-svg-wrap {
+  display: inline-block;
+  line-height: 0;
+}
+
+.duck-svg-wrap svg {
+  overflow: visible;
+}
+
+/* Epic/legendary/mythic/divine glows: drop-shadow keeps this off the SVG
+   filter pipeline (cheap, and unaffected by viewBox clipping). */
+.rarity-sig-epic svg {
+  filter: drop-shadow(0 0 12px var(--rarity-epic));
+}
+
+.rarity-sig-legendary svg {
+  filter: drop-shadow(0 0 16px var(--rarity-legendary));
+}
+
+.rarity-sig-mythic svg {
+  filter: drop-shadow(0 0 18px var(--rarity-mythic));
+}
+
+.rarity-sig-divine svg {
+  filter: drop-shadow(0 0 22px var(--rarity-divine));
+}
+
+/* Divine: slow rotating iridescent conic ring behind the portrait.
+   transform-only per §8; respects the global prefers-reduced-motion rule
+   in tokens.css which zeroes animation-duration. */
+.duck-svg-divine-spin {
+  position: relative;
+}
+
+.duck-svg-divine-spin::before {
+  content: "";
+  position: absolute;
+  inset: -6%;
+  border-radius: 50%;
+  background: var(--rarity-divine-grad);
+  opacity: 0.55;
+  z-index: -1;
+  animation: rarity-divine-rotate 6s linear infinite;
+}
+
+@keyframes rarity-divine-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---- Pack-reveal drama (§4): flip (card-flip, style.css) -> ring draw-on
+   -> signature pop (--ease-bounce) -> glow (rarity-sig-* above). ---- */
+
+.duck-reveal-ring {
+  stroke-dasharray: 360;
+  stroke-dashoffset: 360;
+  animation: rarity-ring-draw var(--dur-3) var(--ease-out) 0.2s forwards;
+}
+
+@keyframes rarity-ring-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.duck-reveal-pop {
+  transform-origin: center;
+  animation: rarity-sig-pop var(--dur-3) var(--ease-bounce) 0.5s backwards;
+}
+
+@keyframes rarity-sig-pop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Divine pack-reveal only: one absolutely-positioned full-screen soft ray
+   burst, transform/opacity only, removed on animationend (see shopModal.ts). */
+.duck-ray-burst {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--rarity-divine) 55%, transparent) 0%, transparent 65%);
+  opacity: 0;
+  transform: scale(0.6);
+  animation: rarity-ray-burst 0.9s var(--ease-out) 0.5s forwards;
+}
+
+@keyframes rarity-ray-burst {
+  0% { opacity: 0; transform: scale(0.6); }
+  35% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+/* ---- Crest badge (legendary+ card frames): small crown/flame/ray glyph
+   pinned to the top of the frame, reusing the rarity token colors. ---- */
+
+.rarity-crest {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  filter: drop-shadow(0 1px 0 var(--shadow-drop));
+}
+
+.reveal-card,
+.inv-card-art {
+  position: relative;
+}

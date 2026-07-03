@@ -275,7 +275,7 @@ function rebuildPondRoster(state: GameState): void {
     const defId = state.rosters.pond[i];
     if (defId) {
       const ascension = state.ducks.find((d) => d.defId === defId)?.ascension ?? 0;
-      slots.push(`<div class="duck-slot pond-duck" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 40, ascension)}</div>`);
+      slots.push(`<div class="duck-slot pond-duck" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 40, { ascension, ringed: false })}</div>`);
     } else {
       slots.push(`<div class="duck-slot empty pond-empty" data-slot="${i}" title="Assign a duck to swim">+</div>`);
     }

@@ -5,7 +5,7 @@ import { ascendDuck, ascensionCost, canAscend, upgradeCost } from "../game/packs
 import { toggleFavorite } from "../game/state";
 import { TRAITS } from "../game/traits";
 import type { EquipSlot, EquipmentItem, GameState, Rarity } from "../game/types";
-import { duckSvg } from "./duckArt";
+import { duckSvg, rarityCrestBadge } from "./duckArt";
 import { attachTooltip } from "./tooltip";
 
 const SLOT_LABEL: Record<EquipSlot, string> = { weapon: "Weapon", armor: "Armor", charm: "Charm" };
@@ -183,7 +183,7 @@ function renderCard(): void {
     .join("");
 
   card.innerHTML = `
-    <div class="inv-card-art">${duckSvg(duck.defId, 96, duck.ascension ?? 0)}</div>
+    <div class="inv-card-art">${rarityCrestBadge(def.rarity)}${duckSvg(duck.defId, 96, duck.ascension ?? 0)}</div>
     <div class="inv-card-body">
       <div class="inv-card-title">
         <b>${def.name}</b>

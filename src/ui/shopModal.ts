@@ -4,7 +4,7 @@ import { canUpgrade, openPack, packPrice, packUnlocked, upgradeCost, upgradeDuck
 import { buyFromShardShop, currentShardShopSlots, msUntilRestock } from "../game/shardshop";
 import { toggleFavorite } from "../game/state";
 import type { GameState, PackId, Rng } from "../game/types";
-import { duckSvg, duckTooltipHtml } from "./duckArt";
+import { duckSvg, duckTooltipHtml, rarityCrestBadge } from "./duckArt";
 import { fmt } from "./format";
 import { attachTooltip } from "./tooltip";
 
@@ -172,15 +172,23 @@ function buyPack(pack: PackId): void {
       ? `💥 PACK CRIT! +${opened.bonusPacks} free ${PACK_LABELS[pack].name}${opened.bonusPacks > 1 ? "s" : ""}!`
       : "";
   reveal.innerHTML = opened.results
-    .map(
-      (r, i) => `
+    .map((r, i) => {
+      const rayBurst = r.rarity === "divine" ? `<span class="duck-ray-burst" aria-hidden="true"></span>` : "";
+      return `
       <div class="reveal-card rarity-${r.rarity}" style="animation-delay: ${Math.min(i * 140, 2000)}ms">
-        ${duckSvg(r.defId, 64)}
+        ${rayBurst}
+        ${rarityCrestBadge(r.rarity)}
+        ${duckSvg(r.defId, 64, { reveal: true })}
         <b>${getDuckDef(r.defId).name}</b>
         <small>${r.isNew ? `<span class="new-tag">NEW!</span>` : `+${r.shardsGained} shard${r.shardsGained === 1 ? "" : "s"}`}</small>
-      </div>`,
-    )
+      </div>`;
+    })
     .join("");
+  // One-shot ray burst elements clean themselves up after the animation so
+  // they never linger in the DOM (transform/opacity only, per §8).
+  reveal.querySelectorAll<HTMLElement>(".duck-ray-burst").forEach((el) => {
+    el.addEventListener("animationend", () => el.remove());
+  });
   renderPackButtons();
   renderCollection();
 }

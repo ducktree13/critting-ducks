@@ -2,16 +2,6 @@ import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../g
 import { TRAITS } from "../game/traits";
 import type { GameState, OwnedDuck, Rarity } from "../game/types";
 
-const RARITY_RING: Record<Rarity, string> = {
-  common: "#9e9e9e",
-  uncommon: "#4caf50",
-  rare: "#2196f3",
-  epic: "#9c27b0",
-  legendary: "#f5c518",
-  mythic: "#c0392b",
-  divine: "#e8f4ff",
-};
-
 interface DuckLook {
   body: string;
   beak: string;
@@ -58,12 +48,123 @@ function proceduralLook(defId: string): DuckLook {
 
 const STAR_X = [30, 60, 90];
 
+// ---- Rarity shape signatures (design/STYLE.md §4) ----
+// Hue is never the only cue: each tier gets a distinct ring construction
+// built programmatically (not 7 duplicated SVG strings). Ring colors come
+// from the --rarity-* CSS custom properties, which resolve fine inline on
+// SVG `fill`/`stroke` attributes. Glows are CSS `filter: drop-shadow(...)`
+// classes (see components.css) applied to the wrapping element, not SVG
+// filters, so they stay cheap and reduced-motion-safe.
+
+// One reveal-only pass: adds a stroke-dasharray "draw-on" class name so the
+// shop's pack-reveal cards can animate the ring appearing (see components.css
+// `.duck-reveal-ring`). Normal renders skip it.
+function ringDrawOnAttrs(reveal: boolean): string {
+  return reveal ? ` class="duck-reveal-ring"` : "";
+}
+
+// Builds the <g> of ring/signature markup for a tier, centered on (60,60)
+// with the portrait circle at r=56. Returns { markup, glowClass }.
+function raritySignature(rarity: Rarity, reveal: boolean): { markup: string; glowClass: string } {
+  const c = `var(--rarity-${rarity})`;
+  const drawOn = ringDrawOnAttrs(reveal);
+  const popClass = reveal ? " duck-reveal-pop" : "";
+
+  switch (rarity) {
+    case "common":
+      return {
+        markup: `<circle cx="60" cy="60" r="56" fill="none" stroke="${c}" stroke-width="3"${drawOn}/>`,
+        glowClass: "",
+      };
+    case "uncommon":
+      return {
+        markup: `
+          <circle cx="60" cy="60" r="56" fill="none" stroke="${c}" stroke-width="3"${drawOn}/>
+          <path d="M60 2 q9 8 0 16 q-9 -8 0 -16 z" fill="${c}" class="rarity-sig-leaf${popClass}"/>`,
+        glowClass: "",
+      };
+    case "rare":
+      return {
+        markup: `
+          <circle cx="60" cy="60" r="56" fill="none" stroke="${c}" stroke-width="3"${drawOn}/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="${c}" stroke-width="2"${drawOn}/>`,
+        glowClass: "",
+      };
+    case "epic": {
+      const studAngles = [0, 90, 180, 270];
+      const studs = studAngles
+        .map((deg) => {
+          const rad = (deg * Math.PI) / 180;
+          const x = 60 + 56 * Math.sin(rad);
+          const y = 60 - 56 * Math.cos(rad);
+          return `<rect x="${x - 3.2}" y="${y - 3.2}" width="6.4" height="6.4" fill="${c}" transform="rotate(45 ${x} ${y})" class="rarity-sig-stud${popClass}"/>`;
+        })
+        .join("");
+      return {
+        markup: `
+          <circle cx="60" cy="60" r="56" fill="none" stroke="${c}" stroke-width="4"${drawOn}/>
+          ${studs}`,
+        glowClass: "rarity-sig-epic",
+      };
+    }
+    case "legendary":
+      return {
+        markup: `
+          <circle cx="60" cy="60" r="56" fill="none" stroke="${c}" stroke-width="5"${drawOn}/>
+          <path d="M46 8 l4 10 l10 -8 l-2 12 h16 l-2 -12 l10 8 l4 -10 l-2 20 h-36 z" fill="${c}" class="rarity-sig-crown${popClass}"/>`,
+        glowClass: "rarity-sig-legendary",
+      };
+    case "mythic": {
+      const scallops = Array.from({ length: 10 }, (_, i) => {
+        const deg = i * 36;
+        const rad = (deg * Math.PI) / 180;
+        const x = 60 + 56 * Math.sin(rad);
+        const y = 60 - 56 * Math.cos(rad);
+        return `<path d="M${x} ${y - 6} q6 4 0 12 q-6 -4 0 -12 z" fill="${c}" transform="rotate(${deg} ${x} ${y})"/>`;
+      }).join("");
+      return {
+        markup: `
+          <circle cx="60" cy="60" r="56" fill="none" stroke="${c}" stroke-width="5"${drawOn}/>
+          <g class="rarity-sig-flames${popClass}">${scallops}</g>`,
+        glowClass: "rarity-sig-mythic",
+      };
+    }
+    case "divine": {
+      const rays = Array.from({ length: 8 }, (_, i) => {
+        const deg = i * 45;
+        return `<polygon points="60,60 57,4 63,4" fill="${c}" opacity="0.55" transform="rotate(${deg} 60 60)"/>`;
+      }).join("");
+      return {
+        markup: `
+          <g class="rarity-sig-rays${popClass}">${rays}</g>
+          <circle cx="60" cy="60" r="56" fill="none" stroke="${c}" stroke-width="4"${drawOn}/>`,
+        glowClass: "rarity-sig-divine",
+      };
+    }
+  }
+}
+
+export interface DuckSvgOptions {
+  ascension?: number;
+  /** Render the rarity ring/signature (inventory, cards, pickers). Scene
+   * roster slots (mine/arena/pond) pass ringed: false — ducks standing in
+   * scenes carry no ring (design/STYLE.md §4). Defaults to true. */
+  ringed?: boolean;
+  /** Adds the one-shot pack-reveal draw-on/pop-in animation classes. */
+  reveal?: boolean;
+}
+
 // One parametric duck: body ellipse, wing arc, head circle, beak triangle,
-// eye dot, rarity ring, optional accessory, ascension star pips.
-export function duckSvg(defId: string, size: number, ascension = 0): string {
+// eye dot, optional rarity ring + shape signature, optional accessory,
+// ascension star pips.
+export function duckSvg(defId: string, size: number, ascensionOrOpts: number | DuckSvgOptions = 0): string {
+  const opts: DuckSvgOptions = typeof ascensionOrOpts === "number" ? { ascension: ascensionOrOpts } : ascensionOrOpts;
+  const ascension = opts.ascension ?? 0;
+  const ringed = opts.ringed ?? true;
+  const reveal = opts.reveal ?? false;
+
   const def = getDuckDef(defId);
   const look = LOOKS[defId] ?? proceduralLook(defId);
-  const ring = RARITY_RING[def.rarity];
 
   const accessory =
     look.accessory === "scythe"
@@ -80,8 +181,13 @@ export function duckSvg(defId: string, size: number, ascension = 0): string {
     `<text x="${STAR_X[i]}" y="14" font-size="16" text-anchor="middle" fill="#f5c518" stroke="#a87c00" stroke-width="0.5">★</text>`,
   ).join("");
 
-  return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" role="img" aria-label="${def.name}">
-    <circle cx="60" cy="60" r="56" fill="none" stroke="${ring}" stroke-width="4"/>
+  const sig = ringed ? raritySignature(def.rarity, reveal) : null;
+  const wrapperClass = ["duck-svg-wrap", sig?.glowClass, def.rarity === "divine" && ringed ? "duck-svg-divine-spin" : ""]
+    .filter(Boolean)
+    .join(" ");
+
+  const svg = `<svg viewBox="0 0 120 120" width="${size}" height="${size}" role="img" aria-label="${def.name}">
+    ${sig ? sig.markup : ""}
     <ellipse cx="56" cy="76" rx="30" ry="21" fill="${look.body}"/>
     <path d="M45 73 q13 -5 24 2 q-9 11 -24 5 z" fill="rgba(0,0,0,0.15)"/>
     <circle cx="80" cy="48" r="14" fill="${look.body}"/>
@@ -90,6 +196,21 @@ export function duckSvg(defId: string, size: number, ascension = 0): string {
     ${accessory}
     ${stars}
   </svg>`;
+
+  return wrapperClass ? `<span class="${wrapperClass}">${svg}</span>` : svg;
+}
+
+// Small crest badge markup for legendary+ card frames (inventory duck card,
+// pack reveal card). Reuses the same crown/flame/ray language as the ring
+// signature at a much smaller scale. Returns "" below legendary.
+export function rarityCrestBadge(rarity: Rarity): string {
+  if (rarity !== "legendary" && rarity !== "mythic" && rarity !== "divine") return "";
+  const c = `var(--rarity-${rarity})`;
+  return `<span class="rarity-crest rarity-crest-${rarity}" aria-hidden="true">
+    <svg viewBox="0 0 24 16" width="22" height="15">
+      <path d="M3 14 L1 3 L7 8 L12 1 L17 8 L23 3 L21 14 Z" fill="${c}"/>
+    </svg>
+  </span>`;
 }
 
 const ROLE_LABEL: Record<string, string> = {
