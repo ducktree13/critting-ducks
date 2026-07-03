@@ -75,5 +75,6 @@ export function craftItem(state: GameState, rng: Rng, recipeId: string): Equipme
   const rarity = rollWeightedRarity(rng, recipe.rarityWeights);
   const item = buildEquipment(rng, recipe.slot, rarity);
   state.equipment.push(item);
+  state.lifetime.gearCrafted += 1;
   return item;
 }

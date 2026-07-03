@@ -64,6 +64,7 @@ function rollDuckOfRarity(state: GameState, rng: Rng, rarity: Rarity): string {
 // packs do (dupe -> shards, with shard-cap overflow into Shard Points).
 export function grantDuck(state: GameState, defId: string): GachaResult {
   const rarity = getDuckDef(defId).rarity;
+  if (rarity === "divine") state.lifetime.divinePulls += 1;
   const owned = state.ducks.find((d) => d.defId === defId);
   if (owned) {
     const gained = GACHA.dupeShards[rarity];
@@ -114,7 +115,7 @@ export function openPack(
   if (state.packCredits[pack] > 0) state.packCredits[pack] -= 1;
   else state.gold -= price;
 
-  const critChance = getStats(state).critChance;
+  const packCritChance = getStats(state).packCritChance;
   const results: GachaResult[] = [];
   let bonusPacks = 0;
 
@@ -123,7 +124,7 @@ export function openPack(
     packsToOpen -= 1;
     state.lifetime.packs += 1;
     results.push(...rollOnePack(state, rng, pack));
-    if (bonusPacks < GACHA.packCritMaxBonus && rng.next() < critChance) {
+    if (bonusPacks < GACHA.packCritMaxBonus && rng.next() < packCritChance) {
       bonusPacks += 1;
       packsToOpen += 1;
     }

@@ -55,6 +55,7 @@ function victory(state: GameState, rng: Rng, nowMs: number): void {
   }
   rollMaterialDrop(state, rng, wave, boss);
   rollEquipmentDrop(state, rng, boss);
+  if (boss) state.lifetime.bossesDefeated += 1;
 
   emit("wave", { wave, boss, gold, xp });
   arena.wave += 1;

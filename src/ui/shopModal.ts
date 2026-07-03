@@ -49,6 +49,7 @@ export function initShopModal(state: GameState, rng: Rng, actions: SaveActions):
         <h4>Shard Shop</h4>
         <small id="shard-shop-restock"></small>
       </div>
+      <small class="shard-shop-hint">Earn Shard Points from duplicate ducks.</small>
       <div class="shard-shop-slots" id="shard-shop-slots"></div>
       <div class="shop-collection" id="shop-collection"></div>
       <div class="shop-settings">

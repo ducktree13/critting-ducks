@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { buy, canBuy, isVisible, SKILL_NODES } from "./skilltree";
+import { buy, canBuy, isVisible, nodesForTree, SKILL_NODES } from "./skilltree";
 import { createInitialState, refreshStats } from "./state";
 import type { GameState } from "./types";
 
@@ -112,6 +112,33 @@ describe("effect folding in computeStats", () => {
   it("caps full-tree crit chance contributions within the cap", () => {
     state.skillNodes = ["crit1", "crit2", "crit3", "crit4", "crit5"];
     expect(refreshStats(state, 0).critChance).toBeCloseTo(0.7); // 0.30 + 0.40
+  });
+
+  it("folds packCrit nodes into packCritChance, independent of critChance", () => {
+    state.skillNodes = ["x2_luckywrapping", "x2_goldenseams", "p2_luckycharms", "p2_fortunesblessing"];
+    const s = refreshStats(state, 0);
+    expect(s.packCritChance).toBeCloseTo(0.02 + 0.02 + 0.03 + 0.02 + 0.03); // base 0.02 + four branch nodes
+    expect(s.critChance).toBeCloseTo(0.3); // untouched by packCrit nodes
+  });
+});
+
+describe("Act-2 pack-crit branch nodes", () => {
+  it("crit2 and passive2 each seat exactly 16 nodes (14 chain + 2 branch)", () => {
+    expect(nodesForTree("crit2")).toHaveLength(16);
+    expect(nodesForTree("passive2")).toHaveLength(16);
+  });
+
+  it("mining2 and combat2 stay at 14 (no branch added)", () => {
+    expect(nodesForTree("mining2")).toHaveLength(14);
+    expect(nodesForTree("combat2")).toHaveLength(14);
+  });
+
+  it("fully-built pack-crit nodes bring packCritChance to 12% (2% base + 10%)", () => {
+    state.skillNodes = [
+      "x2_luckywrapping", "x2_goldenseams",
+      "p2_luckycharms", "p2_fortunesblessing",
+    ];
+    expect(refreshStats(state, 0).packCritChance).toBeCloseTo(0.12);
   });
 });
 

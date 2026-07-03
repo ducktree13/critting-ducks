@@ -60,6 +60,8 @@ function nodeType(effect: NodeEffect): NodeType {
       return passive;
     case "buffDuration":
       return crit;
+    case "packCrit":
+      return crit;
     case "stat":
       switch (effect.stat) {
         case "critChance":

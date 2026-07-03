@@ -47,6 +47,15 @@ export function openAchievements(): void {
   const list = overlay.querySelector("#ach-list")!;
   list.innerHTML = ACHIEVEMENTS.map((def) => {
     const done = gameState.achievementsCompleted.includes(def.id);
+    if (def.hidden && !done) {
+      return `
+      <div class="ach-row ach-hidden">
+        <div class="ach-info">
+          <b>???</b>
+          <small>Hidden achievement</small>
+        </div>
+      </div>`;
+    }
     const current = Math.min(def.metric(gameState), def.target);
     const pct = Math.min((current / def.target) * 100, 100);
     return `

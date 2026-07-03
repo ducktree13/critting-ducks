@@ -47,6 +47,14 @@ const ACT1_NODES: readonly SkillNode[] = [
 const ACT2_COSTS = [50_000, 75_000, 120_000, 180_000, 270_000, 400_000, 600_000, 900_000, 1_300_000, 1_900_000, 2_700_000, 3_800_000, 5_000_000, 7_000_000];
 const ACT2_LEVELS = [15, 17, 19, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51];
 
+// Extra costs/levels for the two branch-off pack-crit nodes each of
+// crit2/passive2 grows (16 nodes total per tree — the seating cap). Priced
+// in line with their neighboring chain nodes.
+const PACK_CRIT_BRANCH = [
+  { cost: 800_000, minLevel: 28 },
+  { cost: 2_100_000, minLevel: 40 },
+] as const;
+
 // Each Act-2 tree renders in its own independent 400x600 viewBox, so every
 // chain is centered on the same x — a single column growing upward.
 function act2Chain(
@@ -116,6 +124,34 @@ const CRIT2_NODES = act2Chain("crit2", [
   { id: "x2_capstone", name: "Critical Singularity", desc: "+10% crit chance", effect: { kind: "stat", stat: "critChance", add: 0.1 } },
 ]);
 
+// Two pack-crit branch nodes per tree (crit2 + passive2), each hung off an
+// existing chain leaf so every tree still seats at exactly 16 nodes (14
+// chain + 2 branch = the Act-2 procedural-tree anchor cap, treePanel.ts).
+function packCritBranch(
+  treeId: Act2TreeId,
+  requiresId: string,
+  steps: readonly { id: string; name: string; desc: string; add: number }[],
+): SkillNode[] {
+  return steps.map((step, i) => ({
+    id: step.id,
+    name: step.name,
+    desc: step.desc,
+    cost: PACK_CRIT_BRANCH[i].cost,
+    minLevel: PACK_CRIT_BRANCH[i].minLevel,
+    requires: i === 0 ? requiresId : steps[i - 1].id,
+    branch: "trunk",
+    treeId,
+    x: 260,
+    y: 400 - i * 38,
+    effect: { kind: "packCrit", add: step.add },
+  }));
+}
+
+const CRIT2_PACKCRIT_NODES = packCritBranch("crit2", "x2_critdmg5", [
+  { id: "x2_luckywrapping", name: "Lucky Wrapping", desc: "+2% pack crit chance", add: 0.02 },
+  { id: "x2_goldenseams", name: "Golden Seams", desc: "+3% pack crit chance", add: 0.03 },
+]);
+
 const PASSIVE2_NODES = act2Chain("passive2", [
   { id: "p2_gold1", name: "Efficient Trade", desc: "+15% gold", effect: { kind: "stat", stat: "goldMult", mult: 1.15 } },
   { id: "p2_xp1", name: "Ancient Wisdom", desc: "+15% XP", effect: { kind: "stat", stat: "xpMult", mult: 1.15 } },
@@ -133,12 +169,19 @@ const PASSIVE2_NODES = act2Chain("passive2", [
   { id: "p2_capstone", name: "Passive Nirvana", desc: "+100% gold and XP", effect: { kind: "stat", stat: "goldMult", mult: 2 } },
 ]);
 
+const PASSIVE2_PACKCRIT_NODES = packCritBranch("passive2", "p2_gold4", [
+  { id: "p2_luckycharms", name: "Lucky Charms", desc: "+2% pack crit chance", add: 0.02 },
+  { id: "p2_fortunesblessing", name: "Fortune's Blessing", desc: "+3% pack crit chance", add: 0.03 },
+]);
+
 export const SKILL_NODES: readonly SkillNode[] = [
   ...ACT1_NODES,
   ...MINING2_NODES,
   ...COMBAT2_NODES,
   ...CRIT2_NODES,
+  ...CRIT2_PACKCRIT_NODES,
   ...PASSIVE2_NODES,
+  ...PASSIVE2_PACKCRIT_NODES,
 ];
 
 export const ACT2_TREE_IDS: readonly Act2TreeId[] = ["mining2", "combat2", "crit2", "passive2"];

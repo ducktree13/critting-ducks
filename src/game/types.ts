@@ -130,7 +130,17 @@ export interface GameState {
   gold: number;
   xp: number;
   level: number;
-  lifetime: { gold: number; crits: number; hits: number; packs: number };
+  lifetime: {
+    gold: number;
+    crits: number;
+    hits: number;
+    packs: number;
+    leavesClicked: number;
+    expeditionsCompleted: number;
+    gearCrafted: number;
+    bossesDefeated: number;
+    divinePulls: number;
+  };
   ores: Record<OreId, number>;
   selectedOre: OreId;
   ducks: OwnedDuck[];
@@ -172,7 +182,8 @@ export type NodeEffect =
   | { kind: "slot"; panel: Panel }
   | { kind: "oreUnlock"; ore: OreId }
   | { kind: "offline"; rate: number }
-  | { kind: "buffDuration"; seconds: number };
+  | { kind: "buffDuration"; seconds: number }
+  | { kind: "packCrit"; add: number };
 
 export interface SkillNode {
   id: string;
@@ -200,6 +211,7 @@ export interface LeafDrop {
 export interface DerivedStats {
   critChance: number;
   critMult: number;
+  packCritChance: number;
   orePerHit: number;
   oreMult: number;
   attackDamageMult: number;

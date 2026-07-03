@@ -882,6 +882,12 @@ main.panels {
   color: var(--muted);
 }
 
+.shard-shop-hint {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
 .shard-shop-slots {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -1596,6 +1602,14 @@ main.panels {
 
 .ach-row.done {
   border-color: var(--accent);
+}
+
+.ach-row.ach-hidden {
+  opacity: 0.65;
+}
+
+.ach-row.ach-hidden b {
+  letter-spacing: 0.1em;
 }
 
 .ach-info small {

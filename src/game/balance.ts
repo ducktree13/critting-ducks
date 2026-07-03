@@ -13,6 +13,7 @@ export const BASE_STATS = {
   critChance: 0.3,
   critChanceCap: 0.95,
   critMult: 2.0,
+  packCritChance: 0.02, // pack crits are decoupled from player critChance; gated behind Act-2 nodes
   orePerHit: 0.1, // Bill on copper ≈ 0.26 gold/sec expected
   offlineRate: 0.5,
   mineSlots: 1,
@@ -216,10 +217,11 @@ export const EXPEDITIONS = {
     epic: { hours: 24, label: "Grand Journey" },
   } as const,
   rosterSize: 3,
-  goldPerPowerPerHour: 6,
+  // +10% (rebalanced from the removed shardPointsPerPowerPerHour drip —
+  // Shard Points now come only from duck dupe overflow, PLAN2.md v2 patch).
+  goldPerPowerPerHour: 6.6,
   xpPerPowerPerHour: 2,
   materialChancePerPowerPerHour: 0.02,
-  shardPointsPerPowerPerHour: 0.15,
   packChancePerHour: 0.03, // capped below; a Standard Pack credit on success
   packChanceCap: 0.9,
   fail: {

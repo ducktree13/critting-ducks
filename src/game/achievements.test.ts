@@ -28,11 +28,24 @@ describe("checkAchievements", () => {
     expect(state.achievementsCompleted.filter((id) => id === "firstCrit")).toHaveLength(1);
   });
 
-  it("grants a shardPoints reward", () => {
+  it("grants a gold reward for a lifetime-gold achievement", () => {
     state.lifetime.gold = 1000;
+    const goldBefore = state.gold;
     checkAchievements(state);
     expect(state.achievementsCompleted).toContain("gold1k");
-    expect(state.shardPoints).toBe(10);
+    expect(state.gold).toBe(goldBefore + 200);
+  });
+
+  it("achievement rewards never grant Shard Points directly (SP comes only from dupe overflow)", () => {
+    expect(ACHIEVEMENTS.every((a) => a.reward.shardPoints === undefined)).toBe(true);
+  });
+
+  it("hidden achievements are flagged and complete like any other", () => {
+    const hidden = ACHIEVEMENTS.filter((a) => a.hidden);
+    expect(hidden.length).toBeGreaterThanOrEqual(4);
+    state.lifetime.divinePulls = 3;
+    checkAchievements(state);
+    expect(state.achievementsCompleted).toContain("divine3");
   });
 
   it("grants a packCredits reward", () => {

@@ -128,6 +128,24 @@ describe("pack crits", () => {
     expect(opened.bonusPacks).toBe(1);
     expect(opened.results).toHaveLength(2);
   });
+
+  it("uses packCritChance, not player critChance (base 2%, independent of the crit tree)", () => {
+    // Player crit chance is 0.3 by default; a roll of 0.05 would crit against
+    // critChance but must NOT trigger a pack bonus, since pack crits only
+    // check packCritChance (base 0.02) with no packCrit nodes owned.
+    refreshStats(state, 0);
+    const rng = seq([0, 0, 0.05, NO_CRIT]);
+    const opened = openPack(state, rng, "standard", 0)!;
+    expect(opened.bonusPacks).toBe(0);
+    expect(opened.results).toHaveLength(1);
+  });
+
+  it("a roll under the 2% base packCritChance grants a bonus pack with zero packCrit nodes owned", () => {
+    refreshStats(state, 0);
+    const rng = seq([0, 0, 0.01, 0, 0, NO_CRIT]);
+    const opened = openPack(state, rng, "standard", 0)!;
+    expect(opened.bonusPacks).toBe(1);
+  });
 });
 
 describe("pack credits and T100", () => {

@@ -49,6 +49,7 @@ export function clickLeaf(state: GameState, leafId: string): boolean {
   else if (leaf.kind === "xp") grantXp(state, leaf.amount);
   else grantDuck(state, LEAVES.duckId);
 
+  state.lifetime.leavesClicked += 1;
   emit("leafClicked", { kind: leaf.kind, amount: leaf.amount, isCrit: leaf.isCrit });
   return true;
 }

@@ -94,6 +94,7 @@ describe("claimExpedition", () => {
     expect(state.gold).toBeGreaterThan(goldBefore);
     expect(state.expeditions).toHaveLength(0);
     expect(isDuckOnExpedition(state, "bill")).toBe(false);
+    expect(state.lifetime.expeditionsCompleted).toBe(1);
   });
 
   it("pays a reduced amount and no materials on failure", () => {
@@ -105,9 +106,9 @@ describe("claimExpedition", () => {
     const result = claimExpedition(state, id, endsAt, ALWAYS, stats); // ALWAYS: 0 < failChance, always fails
     expect(result!.success).toBe(false);
     expect(result!.materials).toHaveLength(0);
-    expect(result!.shardPoints).toBe(0);
     expect(result!.gotPack).toBe(false);
     expect(result!.gold).toBeCloseTo(expectedGold);
+    expect(state.lifetime.expeditionsCompleted).toBe(0); // failures don't count as completed
   });
 });
 

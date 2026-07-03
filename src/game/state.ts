@@ -29,7 +29,17 @@ export function createInitialState(): GameState {
     gold: 0,
     xp: 0,
     level: 1,
-    lifetime: { gold: 0, crits: 0, hits: 0, packs: 0 },
+    lifetime: {
+      gold: 0,
+      crits: 0,
+      hits: 0,
+      packs: 0,
+      leavesClicked: 0,
+      expeditionsCompleted: 0,
+      gearCrafted: 0,
+      bossesDefeated: 0,
+      divinePulls: 0,
+    },
     ores,
     selectedOre: "copper",
     ducks: [makeOwnedDuck("bill")],
@@ -168,6 +178,7 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
   const stats: DerivedStats = {
     critChance: BASE_STATS.critChance,
     critMult: BASE_STATS.critMult,
+    packCritChance: BASE_STATS.packCritChance,
     orePerHit: BASE_STATS.orePerHit,
     oreMult: 1,
     attackDamageMult: 1,
@@ -209,6 +220,9 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
         break;
       case "buffDuration":
         stats.buffDurationSec = effect.seconds;
+        break;
+      case "packCrit":
+        stats.packCritChance += effect.add;
         break;
     }
   }

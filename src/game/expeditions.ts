@@ -76,7 +76,6 @@ export interface ExpeditionResult {
   isCrit: boolean;
   gold: number;
   xp: number;
-  shardPoints: number;
   materials: MaterialId[];
   gotPack: boolean;
 }
@@ -106,7 +105,6 @@ export function claimExpedition(
   const gold = baseGold * payoutMult;
   const xp = baseXp * payoutMult;
   const materials: MaterialId[] = [];
-  let shardPoints = 0;
   let gotPack = false;
 
   if (success) {
@@ -114,18 +112,18 @@ export function claimExpedition(
     if (rng.next() < materialChance) {
       materials.push(MATERIAL_BY_WAVE_INDEX[Math.floor(rng.next() * MATERIAL_BY_WAVE_INDEX.length)]);
     }
-    shardPoints = Math.round(power * EXPEDITIONS.shardPointsPerPowerPerHour * hours * critMult);
     const packChance = Math.min(EXPEDITIONS.packChancePerHour * hours * critMult, EXPEDITIONS.packChanceCap);
     gotPack = rng.next() < packChance;
   }
 
-  applyReward(state, { gold, shardPoints, packCredits: gotPack ? { standard: 1 } : undefined });
+  applyReward(state, { gold, packCredits: gotPack ? { standard: 1 } : undefined });
   grantXp(state, xp);
   for (const material of materials) state.materials[material] += 1;
+  if (success) state.lifetime.expeditionsCompleted += 1;
 
   state.expeditions = state.expeditions.filter((e) => e.id !== expeditionId);
   emit("expeditionClaimed", { success, isCrit, gold, xp });
-  return { success, isCrit, gold, xp, shardPoints, materials, gotPack };
+  return { success, isCrit, gold, xp, materials, gotPack };
 }
 
 // Fires a one-time "expeditionReady" event per journey the instant its

@@ -31,7 +31,7 @@ export const MISSION_TEMPLATES: readonly MissionTemplate[] = [
     metric: (s) => s.lifetime.gold,
     increment: (s) => Math.max(50, Math.round(50 * Math.pow(1.6, s.level - 1))),
     desc: (n) => `Earn ${Math.round(n)} more gold`,
-    reward: () => ({ shardPoints: 5 }),
+    reward: (n) => ({ gold: Math.round(n * 0.5) }),
   },
   {
     id: "treeNodes",
@@ -67,7 +67,7 @@ export const MISSION_TEMPLATES: readonly MissionTemplate[] = [
     metric: (s) => s.streak.best,
     increment: () => 5,
     desc: (n) => `Beat your best streak by ${n}`,
-    reward: () => ({ shardPoints: 10 }),
+    reward: () => ({ gold: 250 }),
   },
 ];
 
