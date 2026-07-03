@@ -633,3 +633,332 @@ button:disabled {
 .inv-card-art {
   position: relative;
 }
+
+/* ============================================================
+   CRIT & STREAK ESCALATION LADDER — design/STYLE.md §7, motion
+   rules §8. Pools are built once in src/ui/floaters.ts and
+   src/ui/hud.ts; this file only styles the pooled nodes and the
+   heat-state/tier-cross/QUACKENING sequencing classes. All
+   per-frame animation here is transform/opacity only.
+   ============================================================ */
+
+/* ---- Floaters (pool of 12, round-robin) ---- */
+
+.floater {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  font-family: var(--font-body);
+  font-weight: 800;
+  color: var(--text);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.floater.anim {
+  animation: floater-normal 480ms var(--ease-out) forwards;
+}
+
+@keyframes floater-normal {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  59% { opacity: 1; }
+  100% { transform: translateY(-36px) scale(1); opacity: 0; }
+}
+
+.floater.crit {
+  font-family: var(--font-display);
+  color: var(--crit);
+  text-shadow: 0 0 10px var(--crit-glow), 0 0 4px var(--crit-glow);
+  font-size: 1.3rem;
+}
+
+.floater.crit.anim {
+  animation: floater-crit 640ms var(--ease-out) forwards;
+}
+
+@keyframes floater-crit {
+  0% { transform: translateY(0) scale(1.45); opacity: 1; }
+  19% { transform: translateY(-8px) scale(1); opacity: 1; }
+  60% { opacity: 1; }
+  100% { transform: translateY(-36px) scale(1); opacity: 0; }
+}
+
+/* Crit wedge burst: 6-particle radial pop, 300ms, pooled. */
+
+.crit-particle {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 2px;
+  background: var(--crit);
+  pointer-events: none;
+  z-index: 9;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.crit-particle.anim {
+  animation: crit-particle-burst 300ms var(--ease-out) forwards;
+}
+
+@keyframes crit-particle-burst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0; }
+}
+
+/* ---- Streak heat ladder ---- */
+
+.streak-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  border-radius: var(--radius-m);
+  border: var(--border-w) solid var(--surface-border);
+  transition: border-color 400ms var(--ease-snap), box-shadow 400ms var(--ease-snap),
+    background 400ms var(--ease-snap);
+}
+
+.streak-wrap[data-heat="cold"] {
+  border-color: var(--surface-border);
+  box-shadow: none;
+}
+
+.streak-wrap[data-heat="warm"] {
+  border-color: var(--heat-1);
+  box-shadow: 0 0 8px var(--heat-1);
+  animation: heat-pulse 1.4s ease-in-out infinite;
+}
+
+.streak-wrap[data-heat="hot"] {
+  border-color: var(--heat-2);
+  box-shadow: 0 0 10px var(--heat-2);
+  animation: heat-pulse 1.0s ease-in-out infinite;
+}
+
+.streak-wrap[data-heat="blazing"] {
+  border-color: var(--heat-3);
+  box-shadow: 0 0 14px var(--heat-3);
+  animation: heat-pulse 0.7s ease-in-out infinite;
+}
+
+.streak-wrap[data-heat="quackening"] {
+  border-image: var(--rarity-divine-grad) 1;
+  box-shadow: 0 0 18px var(--heat-4);
+  animation: heat-pulse 0.5s ease-in-out infinite, quackening-sweep 1.6s linear infinite;
+}
+
+/* Game speed 2x scales pulse *frequency* (halved durations), never one-shot
+   effects (§7/§8). */
+.streak-wrap.speed-2x[data-heat="warm"] { animation-duration: 0.7s; }
+.streak-wrap.speed-2x[data-heat="hot"] { animation-duration: 0.5s; }
+.streak-wrap.speed-2x[data-heat="blazing"] { animation-duration: 0.35s; }
+.streak-wrap.speed-2x[data-heat="quackening"] { animation-duration: 0.25s, 1.6s; }
+
+@keyframes heat-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes quackening-sweep {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* Tier-cross: counter scale-pop (280ms bounce). */
+
+.streak-wrap.tier-pop .hud-streak {
+  animation: tier-scale-pop 280ms var(--ease-bounce);
+}
+
+@keyframes tier-scale-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* Screen shake on tier cross / QUACKENING entry: 220ms/400ms decaying ±4px,
+   applied to <main class="panels">. */
+
+main.panels.streak-shake {
+  animation: streak-shake-decay 220ms var(--ease-out);
+}
+
+body.quackening-active main.panels.streak-shake {
+  animation-duration: 400ms;
+}
+
+@keyframes streak-shake-decay {
+  0% { transform: translate(0, 0); }
+  15% { transform: translate(-4px, 3px); }
+  30% { transform: translate(3px, -3px); }
+  45% { transform: translate(-3px, 2px); }
+  60% { transform: translate(2px, -2px); }
+  75% { transform: translate(-1px, 1px); }
+  100% { transform: translate(0, 0); }
+}
+
+/* 12-particle ring burst on tier cross, pooled. */
+
+.tier-burst-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--accent);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 5;
+  will-change: transform, opacity;
+}
+
+.tier-burst-particle.anim {
+  animation: tier-burst 500ms var(--ease-out) forwards;
+}
+
+@keyframes tier-burst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+}
+
+/* Embers rising from the streak counter, pooled, spawn-rate managed in JS. */
+
+.heat-ember {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--heat-3);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 4;
+  will-change: transform, opacity;
+}
+
+.heat-ember.anim {
+  animation: ember-rise 900ms var(--ease-out) forwards;
+}
+
+@keyframes ember-rise {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-42px) translateX(var(--drift)) scale(0.4); opacity: 0; }
+}
+
+/* Streak break: calm desaturate, no flash/shake. */
+
+.streak-wrap.streak-break {
+  animation: none;
+  transition: filter 600ms var(--ease-out);
+  filter: saturate(0.2);
+}
+
+/* ---- Scene saturation bump (Blazing+), scene layers only ---- */
+
+.mine-scene.heat-saturate,
+.arena-scene.heat-saturate {
+  filter: saturate(1.06);
+}
+
+/* ---- THE QUACKENING (streak >= 100) ---- */
+
+.quackening-flash {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.quackening-flash.anim {
+  animation: quackening-flash-anim 120ms linear;
+}
+
+@keyframes quackening-flash-anim {
+  0% { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+.quackening-banner {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-family: var(--font-display);
+  font-size: 44px;
+  color: var(--crit);
+  text-shadow: 0 0 16px var(--crit-glow), 0 3px 0 var(--shadow-drop);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1000;
+}
+
+.quackening-banner.anim {
+  animation: quackening-banner-pop 900ms var(--ease-bounce) forwards;
+}
+
+@keyframes quackening-banner-pop {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+  60% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+/* Golden-duck confetti, pooled, falls from the top of the viewport. */
+
+.quackening-confetti {
+  position: fixed;
+  top: -12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--gold);
+  pointer-events: none;
+  opacity: 0;
+  z-index: 998;
+  will-change: transform, opacity;
+}
+
+.quackening-confetti.anim {
+  animation: confetti-fall 2.2s var(--ease-out) forwards;
+  animation-delay: var(--fall-delay, 0ms);
+}
+
+@keyframes confetti-fall {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate(var(--drift), 110vh) rotate(360deg); opacity: 0; }
+}
+
+/* While QUACKENING holds, HUD + panel borders get the iridescent sweep too. */
+
+body.quackening-active main.panel {
+  border-image: var(--rarity-divine-grad) 1;
+  transition: border-color 400ms var(--ease-snap);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-wrap,
+  .streak-wrap[data-heat="warm"],
+  .streak-wrap[data-heat="hot"],
+  .streak-wrap[data-heat="blazing"],
+  .streak-wrap[data-heat="quackening"],
+  main.panels.streak-shake,
+  .quackening-banner.anim {
+    animation: none !important;
+  }
+  .heat-ember,
+  .tier-burst-particle,
+  .quackening-confetti,
+  .quackening-flash,
+  .crit-particle {
+    display: none !important;
+  }
+}
