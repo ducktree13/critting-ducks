@@ -1,4 +1,4 @@
-import { ACT2_TREE_IDS, treeProgress } from "../game/chapters";
+import { ACT2_TREE_IDS } from "../game/chapters";
 import { on } from "../game/events";
 import { clickLeaf } from "../game/leaves";
 import { pondIncomePerSec } from "../game/pond";
@@ -10,6 +10,15 @@ import { fmt } from "./format";
 import { renderMissionTracker } from "./missionsPanel";
 import { openRosterPicker } from "./rosterPicker";
 import { attachTooltip } from "./tooltip";
+import {
+  generateTree,
+  stageDepth,
+  stageFor,
+  stageScale,
+  type Anchor,
+  type GeneratedTree,
+  type Segment,
+} from "./treegen";
 
 const TREE_NAMES: Record<TreeId, string> = {
   act1: "Skill Tree",
@@ -27,112 +36,315 @@ let gameState: GameState;
 let freshNodeId: string | null = null; // most recently bought — its leaves pop
 let lastLayoutKey = "";
 
-function glyph(effect: NodeEffect): string {
+// ---- Node type -> icon + color (§6). Icons are tiny SVG paths drawn in a
+// local ~[-6,6] box, translated to the anchor. Color is a CSS var per type. --
+interface NodeType {
+  color: string; // CSS var used for owned fill / affordable ring
+  ink: string; // icon stroke/fill color that reads on the type color
+  icon: string; // <path>/<polygon> markup centered on 0,0
+}
+
+function nodeType(effect: NodeEffect): NodeType {
+  const gold: NodeType = { color: "var(--gold)", ink: "var(--surface-border)", icon: ICON_PICK };
+  const attack: NodeType = { color: "var(--accent)", ink: "var(--accent-ink)", icon: ICON_SWORD };
+  const defense: NodeType = { color: "var(--xp)", ink: "var(--surface-border)", icon: ICON_SHIELD };
+  const crit: NodeType = { color: "var(--crit)", ink: "var(--crit-ink)", icon: ICON_SPARK };
+  const passive: NodeType = { color: "var(--rarity-uncommon)", ink: "var(--surface-border)", icon: ICON_LEAF };
   switch (effect.kind) {
-    case "slot": return "+";
-    case "oreUnlock": return "◆";
-    case "offline": return "☾";
-    case "buffDuration": return "∞";
+    case "slot":
+      return effect.panel === "mine" ? gold : effect.panel === "arena" ? attack : passive;
+    case "oreUnlock":
+      return gold;
+    case "offline":
+      return passive;
+    case "buffDuration":
+      return crit;
     case "stat":
       switch (effect.stat) {
-        case "critChance": return "✦";
-        case "critMult": return "✸";
-        case "orePerHit": case "oreMult": return "⛏";
-        case "flatAttack": case "attackDamageMult": return "⚔";
-        case "flatDefense": case "defenseMult": return "⛨";
-        case "xpMult": return "☆";
-        case "goldMult": return "$";
-        default: return "»";
+        case "critChance":
+        case "critMult":
+          return crit;
+        case "orePerHit":
+        case "oreMult":
+        case "goldMult":
+          return gold;
+        case "flatAttack":
+        case "attackDamageMult":
+        case "attackSpeedMult":
+        case "arenaSpeedMult":
+        case "mineSpeedMult":
+          return attack;
+        case "flatDefense":
+        case "defenseMult":
+          return defense;
+        case "xpMult":
+          return passive;
+        default:
+          return passive;
       }
   }
 }
 
-// Deterministic tiny PRNG per node id so leaf clusters are stable.
-function leafSeeds(id: string, count: number): { dx: number; dy: number; rot: number }[] {
+// Icon glyphs — flat, ink-outlinable, centered on the origin (~11px tall).
+const ICON_PICK = `<path d="M -5 5 L 5 -5 M 5 -5 C 2 -6 -1 -6 -4 -4 M 5 -5 C 6 -2 6 1 4 4" fill="none" stroke-width="1.6"/>`;
+const ICON_SWORD = `<path d="M 0 -6 L 2 -1 L 2 3 L -2 3 L -2 -1 Z M -3 3 L 3 3 M 0 3 L 0 6" fill="none" stroke-width="1.5"/>`;
+const ICON_SHIELD = `<path d="M 0 -6 L 5 -4 L 5 1 C 5 4 3 5 0 6 C -3 5 -5 4 -5 1 L -5 -4 Z" fill="none" stroke-width="1.5"/>`;
+const ICON_SPARK = `<path d="M 0 -6 L 1.4 -1.4 L 6 0 L 1.4 1.4 L 0 6 L -1.4 1.4 L -6 0 L -1.4 -1.4 Z" stroke="none"/>`;
+const ICON_LEAF = `<path d="M 0 -6 C 4 -3 4 3 0 6 C -4 3 -4 -3 0 -6 Z M 0 -5 L 0 5" fill="none" stroke-width="1.5"/>`;
+
+// Per-tree geometry + node seating, cached (the tree only rebuilds on
+// buy/chapter events, not per frame). Regenerated whenever the growth stage
+// or owned set changes so seating stays stable within a stage.
+interface Seated {
+  tree: GeneratedTree;
+  pos: Map<string, Anchor>; // nodeId -> seated anchor (fitted coords)
+  fit: { s: number; tx: number; ty: number }; // transform to fit 400x600
+}
+
+const GROUND_Y = 572;
+const FIT_W = 320; // usable width inside the 400 viewBox
+const FIT_TOP = 40; // top margin
+
+// Chain depth: number of requires-hops back to a root, for topo seating order.
+function chainDepth(node: SkillNode): number {
+  let d = 0;
+  let cur: SkillNode | undefined = node;
+  while (cur?.requires) {
+    cur = getSkillNode(cur.requires);
+    d++;
+  }
+  return d;
+}
+
+// Fit the generated tree (root at 0,0, grows up = -y) into the 400x600 canvas
+// with the base pinned to the ground line.
+function fitTransform(tree: GeneratedTree): { s: number; tx: number; ty: number } {
+  const b = tree.bounds;
+  const w = b.maxX - b.minX || 1;
+  const h = b.maxY - b.minY || 1;
+  const s = Math.min(FIT_W / w, (GROUND_Y - FIT_TOP) / h);
+  // center horizontally on x=200; pin root (0,0) to the ground line.
+  const tx = 200 - ((b.minX + b.maxX) / 2) * s;
+  const ty = GROUND_Y; // root y=0 maps here; up (-y) rises above the ground
+  return { s, tx, ty };
+}
+
+function apply(fit: { s: number; tx: number; ty: number }, x: number, y: number): { x: number; y: number } {
+  return { x: fit.tx + x * fit.s, y: fit.ty + y * fit.s };
+}
+
+function seatTree(treeId: TreeId, stage: number): Seated {
+  const nodes = nodesForTree(treeId);
+  const cap = treeId === "act1" ? 30 : 16;
+  const tree = generateTree(treeId, 4, cap);
+  const fit = fitTransform(tree);
+  // Stages render the same tree scaled 0.5 -> 1 (§6). Fold the stage scale into
+  // the fit about the pinned root so the whole tree grows in size with owned
+  // count; re-center horizontally at the reduced scale.
+  const sc = stageScale(stage);
+  fit.s *= sc;
+  fit.tx = 200 - ((tree.bounds.minX + tree.bounds.maxX) / 2) * fit.s;
+
+  // Order nodes topologically (chain depth, then cost) and anchors by
+  // root-distance; zip them so parents always sit closer to the root.
+  const ordered = [...nodes].sort((a, b) => {
+    const da = chainDepth(a);
+    const db = chainDepth(b);
+    return da !== db ? da - db : a.cost - b.cost;
+  });
+  const anchors = [...tree.anchors].sort((a, b) => a.dist - b.dist);
+
+  const pos = new Map<string, Anchor>();
+  for (let i = 0; i < ordered.length; i++) {
+    const anchor = anchors[Math.min(i, anchors.length - 1)];
+    const p = apply(fit, anchor.x, anchor.y);
+    pos.set(ordered[i].id, { x: p.x, y: p.y, depth: anchor.depth, dist: anchor.dist });
+  }
+  return { tree, pos, fit };
+}
+
+// Merged-ink silhouette + bark polygon for one segment (tapered).
+function segPolygon(fit: { s: number; tx: number; ty: number }, seg: Segment, expand: number): string {
+  const a = apply(fit, seg.x1, seg.y1);
+  const b = apply(fit, seg.x2, seg.y2);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  // perpendicular unit
+  const nx = -dy / len;
+  const ny = dx / len;
+  const wb = (seg.wBase * fit.s) / 2 + expand;
+  const wt = (seg.wTip * fit.s) / 2 + expand;
+  const p1 = `${(a.x + nx * wb).toFixed(1)} ${(a.y + ny * wb).toFixed(1)}`;
+  const p2 = `${(b.x + nx * wt).toFixed(1)} ${(b.y + ny * wt).toFixed(1)}`;
+  const p3 = `${(b.x - nx * wt).toFixed(1)} ${(b.y - ny * wt).toFixed(1)}`;
+  const p4 = `${(a.x - nx * wb).toFixed(1)} ${(a.y - ny * wb).toFixed(1)}`;
+  return `${p1} ${p2} ${p3} ${p4}`;
+}
+
+// Core-shadow ribbon: a thin (30% width) strip offset to the shade side.
+function segRibbon(fit: { s: number; tx: number; ty: number }, seg: Segment): string {
+  const a = apply(fit, seg.x1, seg.y1);
+  const b = apply(fit, seg.x2, seg.y2);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const wb = (seg.wBase * fit.s) / 2;
+  const wt = (seg.wTip * fit.s) / 2;
+  const off = 0.35; // shade side offset fraction
+  // ribbon spans from ~+0.05w to +0.35w on one consistent side.
+  const o1 = wb * off;
+  const o2 = wt * off;
+  const r1 = wb * 0.05;
+  const r2 = wt * 0.05;
+  const p1 = `${(a.x + nx * o1).toFixed(1)} ${(a.y + ny * o1).toFixed(1)}`;
+  const p2 = `${(b.x + nx * o2).toFixed(1)} ${(b.y + ny * o2).toFixed(1)}`;
+  const p3 = `${(b.x + nx * r2).toFixed(1)} ${(b.y + ny * r2).toFixed(1)}`;
+  const p4 = `${(a.x + nx * r1).toFixed(1)} ${(a.y + ny * r1).toFixed(1)}`;
+  return `${p1} ${p2} ${p3} ${p4}`;
+}
+
+// A leaf = two quadratic curves meeting at a point + center vein.
+function leafPath(cx: number, cy: number, rot: number, size: number): string {
+  const r = (a: number) => (a * Math.PI) / 180;
+  const co = Math.cos(r(rot));
+  const si = Math.sin(r(rot));
+  const T = (lx: number, ly: number) => `${(cx + lx * co - ly * si).toFixed(1)} ${(cy + lx * si + ly * co).toFixed(1)}`;
+  const tipX = 0;
+  const tipY = -size;
+  const baseX = 0;
+  const baseY = size * 0.5;
+  const bw = size * 0.55;
+  return (
+    `M ${T(baseX, baseY)} Q ${T(-bw, 0)} ${T(tipX, tipY)} ` +
+    `Q ${T(bw, 0)} ${T(baseX, baseY)} Z`
+  );
+}
+
+// Deterministic per-id leaf fan (4–7 leaves) around an owned anchor.
+function leafFan(id: string, cx: number, cy: number, fresh: boolean): string {
   let h = 2166136261;
   for (const ch of id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619);
-  const out = [];
+  const rnd = () => {
+    h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
+    return ((h >>> 8) & 0xffff) / 0x10000;
+  };
+  const count = 4 + Math.floor(rnd() * 4); // 4–7
+  const out: string[] = [];
   for (let i = 0; i < count; i++) {
-    h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
-    const a = ((h >>> 8) % 360) * (Math.PI / 180);
-    h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
-    const r = 20 + ((h >>> 8) % 8);
-    out.push({ dx: Math.cos(a) * r, dy: Math.sin(a) * r, rot: (h >>> 4) % 360 });
+    const ang = -90 + (i / (count - 1) - 0.5) * 150 + (rnd() - 0.5) * 20;
+    const rad = 9 + rnd() * 6;
+    const lx = cx + Math.cos((ang * Math.PI) / 180) * rad;
+    const ly = cy + Math.sin((ang * Math.PI) / 180) * rad;
+    const size = 7 + rnd() * 3;
+    const cls = `leaf leaf-${i % 2 === 0 ? "a" : "b"}${fresh ? " pop" : ""}`;
+    out.push(
+      `<path class="${cls}" d="${leafPath(lx, ly, ang + 90, size)}" style="animation-delay:${i * 55}ms"/>`,
+    );
   }
-  return out;
+  return out.join("");
 }
 
-function canopyLeavesFor(node: SkillNode): string {
-  const count = 3 + (node.id.length % 3); // 3–5 leaves
-  const pop = node.id === freshNodeId ? " pop" : "";
-  return leafSeeds(node.id, count)
-    .map(
-      (l, i) =>
-        `<ellipse class="leaf${pop}" cx="${node.x + l.dx}" cy="${node.y + l.dy}" rx="7" ry="4"
-          transform="rotate(${l.rot} ${node.x + l.dx} ${node.y + l.dy})"
-          style="animation-delay: ${i * 60}ms"/>`,
-    )
-    .join("");
-}
-
-function edgePath(parent: SkillNode, child: SkillNode): string {
-  const midY = (parent.y + child.y) / 2;
-  return `M ${parent.x} ${parent.y} C ${parent.x} ${midY}, ${child.x} ${midY}, ${child.x} ${child.y}`;
-}
-
-// Builds one tree's SVG inner markup (trunk art + edges + nodes + canopy),
-// scaled by how much of it is owned so a fresh sapling looks tiny next to a
-// nearly-finished grove.
+// Builds one tree's SVG inner markup via the procedural generator (§6):
+// merged ink silhouette, bark fills, core-shadow ribbons, seated typed nodes,
+// leaf fans on outermost owned anchors. Renders only the recursion depth the
+// growth stage allows; branches arrive one stage before their nodes.
 function buildTreeSvg(state: GameState, treeId: TreeId): string {
   const nodes = nodesForTree(treeId);
-  const edges: string[] = [];
+  const total = nodes.length;
+  const owned = nodes.filter((n) => isOwned(state, n.id)).length;
+  const stage = stageFor(owned, total);
+  const seated = seatTree(treeId, stage);
+  const { tree, pos, fit } = seated;
+
+  // Which recursion depth is visible: branches arrive one stage early.
+  const shownDepth = stageDepth(stage, 4) + 1; // "bare one stage ahead"
+  const visibleSegs = tree.segments.filter((s) => s.depth <= shownDepth);
+  const prevDepth = stageDepth(lastStage[treeId] ?? stage, 4) + 1;
+
+  // Silhouette (all visible limbs, expanded +2.6px, ink fill).
+  const silhouette = visibleSegs
+    .map((s) => `<polygon class="tree-ink" points="${segPolygon(fit, s, 2.6)}"/>`)
+    .join("");
+  // Bark fills — two tones by depth parity.
+  const bark = visibleSegs
+    .map((s) => {
+      const grow = s.depth > prevDepth ? " grow" : "";
+      const p = apply(fit, s.parentTipX, s.parentTipY);
+      const origin = grow ? ` style="transform-origin:${p.x.toFixed(1)}px ${p.y.toFixed(1)}px"` : "";
+      const tone = s.depth % 2 === 0 ? "tree-bark-a" : "tree-bark-b";
+      return `<polygon class="${tone}${grow}" points="${segPolygon(fit, s, 0)}"${origin}/>`;
+    })
+    .join("");
+  // Core-shadow ribbons on major limbs only.
+  const ribbons = visibleSegs
+    .filter((s) => s.major)
+    .map((s) => `<polygon class="tree-core" points="${segRibbon(fit, s)}"/>`)
+    .join("");
+
+  // Nodes + leaf fans.
   const nodeEls: string[] = [];
-  const canopy: string[] = [];
+  const leaves: string[] = [];
+  const ownedNodes = nodes.filter((n) => isOwned(state, n.id));
+  const ownedIds = new Set(ownedNodes.map((n) => n.id));
+  // Outermost owned = owned nodes whose seated dist is in the top band.
+  const ownedByDist = [...ownedNodes].sort((a, b) => (pos.get(b.id)!.dist) - (pos.get(a.id)!.dist));
+  const outerCount = Math.max(1, Math.ceil(ownedByDist.length * 0.5));
+  const outerSet = new Set(ownedByDist.slice(0, outerCount).map((n) => n.id));
 
   for (const node of nodes) {
-    if (node.requires) {
-      const parent = getSkillNode(node.requires);
-      const lit = isOwned(state, node.id);
-      edges.push(`<path class="tree-edge${lit ? " lit" : ""}" d="${edgePath(parent, node)}"/>`);
-    }
-
+    const a = pos.get(node.id)!;
     if (!isVisible(state, node.id)) {
-      nodeEls.push(`<g class="tree-node silhouette" data-node="${node.id}"><circle cx="${node.x}" cy="${node.y}" r="13"/></g>`);
+      nodeEls.push(
+        `<g class="tree-node hidden" data-node="${node.id}"><circle class="face" cx="${a.x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="11"/></g>`,
+      );
       continue;
     }
-
-    const owned = isOwned(state, node.id);
+    const own = ownedIds.has(node.id);
+    const type = nodeType(node.effect);
+    const cx = a.x.toFixed(1);
+    const cy = a.y.toFixed(1);
+    const iconFill = ICON_FILLED.has(node.effect.kind === "stat" ? node.effect.stat : node.effect.kind);
     nodeEls.push(`
-      <g class="tree-node${owned ? " owned" : ""}" data-node="${node.id}">
-        <circle class="hit" cx="${node.x}" cy="${node.y}" r="18"/>
-        <circle class="face" cx="${node.x}" cy="${node.y}" r="13"/>
-        <text class="glyph" x="${node.x}" y="${node.y + 4}">${glyph(node.effect)}</text>
-        ${owned ? "" : `<text class="cost" x="${node.x}" y="${node.y + 30}">${fmt(node.cost)}</text>`}
+      <g class="tree-node${own ? " owned" : ""}" data-node="${node.id}" style="--node-color:${type.color};--node-ink:${type.ink}">
+        <circle class="hit" cx="${cx}" cy="${cy}" r="17"/>
+        <circle class="ring" cx="${cx}" cy="${cy}" r="12"/>
+        <circle class="face" cx="${cx}" cy="${cy}" r="11"/>
+        <g class="icon" transform="translate(${cx} ${cy})" ${iconFill ? "" : ""}>${type.icon}</g>
+        ${own ? "" : `<g class="cost-pill" transform="translate(${cx} ${(a.y + 26).toFixed(1)})"><rect x="-16" y="-8" width="32" height="15" rx="7"/><text y="3">${fmt(node.cost)}</text></g>`}
       </g>`);
-    if (owned) canopy.push(canopyLeavesFor(node));
+    if (own && outerSet.has(node.id)) {
+      leaves.push(leafFan(node.id, a.x, a.y, node.id === freshNodeId));
+    }
   }
 
-  const trunkArt =
-    treeId === "act1"
-      ? `<path class="tree-trunk" d="M 200 572 L 200 400"/>
-         <path class="tree-limb" d="M 200 470 C 170 460, 150 455, 140 450"/>
-         <path class="tree-limb" d="M 200 470 C 230 460, 250 455, 260 450"/>
-         <path class="tree-limb" d="M 200 400 C 195 375, 185 355, 180 335"/>
-         <path class="tree-limb" d="M 200 400 C 215 375, 228 358, 235 340"/>`
-      : `<path class="tree-trunk" d="M 200 572 L 200 60"/>`;
+  // ground shadow ellipse under the crown
+  const cxRoot = 200;
+  const groundEllipse = `<ellipse class="tree-ground-shadow" cx="${cxRoot}" cy="${GROUND_Y + 3}" rx="${(FIT_W * 0.42).toFixed(0)}" ry="9"/>`;
 
-  const progress = treeProgress(state, treeId);
-  const scale = 0.35 + 0.65 * progress; // sapling -> full canopy
+  lastStage[treeId] = stage;
+
   return `
-    <g transform="translate(200 572) scale(${scale}) translate(-200 -572)">
-      <line class="tree-ground" x1="40" y1="572" x2="360" y2="572"/>
-      ${trunkArt}
-      ${edges.join("")}
-      ${nodeEls.join("")}
-      ${canopy.join("")}
+    ${groundEllipse}
+    <line class="tree-ground" x1="40" y1="${GROUND_Y}" x2="360" y2="${GROUND_Y}"/>
+    <g class="tree-limbs">
+      ${silhouette}
+      ${bark}
+      ${ribbons}
     </g>
+    <g class="tree-foliage">${leaves.join("")}</g>
+    <g class="tree-nodes">${nodeEls.join("")}</g>
   `;
 }
+
+// spark + (nothing else) uses fill; icons that are stroke-based skip fill.
+const ICON_FILLED = new Set<string>(["critChance", "critMult", "buffDuration"]);
+
+// Track the last-rendered stage per tree so a stage advance can animate only
+// the newly-revealed segments (scale-in from parent joint).
+const lastStage: Partial<Record<TreeId, number>> = {};
 
 function nodeTooltipHtml(nodeId: string): string {
   const node = getSkillNode(nodeId);
@@ -149,7 +361,7 @@ function nodeTooltipHtml(nodeId: string): string {
 }
 
 function wireTreeSvg(svg: SVGSVGElement): void {
-  svg.querySelectorAll<SVGGElement>(".tree-node:not(.silhouette)").forEach((g) => {
+  svg.querySelectorAll<SVGGElement>(".tree-node:not(.hidden)").forEach((g) => {
     const nodeId = g.dataset.node!;
     attachTooltip(g, () => nodeTooltipHtml(nodeId));
     g.addEventListener("click", (e) => {
@@ -336,7 +548,7 @@ export function renderTreePanel(state: GameState): void {
   if (layoutKey(state) !== lastLayoutKey) rebuildLayout();
 
   // Cheap per-frame pass: pulse nodes the player can afford right now.
-  bodyEl.querySelectorAll<SVGGElement>(".tree-node:not(.silhouette):not(.owned)").forEach((g) => {
+  bodyEl.querySelectorAll<SVGGElement>(".tree-node:not(.hidden):not(.owned)").forEach((g) => {
     g.classList.toggle("affordable", canBuy(state, g.dataset.node!));
   });
 

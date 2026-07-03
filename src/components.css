@@ -962,3 +962,156 @@ body.quackening-active main.panel {
     display: none !important;
   }
 }
+
+/* =========================================================================
+   Procedural skill tree (design/STYLE.md §6)
+   Flat two-tone generated trees: merged ink silhouette, two bark tones,
+   core-shadow ribbons, seated typed nodes, individual ink-outlined leaves.
+   Markup is built in src/ui/treePanel.ts from src/ui/treegen.ts. These rules
+   load after style.css and supersede the old authored-tree styling.
+   ========================================================================= */
+
+/* --- Limbs: silhouette + two bark tones + core ribbon --- */
+.tree-ink {
+  fill: var(--surface-border);
+  stroke: none;
+}
+.tree-bark-a {
+  fill: color-mix(in srgb, var(--surface-border) 22%, var(--surface));
+  stroke: none;
+}
+.tree-bark-b {
+  fill: color-mix(in srgb, var(--surface-border) 34%, var(--surface));
+  stroke: none;
+}
+.tree-core {
+  fill: color-mix(in srgb, var(--surface-border) 55%, var(--surface));
+  opacity: 0.6;
+  stroke: none;
+}
+.tree-ground-shadow {
+  fill: var(--shadow-drop);
+  opacity: 0.5;
+}
+/* keep the ground line rule from style.css; nothing to override */
+
+/* --- Growth: new limb segments scale in from their parent joint --- */
+.tree-bark-a.grow,
+.tree-bark-b.grow {
+  transform-box: fill-box;
+  animation: tree-grow 480ms var(--ease-out) backwards;
+}
+@keyframes tree-grow {
+  from { transform: scale(0.05); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* --- Foliage: individual ink-outlined leaves in two greens --- */
+.tree-foliage .leaf {
+  stroke: var(--surface-border);
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+.tree-foliage .leaf-a {
+  fill: var(--panel-head);
+}
+.tree-foliage .leaf-b {
+  fill: color-mix(in srgb, var(--rarity-uncommon) 70%, var(--panel-head));
+}
+.tree-foliage .leaf.pop {
+  transform-box: fill-box;
+  transform-origin: 50% 80%;
+  animation: tree-leaf-pop 400ms var(--ease-out) backwards;
+}
+@keyframes tree-leaf-pop {
+  from { transform: scale(0); }
+  60% { transform: scale(1.25); }
+  to { transform: scale(1); }
+}
+
+/* --- Nodes: hidden / affordable / owned (tokens, §6) --- */
+.tree-node .hit {
+  fill: transparent;
+  cursor: pointer;
+}
+.tree-node .ring {
+  fill: none;
+  stroke: none;
+}
+.tree-node .face {
+  fill: var(--surface);
+  stroke: var(--surface-border);
+  stroke-width: 2;
+}
+.tree-node .icon {
+  pointer-events: none;
+  stroke: var(--surface-border);
+  fill: var(--surface-border);
+}
+/* hidden = sunken silhouette, no icon */
+.tree-node.hidden .face {
+  fill: var(--surface-sunken);
+  stroke: none;
+  opacity: 0.5;
+}
+/* affordable = surface fill, pulsing type-colored ring + icon + cost pill */
+.tree-node.affordable .ring {
+  stroke: var(--node-color);
+  stroke-width: 2.5;
+  animation: tree-node-pulse 1.2s ease-in-out infinite;
+}
+.tree-node.affordable .icon {
+  stroke: var(--node-color);
+  fill: var(--node-color);
+}
+@keyframes tree-node-pulse {
+  0%, 100% { stroke-width: 2; opacity: 0.85; }
+  50% { stroke-width: 5; opacity: 0.35; }
+}
+/* owned = type-colored fill + icon */
+.tree-node.owned .face {
+  fill: var(--node-color);
+  stroke: var(--surface-border);
+}
+.tree-node.owned .icon {
+  stroke: var(--node-ink);
+  fill: var(--node-ink);
+}
+
+/* cost pill below affordable nodes */
+.tree-node .cost-pill rect {
+  fill: var(--surface-raised);
+  stroke: var(--surface-border);
+  stroke-width: 1;
+}
+.tree-node .cost-pill text {
+  fill: var(--text);
+  font-size: 9px;
+  font-weight: 800;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.tree-node.denied {
+  animation: tree-node-denied 0.3s ease-in-out;
+}
+@keyframes tree-node-denied {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-3px, 0); }
+  75% { transform: translate(3px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tree-bark-a.grow,
+  .tree-bark-b.grow,
+  .tree-foliage .leaf.pop,
+  .tree-node.affordable .ring,
+  .tree-node.denied {
+    animation: none !important;
+  }
+  .tree-node.affordable .ring {
+    stroke-width: 3;
+    opacity: 0.8;
+  }
+}
