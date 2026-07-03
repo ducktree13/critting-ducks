@@ -13,7 +13,7 @@ export interface GachaResult {
 
 export interface PackOpenResult {
   results: GachaResult[]; // all rolls including bonus packs, in order
-  bonusPacks: number; // packs granted free by pack crits (0–3)
+  bonusPacks: number; // packs granted free by pack crits (0–packCritMaxBonus)
 }
 
 export function rarityAtLeast(rarity: Rarity, floor: Rarity): boolean {
@@ -97,7 +97,8 @@ function rollOnePack(state: GameState, rng: Rng, pack: PackId): GachaResult[] {
 }
 
 // Buys and opens a pack. Every pack opened rolls the player's crit chance;
-// a crit grants a free bonus pack of the same type (chains, max 3 bonus).
+// a crit grants a free bonus pack of the same type (chains, capped at
+// GACHA.packCritMaxBonus bonus packs).
 // Consumes a pack credit before charging gold. Returns null if locked or
 // unaffordable.
 export function openPack(
@@ -148,6 +149,23 @@ export function upgradeDuck(state: GameState, defId: string): boolean {
   duck.level += 1;
   emit("roster", {});
   return true;
+}
+
+// Repeatedly upgrades every owned duck as many times as shards allow.
+// Pure and DOM-free so the UI (inventoryMenu.ts "Upgrade All" button) can
+// call it and just report the result via toast.
+export function upgradeAll(state: GameState): { ducks: number; levels: number } {
+  let ducks = 0;
+  let levels = 0;
+  for (const duck of state.ducks) {
+    let leveled = 0;
+    while (upgradeDuck(state, duck.defId)) leveled += 1;
+    if (leveled > 0) {
+      ducks += 1;
+      levels += leveled;
+    }
+  }
+  return { ducks, levels };
 }
 
 // Cost formula (PLAN2.md §4): 2x the duck's dupe-shard value x10.

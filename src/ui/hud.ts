@@ -1,5 +1,7 @@
 import { STREAK_BALANCE } from "../game/balance";
 import { on } from "../game/events";
+import { offlineIncomePerSec } from "../game/offline";
+import { pondIncomePerSec } from "../game/pond";
 import { RateTracker } from "../game/rates";
 import { getStats, xpToNext } from "../game/state";
 import { gameSpeed } from "../game/streak";
@@ -186,6 +188,8 @@ export function initHud(header: HTMLElement): void {
 
   buildParticleLayers();
 
+  attachTooltip(goldEl, () => goldTooltipHtml());
+
   for (const pip of pipEls) {
     const tier = pip.dataset.tier as TierKey;
     attachTooltip(pip, () => {
@@ -319,6 +323,21 @@ function triggerStreakBreak(): void {
   void streakWrapEl.offsetWidth;
   streakWrapEl.classList.add("streak-break");
   window.setTimeout(() => streakWrapEl.classList.remove("streak-break"), 600);
+}
+
+// Gold breakdown by source, re-evaluated on each hover (pattern matches the
+// pip tooltips: pull the latest state via `latestState`, not a captured ref).
+function goldTooltipHtml(): string {
+  if (!latestState) return "";
+  const state = latestState;
+  const stats = getStats(state);
+  const mine = offlineIncomePerSec(state, stats).goldPerSec * 3600;
+  const pond = pondIncomePerSec(state, stats).goldPerSec * 3600;
+  const total = mine + pond;
+  const rushActive = state.streak.buffExpiry.t10 > Date.now();
+  return `<b>Gold income</b><div class="tt-stats">Mine: ${fmt(mine)}/hr<br>Pond: ${fmt(pond)}/hr<br>Total: ${fmt(total)}/hr${
+    rushActive ? `<br><span class="tt-meta">+50% Gold Rush active</span>` : ""
+  }</div>`;
 }
 
 export function renderHud(state: GameState): void {

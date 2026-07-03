@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ASCENSION, SHARD_CAP } from "./balance";
-import { ascendDuck, ascensionCost, canAscend, canUpgrade, openPack, packPrice, packUnlocked, rollRarity, upgradeDuck } from "./packs";
+import { ascendDuck, ascensionCost, canAscend, canUpgrade, openPack, packPrice, packUnlocked, rollRarity, upgradeAll, upgradeDuck } from "./packs";
 import { assignToRoster, createInitialState, refreshStats } from "./state";
 import type { GameState, Rng } from "./types";
 
@@ -121,12 +121,12 @@ describe("pack crits", () => {
     expect(state.lifetime.packs).toBe(2);
   });
 
-  it("chains at most 3 bonus packs even at guaranteed crit", () => {
+  it("chains at most 1 bonus pack even at guaranteed crit", () => {
     const alwaysLow: Rng = { next: () => 0 }; // crit roll always succeeds
     refreshStats(state, 0);
     const opened = openPack(state, alwaysLow, "standard", 0)!;
-    expect(opened.bonusPacks).toBe(3);
-    expect(opened.results).toHaveLength(4);
+    expect(opened.bonusPacks).toBe(1);
+    expect(opened.results).toHaveLength(2);
   });
 });
 
@@ -216,6 +216,26 @@ describe("ascension", () => {
     bill.shards = ascensionCost("bill") - 1;
     expect(ascendDuck(state, "bill")).toBe(false);
     expect(bill.level).toBe(10);
+  });
+});
+
+describe("upgradeAll", () => {
+  it("upgrades every owned duck as far as shards allow and reports totals", () => {
+    const bill = state.ducks.find((d) => d.defId === "bill")!;
+    bill.shards = 3; // enough for level 1->2 (cost 1) then 2->3 (cost 2)
+    state.ducks.push({ defId: "quackers", level: 1, shards: 1, nextHitIn: 1 }); // enough for one upgrade
+    const result = upgradeAll(state);
+    expect(bill.level).toBe(3);
+    expect(bill.shards).toBe(0);
+    const quackers = state.ducks.find((d) => d.defId === "quackers")!;
+    expect(quackers.level).toBe(2);
+    expect(result).toEqual({ ducks: 2, levels: 3 });
+  });
+
+  it("skips ducks with no upgrades available and reports zero", () => {
+    const bill = state.ducks.find((d) => d.defId === "bill")!;
+    bill.shards = 0;
+    expect(upgradeAll(state)).toEqual({ ducks: 0, levels: 0 });
   });
 });
 

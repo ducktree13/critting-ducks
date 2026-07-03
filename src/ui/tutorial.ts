@@ -40,8 +40,20 @@ export function initTutorial(state: GameState): void {
   document.body.appendChild(overlay);
 }
 
+// Index of the "open a pack" step — kept in sync with tutorial.ts by name
+// rather than a hardcoded index, so this file doesn't drift if steps are
+// reordered.
+const PACK_STEP_INDEX = TUTORIAL_STEPS.findIndex((s) => s.highlight === "#hud-shop");
+
 export function renderTutorial(state: GameState): void {
   advanceTutorial(state);
+
+  // The Standard pack button glows only while the "open a pack" step is the
+  // current, unfinished step — cleared as soon as the tutorial moves on or
+  // finishes, even if the shop modal isn't open right now.
+  const packBtn = document.getElementById("pack-standard");
+  const wantsPackGlow = !state.tutorial.done && state.tutorial.step === PACK_STEP_INDEX;
+  packBtn?.classList.toggle("tutorial-glow", wantsPackGlow);
 
   if (state.tutorial.done) {
     overlay.classList.remove("show");

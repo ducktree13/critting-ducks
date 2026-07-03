@@ -1,10 +1,11 @@
 import { ASCENSION, GEAR, MATERIAL_NAMES } from "../game/balance";
 import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
 import { equipItem, equippedItemsFor, sellEquipment, unequipItem } from "../game/gear";
-import { ascendDuck, ascensionCost, canAscend, upgradeCost } from "../game/packs";
+import { ascendDuck, ascensionCost, canAscend, canUpgrade, upgradeAll, upgradeCost } from "../game/packs";
 import { toggleFavorite } from "../game/state";
 import { TRAITS } from "../game/traits";
 import type { EquipSlot, EquipmentItem, GameState, Rarity } from "../game/types";
+import { showToast } from "./achievementsPanel";
 import { duckSvg, rarityCrestBadge } from "./duckArt";
 import { attachTooltip } from "./tooltip";
 
@@ -41,6 +42,7 @@ export function initInventoryMenu(state: GameState): void {
           <option value="role">Profession</option>
           <option value="level">Level</option>
         </select>
+        <button class="settings-btn" id="inv-upgrade-all">Upgrade All</button>
         <button class="shop-close" id="inv-close">✕</button>
       </div>
       <div class="inventory-body">
@@ -59,7 +61,21 @@ export function initInventoryMenu(state: GameState): void {
     sortKey = (e.target as HTMLSelectElement).value as SortKey;
     renderGrid();
   });
+  overlay.querySelector("#inv-upgrade-all")!.addEventListener("click", () => {
+    const result = upgradeAll(gameState);
+    if (result.ducks > 0) {
+      showToast(`Upgraded ${result.ducks} duck${result.ducks === 1 ? "" : "s"} (+${result.levels} level${result.levels === 1 ? "" : "s"})`);
+      renderGrid();
+      renderCard();
+    }
+    renderUpgradeAllButton();
+  });
   document.body.appendChild(overlay);
+}
+
+function renderUpgradeAllButton(): void {
+  const btn = overlay.querySelector<HTMLButtonElement>("#inv-upgrade-all")!;
+  btn.disabled = !gameState.ducks.some((d) => canUpgrade(gameState, d.defId));
 }
 
 export function openInventory(): void {
@@ -67,6 +83,7 @@ export function openInventory(): void {
   renderCard();
   renderMaterials();
   renderUnequippedGear();
+  renderUpgradeAllButton();
   overlay.classList.add("open");
 }
 
@@ -215,6 +232,7 @@ function renderCard(): void {
     if (ascendDuck(gameState, duck.defId)) {
       renderCard();
       renderGrid();
+      renderUpgradeAllButton();
     }
   });
   card.querySelectorAll<HTMLButtonElement>(".equip-slot").forEach((btn) => {

@@ -95,7 +95,7 @@ export const GACHA = {
     pack25: { price: 3750, rolls: 25, guarantee: "rare", minLevel: 1 },
     pack100: { price: 15000, rolls: 100, guarantee: "epic", minLevel: 20 },
   } as Record<PackId, { price: number; rolls: number; guarantee: Rarity | null; minLevel: number }>,
-  packCritMaxBonus: 3, // free bonus packs per purchase, crits can chain up to this
+  packCritMaxBonus: 1, // free bonus packs per purchase, crits can chain up to this
 } as const;
 
 export const STREAK_BALANCE = {

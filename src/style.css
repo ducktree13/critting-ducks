@@ -713,6 +713,7 @@ main.panels {
   font-weight: 600;
   z-index: 5;
   text-align: center;
+  pointer-events: none; /* status banner only — never intercept clicks (§ arena assign bug) */
 }
 
 .arena-overlay.show {
@@ -1685,6 +1686,20 @@ main.panels {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+/* Standard-pack button glow during the tutorial's "open a pack" step
+   (toggled in src/ui/tutorial.ts). Static ring always shows; the pulse is
+   motion-only, so prefers-reduced-motion (tokens.css zeroes durations
+   globally) still leaves an obvious, tasteful accent ring behind. */
+.tutorial-glow {
+  box-shadow: 0 0 0 2px var(--accent);
+  animation: tutorial-glow-pulse var(--dur-3) var(--ease-snap) infinite;
+}
+
+@keyframes tutorial-glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--accent), 0 0 6px 2px var(--crit-glow); }
+  50% { box-shadow: 0 0 0 2px var(--accent), 0 0 16px 6px var(--crit-glow); }
 }
 
 #tut-skip {

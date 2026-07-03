@@ -66,7 +66,7 @@ function closeAchievements(): void {
   overlay.classList.remove("open");
 }
 
-function showToast(text: string): void {
+export function showToast(text: string): void {
   const el = document.createElement("div");
   el.className = "toast";
   el.textContent = text;
