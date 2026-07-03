@@ -1,19 +1,14 @@
+/* Legacy variable names aliased onto the token sheet (src/tokens.css) so
+   every existing component rule now reskins from the design system.
+   --accent and --crit come straight from the sheet — do NOT redefine them
+   here or theme/mode switching breaks for those roles. New/reworked rules
+   should consume semantic tokens directly (design/STYLE.md §1). */
 :root {
-  --bg: #ffffff;
-  --fg: #1a1a1a;
-  --muted: #6b6b6b;
-  --card: #f5f5f5;
-  --card-border: #e2e2e2;
-  --accent: #f5a623;
-  --crit: #e0483e;
-}
-
-html[data-theme="dark"] {
-  --bg: #14161a;
-  --fg: #e8e8e8;
-  --muted: #9a9a9a;
-  --card: #1c1f26;
-  --card-border: #2a2e37;
+  --bg: var(--surface);
+  --fg: var(--text);
+  --muted: var(--text-muted);
+  --card: var(--surface-raised);
+  --card-border: var(--surface-border);
 }
 
 * {
@@ -22,9 +17,9 @@ html[data-theme="dark"] {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom)) fixed;
   color: var(--fg);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-body);
 }
 
 header.hud {

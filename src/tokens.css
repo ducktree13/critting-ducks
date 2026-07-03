@@ -1,0 +1,57 @@
+/* ================= CRITTING DUCKS TOKEN SHEET =================
+   Copied verbatim from the canonical <style> block in
+   design/Style Guide.dc.html (see design/STYLE.md §1, the written
+   contract). Base tokens live in :root. Semantic tokens are switched
+   by [data-theme] and [data-mode] on any ancestor (the game sets both
+   on <body>). A theme is a token swap — never a per-component
+   override. Components consume semantic tokens only: never raw hex,
+   never [data-theme]-specific CSS. */
+:root {
+  --font-body:'Nunito',sans-serif; --font-mono:'JetBrains Mono',monospace;
+  --radius-s:8px; --radius-m:14px; --radius-l:22px; --border-w:2px;
+  --dur-1:120ms; --dur-2:240ms; --dur-3:480ms;
+  --ease-out:cubic-bezier(0.22,1,0.36,1); --ease-snap:cubic-bezier(0.65,0,0.35,1); --ease-bounce:cubic-bezier(0.34,1.56,0.64,1);
+  /* rarity — global, hue never theme-switched */
+  --rarity-common:#a89a83; --rarity-uncommon:#6f9a4e; --rarity-rare:#4a7fb5; --rarity-epic:#8f6bb5; --rarity-legendary:#d6a336; --rarity-mythic:#c23a3a; --rarity-divine:#cfd8ee;
+  --rarity-divine-grad:conic-gradient(from 20deg,#f2d8ff,#c8ecff,#fdf3c4,#ffd9e8,#d8ffe4,#f2d8ff);
+  /* crit + heat — global */
+  --crit:#d9503d; --crit-ink:#faf3e3; --crit-glow:rgba(217,80,61,0.5);
+  --heat-1:#eaa63c; --heat-2:#e0813c; --heat-3:#d9503d; --heat-4:#b03a86;
+  --gold:#d6a336; --xp:#7fb3c8; --hp:#c65b5b;
+  --disabled-bg:#ece2cc; --disabled-text:#a89a83; --locked-a:#e6dac0; --locked-b:#ded1b4; --locked-text:#8d7d64;
+  /* woodland-day defaults so the page paints before any attribute lands */
+  --sky-top:#a9d3e0; --sky-bottom:#e6efd6; --ground:#8aa86f; --scene-detail:#fdfef8;
+  --surface:#faf3e3; --surface-raised:#fdf9ee; --surface-sunken:#ece2cc; --surface-border:#5b4636; --shadow-drop:rgba(91,70,54,0.28);
+  --text:#5b4636; --text-muted:#7a6a55; --text-inverse:#faf3e3;
+  --accent:#eaa63c; --accent-hover:#f0b558; --accent-ink:#43301a; --accent-soft:#f7e6bf;
+  --panel-head:#8aa86f; --panel-head-ink:#faf3e3;
+  --font-display:'Chelsea Market',cursive;
+}
+[data-mode="night"] {
+  --crit:#ff6752; --crit-glow:rgba(255,103,82,0.55); --gold:#e8c25a; --xp:#8fc7dd; --hp:#e07a7a;
+  --rarity-common:#b8ac96; --rarity-uncommon:#8fbe6a; --rarity-rare:#6fa3d8; --rarity-epic:#b191d8; --rarity-legendary:#e8c25a; --rarity-mythic:#e0605c; --rarity-divine:#e3e9f8;
+  --disabled-bg:#33302a; --disabled-text:#7d7466; --locked-a:#2e2a22; --locked-b:#28241d; --locked-text:#8d8270;
+}
+[data-theme="woodland"] { --sky-top:#a9d3e0; --sky-bottom:#e6efd6; --ground:#8aa86f; --scene-detail:#fdfef8; --surface:#faf3e3; --surface-raised:#fdf9ee; --surface-sunken:#ece2cc; --surface-border:#5b4636; --shadow-drop:rgba(91,70,54,0.28); --text:#5b4636; --text-muted:#7a6a55; --text-inverse:#faf3e3; --accent:#eaa63c; --accent-hover:#f0b558; --accent-ink:#43301a; --accent-soft:#f7e6bf; --panel-head:#8aa86f; --panel-head-ink:#faf3e3; --font-display:'Chelsea Market',cursive; }
+[data-theme="woodland"][data-mode="night"] { --sky-top:#141f2c; --sky-bottom:#2a3948; --ground:#37432f; --scene-detail:#f2e6bc; --surface:#3a3428; --surface-raised:#46402f; --surface-sunken:#2a251d; --surface-border:#171310; --shadow-drop:rgba(0,0,0,0.45); --text:#f0e6cf; --text-muted:#bdb098; --text-inverse:#33291c; --accent:#f0b558; --accent-hover:#f7c876; --accent-ink:#3a2a12; --accent-soft:#4c4128; --panel-head:#4c5f3d; --panel-head-ink:#eef2dd; }
+[data-theme="forest"] { --sky-top:#93bfa6; --sky-bottom:#d5e6c0; --ground:#5f8a52; --scene-detail:#f6faf0; --surface:#eef2e0; --surface-raised:#f6f8ea; --surface-sunken:#dae2c6; --surface-border:#3b4829; --shadow-drop:rgba(59,72,41,0.28); --text:#3b4829; --text-muted:#64724c; --text-inverse:#f4f8ea; --accent:#6f9a4e; --accent-hover:#7fae5c; --accent-ink:#1d2a10; --accent-soft:#dce8c4; --panel-head:#5f8a52; --panel-head-ink:#f0f6e2; --font-display:'Grandstander',cursive; }
+[data-theme="forest"][data-mode="night"] { --sky-top:#0d1a14; --sky-bottom:#1b2d22; --ground:#1c2415; --scene-detail:#cfe6b8; --surface:#242e1c; --surface-raised:#2d3823; --surface-sunken:#181f12; --surface-border:#0d1109; --shadow-drop:rgba(0,0,0,0.5); --text:#e3ead0; --text-muted:#a9b790; --text-inverse:#1c2412; --accent:#8fbe6a; --accent-hover:#a0cc7c; --accent-ink:#17240c; --accent-soft:#35422a; --panel-head:#3c5230; --panel-head-ink:#e3ead0; }
+[data-theme="volcano"] { --sky-top:#f2c396; --sky-bottom:#e89a72; --ground:#7a4a34; --scene-detail:#fbe8d4; --surface:#f5e0cc; --surface-raised:#fbeee0; --surface-sunken:#e6c9ae; --surface-border:#48231a; --shadow-drop:rgba(72,35,26,0.3); --text:#48231a; --text-muted:#7e5240; --text-inverse:#fbeee0; --accent:#e0632e; --accent-hover:#ef7b42; --accent-ink:#fbeee0; --accent-soft:#f6d0b4; --panel-head:#b5502e; --panel-head-ink:#fbeee0; --font-display:'Titan One',cursive; }
+[data-theme="volcano"][data-mode="night"] { --sky-top:#170b10; --sky-bottom:#40150f; --ground:#241110; --scene-detail:#ffb04a; --surface:#33201a; --surface-raised:#3f2a20; --surface-sunken:#221310; --surface-border:#120a07; --shadow-drop:rgba(0,0,0,0.55); --text:#f5dfc8; --text-muted:#c09880; --text-inverse:#2b160e; --accent:#ff7a3d; --accent-hover:#ff9058; --accent-ink:#33120a; --accent-soft:#4c2c1c; --panel-head:#7a2f1e; --panel-head-ink:#f5dfc8; }
+[data-theme="castle"] { --sky-top:#b6c6da; --sky-bottom:#e2e7ee; --ground:#8a94a4; --scene-detail:#f6f8fb; --surface:#e9e5da; --surface-raised:#f2efe6; --surface-sunken:#d5cfc2; --surface-border:#3e3a4c; --shadow-drop:rgba(62,58,76,0.28); --text:#3e3a4c; --text-muted:#6e6a7c; --text-inverse:#f2efe6; --accent:#7d5bb0; --accent-hover:#8e6cc2; --accent-ink:#f2ecfa; --accent-soft:#e2d8f0; --panel-head:#5a5470; --panel-head-ink:#f2efe6; --font-display:'Grenze Gotisch',serif; }
+[data-theme="castle"][data-mode="night"] { --sky-top:#10131f; --sky-bottom:#222941; --ground:#2c3140; --scene-detail:#dfe6ff; --surface:#2b2a38; --surface-raised:#353346; --surface-sunken:#1e1d29; --surface-border:#0f0e16; --shadow-drop:rgba(0,0,0,0.5); --text:#e6e2f0; --text-muted:#a8a2bc; --text-inverse:#211f2e; --accent:#a98be0; --accent-hover:#b99df0; --accent-ink:#241640; --accent-soft:#3c3454; --panel-head:#45405c; --panel-head-ink:#e6e2f0; }
+[data-theme="swamp"] { --sky-top:#aec8a2; --sky-bottom:#d6dcae; --ground:#6b7a3c; --scene-detail:#f2f4de; --surface:#e9ecd0; --surface-raised:#f2f4de; --surface-sunken:#d5dcb4; --surface-border:#3c4824; --shadow-drop:rgba(60,72,36,0.28); --text:#3c4824; --text-muted:#68744a; --text-inverse:#f2f4de; --accent:#8a9a3e; --accent-hover:#9aac4c; --accent-ink:#232c0e; --accent-soft:#dfe6b8; --panel-head:#6b7a3c; --panel-head-ink:#f2f4de; --font-display:'Chewy',cursive; }
+[data-theme="swamp"][data-mode="night"] { --sky-top:#0e160e; --sky-bottom:#1c2a18; --ground:#1c2415; --scene-detail:#c8e07a; --surface:#222c1a; --surface-raised:#2b3722; --surface-sunken:#161d10; --surface-border:#0b0f07; --shadow-drop:rgba(0,0,0,0.5); --text:#e4e8cc; --text-muted:#a6b088; --text-inverse:#1c2410; --accent:#a8be4e; --accent-hover:#b8cc60; --accent-ink:#232c0c; --accent-soft:#333e20; --panel-head:#3b4a24; --panel-head-ink:#e4e8cc; }
+[data-theme="island"] { --sky-top:#8fd0dc; --sky-bottom:#eaf2d8; --ground:#e8d6a0; --scene-detail:#ffffff; --surface:#fbf0d8; --surface-raised:#fdf6e6; --surface-sunken:#eddcb6; --surface-border:#2e5560; --shadow-drop:rgba(46,85,96,0.28); --text:#2e5560; --text-muted:#5f7c84; --text-inverse:#f4fbfa; --accent:#2ea8b8; --accent-hover:#3cbccc; --accent-ink:#06282e; --accent-soft:#cdeef0; --panel-head:#3592a0; --panel-head-ink:#f4fbfa; --font-display:'Boogaloo',cursive; }
+[data-theme="island"][data-mode="night"] { --sky-top:#0c1a28; --sky-bottom:#1d3548; --ground:#4a4030; --scene-detail:#e8f2ff; --surface:#1e3240; --surface-raised:#27404f; --surface-sunken:#142430; --surface-border:#08121a; --shadow-drop:rgba(0,0,0,0.5); --text:#dff0ec; --text-muted:#9cb8b8; --text-inverse:#10262c; --accent:#46c8d8; --accent-hover:#5cd8e6; --accent-ink:#062a30; --accent-soft:#274a52; --panel-head:#2a5866; --panel-head-ink:#dff0ec; }
+[data-theme="prairie"] { --sky-top:#b4d6e6; --sky-bottom:#f0e6bc; --ground:#c89b4a; --scene-detail:#ffffff; --surface:#f8efd8; --surface-raised:#fcf6e8; --surface-sunken:#ebdec0; --surface-border:#5c4426; --shadow-drop:rgba(92,68,38,0.28); --text:#5c4426; --text-muted:#85704c; --text-inverse:#fcf6e8; --accent:#cf8f2e; --accent-hover:#dfa03e; --accent-ink:#3a270c; --accent-soft:#f2e2bc; --panel-head:#a5793a; --panel-head-ink:#fcf6e8; --font-display:'Sniglet',cursive; }
+[data-theme="prairie"][data-mode="night"] { --sky-top:#121728; --sky-bottom:#2a2838; --ground:#38301c; --scene-detail:#f2e2a8; --surface:#342c1e; --surface-raised:#403726; --surface-sunken:#241e14; --surface-border:#120e08; --shadow-drop:rgba(0,0,0,0.5); --text:#f0e4c8; --text-muted:#baa984; --text-inverse:#2c2210; --accent:#e0a848; --accent-hover:#ecb85e; --accent-ink:#33240a; --accent-soft:#4a3d24; --panel-head:#59492a; --panel-head-ink:#f0e4c8; }
+[data-theme="western"] { --sky-top:#d6c4a0; --sky-bottom:#e8ce9e; --ground:#a5764a; --scene-detail:#f6ecd8; --surface:#f2e2c4; --surface-raised:#f8ecd6; --surface-sunken:#e2cda6; --surface-border:#47301e; --shadow-drop:rgba(71,48,30,0.3); --text:#47301e; --text-muted:#7a5c40; --text-inverse:#f8ecd6; --accent:#b5502e; --accent-hover:#c86038; --accent-ink:#fbeee0; --accent-soft:#ecc9ae; --panel-head:#7a4a2c; --panel-head-ink:#f8ecd6; --font-display:'Rye',serif; }
+[data-theme="western"][data-mode="night"] { --sky-top:#170f0c; --sky-bottom:#33201a; --ground:#241510; --scene-detail:#e8cf9a; --surface:#2e1e16; --surface-raised:#392820; --surface-sunken:#1e120c; --surface-border:#0f0806; --shadow-drop:rgba(0,0,0,0.55); --text:#ecd8bc; --text-muted:#b39678; --text-inverse:#281812; --accent:#d86a3e; --accent-hover:#e67c50; --accent-ink:#2e1006; --accent-soft:#45291c; --panel-head:#5a3220; --panel-head-ink:#ecd8bc; }
+@keyframes cd-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+@keyframes cd-twinkle { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes cd-drift { 0% { transform: translateX(0); } 100% { transform: translateX(46px); } }
+@keyframes cd-float-up { 0% { transform: translateY(0) scale(1.15); opacity: 1; } 60% { opacity: 1; } 100% { transform: translateY(-36px) scale(1); opacity: 0; } }
+@keyframes cd-shake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-4px,2px); } 40% { transform: translate(3px,-2px); } 60% { transform: translate(-2px,1px); } 80% { transform: translate(1px,-1px); } }
+@keyframes cd-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }

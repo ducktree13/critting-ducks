@@ -1,3 +1,4 @@
+import "./tokens.css";
 import "./style.css";
 import { checkAchievements } from "./game/achievements";
 import { tickArena } from "./game/arena";
