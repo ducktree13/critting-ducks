@@ -7,6 +7,7 @@ import { TRAITS } from "../game/traits";
 import type { EquipSlot, EquipmentItem, GameState, Rarity } from "../game/types";
 import { showToast } from "./achievementsPanel";
 import { duckSvg, rarityCrestBadge } from "./duckArt";
+import { makeDuckDraggable } from "./dragDuck";
 import { attachTooltip } from "./tooltip";
 
 const SLOT_LABEL: Record<EquipSlot, string> = { weapon: "Weapon", armor: "Armor", charm: "Charm" };
@@ -56,6 +57,14 @@ export function initInventoryMenu(state: GameState): void {
   overlay.addEventListener("click", (e) => {
     if (e.target === overlay) closeInventory();
   });
+  // The inventory is a full-screen modal, so dragging a tile out to a
+  // roster slot behind it would otherwise be impossible. Docking the box
+  // to one side at a reduced scale while a drag is in flight keeps the
+  // world panels visible (and thus droppable) without closing the menu.
+  overlay.addEventListener("dragstart", (e) => {
+    if ((e.target as HTMLElement)?.closest(".inv-tile")) overlay.classList.add("dragging-out");
+  });
+  overlay.addEventListener("dragend", () => overlay.classList.remove("dragging-out"));
   overlay.querySelector("#inv-close")!.addEventListener("click", closeInventory);
   overlay.querySelector<HTMLSelectElement>("#inv-sort")!.addEventListener("change", (e) => {
     sortKey = (e.target as HTMLSelectElement).value as SortKey;
@@ -161,6 +170,10 @@ function renderGrid(): void {
       renderGrid();
       renderCard();
     });
+    // Dragging out of the inventory doubles as a drop source for roster
+    // slots behind the modal (see the dock-aside toggle below); the drag
+    // itself is wired through the shared dragDuck helper.
+    makeDuckDraggable(btn, btn.dataset.duck!, gameState);
   });
 }
 

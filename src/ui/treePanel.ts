@@ -6,6 +6,7 @@ import { buy, canBuy, getSkillNode, isOwned, isVisible, nodesForTree, SKILL_NODE
 import { getStats } from "../game/state";
 import type { GameState, NodeEffect, SkillNode, TreeId } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
+import { makeDuckDraggable, makeDuckDropTarget } from "./dragDuck";
 import { fmt } from "./format";
 import { renderMissionTracker } from "./missionsPanel";
 import { openRosterPicker } from "./rosterPicker";
@@ -499,7 +500,9 @@ function rebuildPondRoster(state: GameState): void {
     if (defId) {
       const duck = state.ducks.find((d) => d.defId === defId);
       if (duck) attachTooltip(slot, () => duckTooltipHtml(state, duck));
+      makeDuckDraggable(slot, defId, state);
     }
+    makeDuckDropTarget(slot, "pond", Number(slot.dataset.slot), state);
   });
   lastPondRosterKey = pondRosterKey(state);
 }

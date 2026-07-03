@@ -1115,3 +1115,65 @@ body.quackening-active main.panel {
     opacity: 0.8;
   }
 }
+
+/* ---- Drag-and-drop duck assignment (PLAN2.md Phase B2, src/ui/dragDuck.ts) ---- */
+
+/* Drag source (inventory tile or an occupied roster slot) while its drag
+   is in flight. */
+.dragging {
+  opacity: 0.4;
+}
+
+/* Roster slot (empty or occupied) currently under a drag whose duck role
+   is eligible for this panel. */
+.drop-ok {
+  box-shadow: 0 0 0 3px var(--accent);
+  transform: scale(1.08);
+}
+
+/* Same, but the dragged duck's role is NOT eligible here. */
+.drop-bad {
+  box-shadow: 0 0 0 3px var(--crit);
+  cursor: not-allowed;
+}
+
+/* Momentary shake on a rejected drop (assignToRoster returned false). */
+.drop-rejected {
+  animation: drop-rejected-shake 0.4s ease-in-out;
+}
+@keyframes drop-rejected-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-4px, 0); }
+  40% { transform: translate(4px, 0); }
+  60% { transform: translate(-3px, 0); }
+  80% { transform: translate(3px, 0); }
+}
+
+/* While dragging a duck out of the inventory modal, dock the box to the
+   right edge at reduced scale so the panels behind it are visible and
+   droppable (PLAN2.md Phase B2 inventory-drag caveat). */
+.inventory-overlay.dragging-out .inventory-box {
+  transition: transform 240ms ease;
+  transform: translateX(38%) scale(0.4);
+  transform-origin: right center;
+  pointer-events: none;
+}
+.inventory-overlay.dragging-out {
+  background: transparent;
+  pointer-events: none;
+}
+.inventory-overlay.dragging-out .inv-tile.dragging {
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-rejected {
+    animation: none !important;
+  }
+  .drop-ok {
+    transform: none;
+  }
+  .inventory-overlay.dragging-out .inventory-box {
+    transition: none;
+  }
+}

@@ -3,6 +3,7 @@ import { on } from "../game/events";
 import { getStats, refreshStats } from "../game/state";
 import type { GameState, OreId } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
+import { makeDuckDraggable, makeDuckDropTarget } from "./dragDuck";
 import { fmt } from "./format";
 import { renderMissionTracker } from "./missionsPanel";
 import { openRosterPicker } from "./rosterPicker";
@@ -214,7 +215,9 @@ function renderRoster(state: GameState): void {
     if (defId) {
       const duck = state.ducks.find((d) => d.defId === defId);
       if (duck) attachTooltip(slot, () => duckTooltipHtml(state, duck));
+      makeDuckDraggable(slot, defId, state);
     }
+    makeDuckDropTarget(slot, "mine", Number(slot.dataset.slot), state);
   });
   lastRosterKey = rosterKey(state);
 }
