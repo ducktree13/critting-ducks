@@ -124,8 +124,7 @@ header.hud .hud-title {
 }
 
 .pip.lit {
-  color: #fff;
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.55);
+  color: var(--accent-ink);
 }
 
 main.panels {
@@ -222,15 +221,9 @@ main.panels {
   font-size: 0.85rem;
 }
 
-.vein.active {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: #fff;
-}
-
 .vein.locked {
-  opacity: 0.55;
   cursor: not-allowed;
+  /* stripe/dashed/locked-text: src/components.css */
 }
 
 .duck-row {
@@ -539,7 +532,7 @@ main.panels {
 }
 
 .tree-node.owned .glyph {
-  fill: #fff;
+  fill: var(--accent-ink);
 }
 
 .tree-node.silhouette .face,
@@ -669,20 +662,14 @@ main.panels {
   position: relative;
   width: min(260px, 90%);
   height: 16px;
-  border-radius: 8px;
-  background: var(--card-border);
   overflow: hidden;
+  /* fill/border/radius: src/components.css (design/STYLE.md §3) */
 }
 
 .hp-bar .hp-fill {
   display: block;
   height: 100%;
-  background: #d9534f;
-  transition: width 0.12s linear;
-}
-
-.hp-bar.team .hp-fill {
-  background: #5cb85c;
+  /* color + transition: src/components.css */
 }
 
 .hp-bar.flash {
@@ -701,8 +688,7 @@ main.panels {
   justify-content: center;
   font-size: 0.68rem;
   font-weight: 600;
-  color: #fff;
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
+  /* color: src/components.css */
 }
 
 .arena-team {
@@ -738,24 +724,21 @@ main.panels {
 .shop-btn {
   padding: 6px 14px;
   margin-right: 12px;
-  border: none;
-  border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  /* fill/color/border/radius/shadow: src/components.css */
 }
 
 .shop-overlay,
 .picker-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 100;
+  /* scrim color: src/components.css */
 }
 
 .shop-overlay.open,
@@ -764,13 +747,11 @@ main.panels {
 }
 
 .shop-box {
-  background: var(--bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
   width: min(680px, 92vw);
   max-height: 86vh;
   overflow-y: auto;
   padding: 18px;
+  /* fill/border/radius/shadow: src/components.css */
 }
 
 .shop-head {
@@ -853,15 +834,7 @@ main.panels {
   to { transform: rotateY(0) scale(1); opacity: 1; }
 }
 
-.reveal-card.rarity-uncommon { border-color: #4caf50; }
-.reveal-card.rarity-rare { border-color: #2196f3; }
-.reveal-card.rarity-epic { border-color: #9c27b0; box-shadow: 0 0 10px #9c27b055; }
-.reveal-card.rarity-legendary { border-color: #f5c518; box-shadow: 0 0 14px #f5c51888; }
-.reveal-card.rarity-mythic { border-color: #c0392b; box-shadow: 0 0 16px #c0392baa; }
-.reveal-card.rarity-divine {
-  border-color: #e8f4ff;
-  box-shadow: 0 0 18px #e8f4ffcc, 0 0 34px #9ad9ff88;
-}
+/* Rarity border colors + glows: see src/components.css (design/STYLE.md §4) */
 
 .shop-sp {
   margin-left: auto;
@@ -930,12 +903,7 @@ main.panels {
   text-align: center;
 }
 
-.duck-card.rarity-uncommon { border-color: #4caf50; }
-.duck-card.rarity-rare { border-color: #2196f3; }
-.duck-card.rarity-epic { border-color: #9c27b0; }
-.duck-card.rarity-legendary { border-color: #f5c518; }
-.duck-card.rarity-mythic { border-color: #c0392b; }
-.duck-card.rarity-divine { border-color: #e8f4ff; }
+/* Rarity border colors: see src/components.css (design/STYLE.md §4) */
 
 .duck-card small {
   color: var(--muted);
@@ -948,28 +916,23 @@ main.panels {
 
 .upgrade-btn {
   padding: 4px 10px;
-  border: none;
-  border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
   font: inherit;
   font-size: 0.75rem;
   cursor: pointer;
+  /* fill/color/border/radius/shadow: src/components.css */
 }
 
 .upgrade-btn:disabled {
-  opacity: 0.4;
   cursor: not-allowed;
+  /* disabled palette: src/components.css */
 }
 
 .picker-box {
-  background: var(--bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
   width: min(360px, 92vw);
   max-height: 70vh;
   overflow-y: auto;
   padding: 14px;
+  /* fill/border/radius/shadow: src/components.css */
 }
 
 .picker-box h3 {
@@ -1045,21 +1008,18 @@ main.panels {
 .wb-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
+  /* scrim color: src/components.css */
 }
 
 .wb-box {
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
   width: min(380px, 92vw);
   padding: 20px;
   text-align: center;
+  /* fill/color/border/radius/shadow: src/components.css */
 }
 
 .wb-box h3 {
@@ -1077,13 +1037,10 @@ main.panels {
 .wb-close {
   margin-top: 10px;
   padding: 8px 18px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  /* fill/color/border/radius/shadow: src/components.css */
 }
 
 .shop-settings {
@@ -1123,24 +1080,20 @@ main.panels {
 /* ---- Shared hover tooltip ---- */
 
 .hover-tooltip {
-  display: none;
+  display: block;
+  visibility: hidden;
   position: fixed;
-  transform: translate(-50%, calc(-100% - 10px));
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
   padding: 10px 12px;
   min-width: 150px;
   max-width: 260px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
   z-index: 300;
-  color: var(--fg);
+  /* fill/color/border/radius/shadow, fade/rise motion: src/components.css */
   font-size: 0.85rem;
   pointer-events: none;
 }
 
 .hover-tooltip.show {
-  display: block;
+  visibility: visible;
 }
 
 .tt-rarity {
@@ -1221,11 +1174,11 @@ main.panels {
 .inventory-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 100;
+  /* scrim color: src/components.css */
 }
 
 .inventory-overlay.open {
@@ -1233,14 +1186,12 @@ main.panels {
 }
 
 .inventory-box {
-  background: var(--bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
   width: min(760px, 94vw);
   max-height: 86vh;
   padding: 18px;
   display: flex;
   flex-direction: column;
+  /* fill/border/radius/shadow: src/components.css */
 }
 
 .inventory-head {
@@ -1300,12 +1251,7 @@ main.panels {
   border-color: var(--accent);
 }
 
-.inv-tile.rarity-uncommon { border-color: #4caf50; }
-.inv-tile.rarity-rare { border-color: #2196f3; }
-.inv-tile.rarity-epic { border-color: #9c27b0; }
-.inv-tile.rarity-legendary { border-color: #f5c518; }
-.inv-tile.rarity-mythic { border-color: #c0392b; }
-.inv-tile.rarity-divine { border-color: #e8f4ff; }
+/* Rarity border colors: see src/components.css (design/STYLE.md §4) */
 
 .inv-fav {
   position: absolute;
@@ -1407,12 +1353,7 @@ main.panels {
   margin-right: 8px;
 }
 
-.equip-slot.rarity-uncommon { border-color: #4caf50; }
-.equip-slot.rarity-rare { border-color: #2196f3; }
-.equip-slot.rarity-epic { border-color: #9c27b0; }
-.equip-slot.rarity-legendary { border-color: #f5c518; }
-.equip-slot.rarity-mythic { border-color: #c0392b; }
-.equip-slot.rarity-divine { border-color: #e8f4ff; }
+/* Rarity border colors: see src/components.css (design/STYLE.md §4) */
 
 .inventory-materials {
   display: flex;
@@ -1445,12 +1386,7 @@ main.panels {
   font-size: 0.8rem;
 }
 
-.gear-row.rarity-uncommon { border-color: #4caf50; }
-.gear-row.rarity-rare { border-color: #2196f3; }
-.gear-row.rarity-epic { border-color: #9c27b0; }
-.gear-row.rarity-legendary { border-color: #f5c518; }
-.gear-row.rarity-mythic { border-color: #c0392b; }
-.gear-row.rarity-divine { border-color: #e8f4ff; }
+/* Rarity border colors: see src/components.css (design/STYLE.md §4) */
 
 .crafting-list {
   display: flex;
@@ -1688,15 +1624,14 @@ main.panels {
 }
 
 .toast {
-  background: var(--card);
-  border: 1px solid var(--accent);
-  color: var(--fg);
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--text);
   padding: 8px 16px;
-  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
   animation: toast-in 0.2s ease-out;
+  /* border-width/radius/shadow: src/components.css */
 }
 
 @keyframes toast-in {
@@ -1733,15 +1668,11 @@ main.panels {
   left: 50%;
   bottom: 24px;
   transform: translateX(-50%);
-  background: var(--bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
   padding: 14px 18px;
   width: min(420px, 90vw);
   pointer-events: auto;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
   z-index: 260;
-  color: var(--fg);
+  /* fill/color/border/radius/shadow: src/components.css */
 }
 
 .tutorial-banner p {
@@ -1767,13 +1698,10 @@ main.panels {
 
 .tt-primary {
   padding: 6px 16px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
   font: inherit;
   font-weight: 600;
   cursor: pointer;
+  /* fill/color/border/radius/shadow: src/components.css */
 }
 
 /* ---- Floaters ---- */

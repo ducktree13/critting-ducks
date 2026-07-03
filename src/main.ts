@@ -1,5 +1,7 @@
+import "./fonts.css";
 import "./tokens.css";
 import "./style.css";
+import "./components.css";
 import { checkAchievements } from "./game/achievements";
 import { tickArena } from "./game/arena";
 import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, OFFLINE, TICK_SEC } from "./game/balance";

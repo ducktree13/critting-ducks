@@ -1,0 +1,517 @@
+/* ================= COMPONENTS — "Storybook Picnic" chrome =================
+   Restyles component chrome to design/STYLE.md §2 (type), §3 (shape &
+   chrome), §8 (motion), §9 (accessibility). Consumes semantic tokens from
+   src/tokens.css only — no raw hex, no [data-theme] overrides here.
+   Legacy variables (--bg/--fg/--muted/--card/--card-border) are aliased in
+   style.css; this file also reaches for the underlying semantic tokens
+   directly where the spec calls for a specific role (e.g. --panel-head). */
+
+/* ---- Type scale (§2) ---- */
+
+h1, h2, h3,
+.panel h2,
+.shop-head h3,
+.picker-box h3,
+.inventory-head h3,
+.wb-box h3,
+.hud-streak,
+button,
+.vein,
+.pack-btn,
+.upgrade-btn,
+.shop-btn,
+.tt-primary,
+.wb-close,
+.settings-btn {
+  font-family: var(--font-display);
+}
+
+.panel h2 {
+  font-size: 20px;
+  letter-spacing: 0.01em;
+}
+
+.shop-head h3,
+.picker-box h3,
+.inventory-head h3,
+.wb-box h3 {
+  font-size: 20px;
+}
+
+/* Numerals: tabular figures, heavy weight, never jitter at 60fps (§2, §9) */
+.hud-gold,
+.hud-rate,
+.hud-streak,
+.hp-bar .hp-label,
+.xp-fill,
+.ach-progress,
+.mission-fill,
+.tt-stats,
+.shard-shop-head small,
+.hud-xp {
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-gold,
+.hud-streak,
+.hp-bar .hp-label {
+  font-weight: 900;
+}
+
+.hud-streak {
+  font-family: var(--font-display);
+  font-size: 20px;
+}
+
+/* ---- Shape & chrome baseline (§3) ---- */
+
+.panel,
+.vein,
+.pack-btn,
+.upgrade-btn,
+.shop-btn,
+.tt-primary,
+.wb-close,
+.settings-btn,
+.picker-row,
+.duck-card,
+.reveal-card,
+.inv-tile,
+.equip-slot,
+.gear-row,
+.recipe-row,
+.expedition-row,
+.ach-row,
+.mission-tracker,
+.tree-nav,
+.panel-toggle,
+.icon-btn,
+.hp-bar,
+.xp-bar,
+.ach-bar,
+.mission-bar,
+.shop-box,
+.picker-box,
+.inventory-box,
+.wb-box,
+.tutorial-banner,
+.hover-tooltip,
+.toast {
+  border: var(--border-w) solid var(--surface-border);
+}
+
+.panel,
+.shop-box,
+.picker-box,
+.inventory-box,
+.wb-box,
+.reveal-card {
+  border-radius: var(--radius-m);
+}
+
+.vein,
+.pack-btn,
+.upgrade-btn,
+.shop-btn,
+.tt-primary,
+.wb-close,
+.settings-btn,
+.picker-row,
+.duck-card,
+.inv-tile,
+.equip-slot,
+.gear-row,
+.recipe-row,
+.expedition-row,
+.ach-row,
+.mission-tracker,
+.tree-nav,
+.panel-toggle,
+.toast,
+.hover-tooltip {
+  border-radius: var(--radius-s);
+}
+
+/* Cartoon offset shadow: surfaces 3px, floating chrome/modals 4-6px */
+.panel,
+.vein,
+.pack-btn,
+.upgrade-btn,
+.shop-btn,
+.tt-primary,
+.wb-close,
+.settings-btn,
+.picker-row,
+.duck-card,
+.inv-tile,
+.equip-slot,
+.gear-row,
+.recipe-row,
+.expedition-row,
+.ach-row,
+.tree-nav,
+.panel-toggle,
+.toast {
+  box-shadow: 0 3px 0 var(--shadow-drop);
+}
+
+.shop-box,
+.picker-box,
+.inventory-box,
+.wb-box,
+.tutorial-banner {
+  box-shadow: 0 6px 0 var(--shadow-drop);
+}
+
+.hover-tooltip {
+  box-shadow: 0 4px 0 var(--shadow-drop);
+}
+
+/* ---- Buttons: hover / press / disabled / focus (§3, §9) ---- */
+
+.vein,
+.pack-btn,
+.upgrade-btn,
+.shop-btn,
+.tt-primary,
+.wb-close,
+.settings-btn,
+.tree-nav,
+.panel-toggle,
+.icon-btn {
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out),
+    background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+
+/* Neutral chrome buttons: surface fill, flip to accent on hover/active */
+.vein,
+.pack-btn,
+.settings-btn,
+.tree-nav,
+.panel-toggle {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* Filled primary-action buttons: accent fill always on */
+.upgrade-btn,
+.shop-btn,
+.tt-primary,
+.wb-close {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--surface-border);
+}
+
+.vein.active,
+.pack-btn:hover:not(:disabled),
+.upgrade-btn:hover:not(:disabled),
+.shop-btn:hover,
+.tt-primary:hover,
+.wb-close:hover,
+.settings-btn:hover:not(:disabled),
+.tree-nav:hover,
+.panel-toggle:hover,
+.vein:hover:not(.active):not(.locked):not(:disabled) {
+  background: var(--accent-hover);
+  color: var(--accent-ink);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 var(--shadow-drop);
+}
+
+.vein.active {
+  background: var(--accent);
+  border-color: var(--surface-border);
+  color: var(--accent-ink);
+}
+
+.vein:active:not(.locked):not(:disabled),
+.pack-btn:active:not(:disabled),
+.upgrade-btn:active:not(:disabled),
+.shop-btn:active,
+.tt-primary:active,
+.wb-close:active,
+.settings-btn:active:not(:disabled),
+.tree-nav:active,
+.panel-toggle:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--shadow-drop);
+}
+
+button:focus-visible,
+.vein:focus-visible,
+.pack-btn:focus-visible,
+.upgrade-btn:focus-visible,
+.shop-btn:focus-visible,
+.tt-primary:focus-visible,
+.wb-close:focus-visible,
+.settings-btn:focus-visible,
+.tree-nav:focus-visible,
+.panel-toggle:focus-visible,
+.icon-btn:focus-visible,
+.picker-row:focus-visible,
+.tree-node:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Disabled — flat, muted, no shadow (never gray-alone; locked below adds
+   stripes so the two states read distinctly, §9) */
+.upgrade-btn:disabled,
+.settings-btn:disabled,
+.pack-btn:disabled:not(.locked),
+button:disabled {
+  background: var(--disabled-bg);
+  color: var(--disabled-text);
+  border-color: var(--disabled-text);
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Locked ≠ disabled: 45° stripe pair + dashed border + locked-text (§3, §9).
+   Applies to vein buttons and pack/recipe rows that carry a padlock glyph
+   in their markup. */
+.vein.locked,
+.pack-btn:disabled,
+.recipe-row.locked {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--locked-a),
+    var(--locked-a) 8px,
+    var(--locked-b) 8px,
+    var(--locked-b) 16px
+  );
+  border-style: dashed;
+  border-color: var(--locked-text);
+  color: var(--locked-text);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.vein.locked:hover,
+.pack-btn:disabled:hover {
+  transform: none;
+}
+
+.recipe-row.locked .recipe-info small {
+  color: var(--locked-text);
+}
+
+/* ---- Panels (§3) ---- */
+
+.panel {
+  background: var(--surface);
+}
+
+.panel h2 {
+  background: var(--panel-head);
+  color: var(--panel-head-ink);
+  border-bottom: var(--border-w) solid var(--surface-border);
+  border-radius: calc(var(--radius-m) - var(--border-w)) calc(var(--radius-m) - var(--border-w)) 0 0;
+}
+
+.panel-toggle {
+  background: var(--surface-raised);
+}
+
+/* Minimized panel reads as a 52px vertical rail (§3) */
+.panel.minimized {
+  width: 52px;
+  min-width: 52px;
+  flex: 0 0 52px;
+}
+
+.panel.minimized h2 {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  width: 52px;
+  padding: 12px 0;
+  border-radius: calc(var(--radius-m) - var(--border-w)) calc(var(--radius-m) - var(--border-w)) 0 0;
+  gap: 10px;
+}
+
+.panel.minimized .panel-toggle {
+  writing-mode: horizontal-tb;
+}
+
+/* ---- Tooltips (§3) ---- */
+
+.hover-tooltip {
+  background: var(--surface-border);
+  color: var(--text-inverse);
+  transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out),
+    visibility var(--dur-2) step-end;
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 4px));
+}
+
+.hover-tooltip.show {
+  opacity: 1;
+  transform: translate(-50%, calc(-100% - 10px));
+  transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out),
+    visibility 0s;
+}
+
+.hover-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  background: var(--surface-border);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.tt-rarity,
+.tt-meta,
+.tt-odds {
+  color: var(--text-inverse);
+  opacity: 0.75;
+}
+
+.tt-passive {
+  color: var(--accent);
+}
+
+/* ---- Modals & scrim (§3) ---- */
+
+.shop-overlay,
+.picker-overlay,
+.wb-overlay,
+.inventory-overlay {
+  background: color-mix(in srgb, var(--surface-border) 32%, transparent);
+}
+
+.shop-box,
+.picker-box,
+.inventory-box,
+.wb-box {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.tutorial-banner {
+  background: var(--surface);
+  color: var(--text);
+  border-radius: var(--radius-m);
+}
+
+/* ---- Meter bars (§3) ---- */
+
+.xp-bar,
+.hp-bar,
+.ach-bar,
+.mission-bar {
+  background: var(--surface-sunken);
+  border-radius: var(--radius-s);
+  position: relative;
+}
+
+.hp-bar {
+  height: 14px;
+}
+
+.xp-bar {
+  height: 12px;
+}
+
+.mission-bar,
+.ach-bar {
+  height: 12px;
+  border: var(--border-w) solid var(--surface-border);
+}
+
+.xp-fill {
+  background: var(--xp);
+  border-right: 1.5px solid var(--surface-border);
+}
+
+.hp-bar .hp-fill {
+  background: var(--hp);
+  border-right: 1.5px solid var(--surface-border);
+}
+
+.hp-bar.team .hp-fill {
+  background: var(--xp);
+}
+
+.mission-fill {
+  background: var(--accent);
+  border-right: 1.5px solid var(--surface-border);
+}
+
+.ach-fill {
+  background: var(--gold);
+  border-right: 1.5px solid var(--surface-border);
+}
+
+.hp-bar .hp-label {
+  color: var(--text-inverse);
+  text-shadow: none;
+}
+
+/* ---- Motion durations from tokens only (§8) ----
+   Note: fills are driven by inline `style.width` from TS (out of scope to
+   change here — see follow-ups). Transition `width` to match actual
+   behavior rather than introducing a dead `transform` rule. */
+
+.hover-tooltip,
+.pack-btn,
+.settings-btn,
+.tree-nav {
+  transition-duration: var(--dur-2);
+}
+
+.xp-fill,
+.mission-fill,
+.ach-fill {
+  transition: width var(--dur-2) linear;
+}
+
+.hp-bar .hp-fill {
+  transition: width var(--dur-1) linear;
+}
+
+/* ---- Rarity border tokens (§4) — de-duplicated from style.css raw hex
+   across reveal cards, duck cards, inventory tiles, equip slots and gear
+   rows. Hue is never the only cue in the actual card art (shape signatures
+   live in the SVG); this border is the chrome-level echo of that hue. */
+
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-uncommon {
+  border-color: var(--rarity-uncommon);
+}
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-rare {
+  border-color: var(--rarity-rare);
+}
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-epic {
+  border-color: var(--rarity-epic);
+}
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-legendary {
+  border-color: var(--rarity-legendary);
+}
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-mythic {
+  border-color: var(--rarity-mythic);
+}
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-divine {
+  border-color: var(--rarity-divine);
+}
+
+.reveal-card.rarity-epic {
+  box-shadow: 0 3px 0 var(--shadow-drop), 0 0 10px color-mix(in srgb, var(--rarity-epic) 40%, transparent);
+}
+.reveal-card.rarity-legendary {
+  box-shadow: 0 3px 0 var(--shadow-drop), 0 0 14px color-mix(in srgb, var(--rarity-legendary) 55%, transparent);
+}
+.reveal-card.rarity-mythic {
+  box-shadow: 0 3px 0 var(--shadow-drop), 0 0 16px color-mix(in srgb, var(--rarity-mythic) 65%, transparent);
+}
+.reveal-card.rarity-divine {
+  border-image: var(--rarity-divine-grad) 1;
+  box-shadow: 0 3px 0 var(--shadow-drop), 0 0 18px color-mix(in srgb, var(--rarity-divine) 65%, transparent);
+}
