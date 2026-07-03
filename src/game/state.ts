@@ -2,7 +2,17 @@ import { ARENA_BASE, BASE_STATS, LEVEL_REWARDS, ORE_LEVEL_GATES, PASSIVES, STREA
 import { getDuckDef, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getSkillNode } from "./skilltree";
-import type { DerivedStats, GameState, OreId, PackId, Panel, Reward } from "./types";
+import type { DerivedStats, DuckDef, GameState, OreId, PackId, Panel, Reward } from "./types";
+
+// Which duck roles may sit in which roster (PLAN2.md §4 Phase B). Hybrids
+// can go anywhere; mine/arena/pond each also accept their matching
+// specialist role. Expedition rosters stay role-free (expeditions.ts).
+export function isRoleEligible(panel: Panel, role: DuckDef["role"]): boolean {
+  if (role === "hybrid") return true;
+  if (panel === "mine") return role === "miner";
+  if (panel === "arena") return role === "fighter";
+  return role === "pond";
+}
 
 export function createInitialState(): GameState {
   const now = Date.now();
@@ -105,6 +115,9 @@ export function assignToRoster(
   if (defId !== null && !state.ducks.some((d) => d.defId === defId)) return false;
   // Away on an expedition: not available to mine/arena/pond until it returns.
   if (defId !== null && state.expeditions.some((e) => e.ducks.includes(defId))) return false;
+  // Role enforcement (PLAN2.md §4 Phase B): mine takes miner/hybrid, arena
+  // takes fighter/hybrid, pond takes pond/hybrid.
+  if (defId !== null && !isRoleEligible(panel, getDuckDef(defId).role)) return false;
 
   if (defId !== null) {
     for (const p of ["mine", "arena", "pond"] as const) {
@@ -206,6 +219,20 @@ export function computeStats(state: GameState, nowMs: number): DerivedStats {
   }
   for (const defId of state.rosters.arena) {
     if (getDuckDef(defId).passive === "teamDmg10") stats.attackDamageMult *= PASSIVES.teamDmgMult;
+  }
+
+  // Pond auras apply globally while their duck sits in the pond roster
+  // (PLAN2.md §4 Phase B): combat -> attack/defense, economy -> gold/xp.
+  for (const defId of state.rosters.pond) {
+    const aura = getDuckDef(defId).pondAura;
+    if (!aura) continue;
+    if (aura.kind === "combat") {
+      stats.attackDamageMult *= 1 + aura.power;
+      stats.defenseMult *= 1 + aura.power;
+    } else {
+      stats.goldMult *= 1 + aura.power;
+      stats.xpMult *= 1 + aura.power;
+    }
   }
 
   // Streak tier buffs, active while their real-time expiry is in the future.

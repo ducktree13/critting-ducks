@@ -101,7 +101,7 @@ describe("tickMine", () => {
     state.rosters.mine = ["goose"];
     refreshStats(state, 0);
     tickMine(state, 1 / 1.2, alwaysCrit);
-    // ore = (0.1 + 1.0) * 2.0 = 2.2 → gold = 2.2 * 2 (goldenCrit)
-    expect(state.gold).toBeCloseTo(4.4);
+    // ore = (0.1 + 1.0) * 2.0 = 2.2 → gold = 2.2 * 2 (goldenCrit) * 1.1 (greedy trait)
+    expect(state.gold).toBeCloseTo(4.4 * 1.1);
   });
 });

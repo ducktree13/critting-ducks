@@ -241,21 +241,24 @@ describe("upgradeAll", () => {
 
 describe("assignToRoster", () => {
   beforeEach(() => {
-    state.ducks.push({ defId: "quackers", level: 1, shards: 0, nextHitIn: 1 });
-    state.rosters.arena = ["quackers"];
+    // duckTree is hybrid, so it's role-eligible for mine/arena/pond alike —
+    // these tests exercise slot/roster-move mechanics, not role rules
+    // (PLAN2.md §4 Phase B covers role rejection separately in state.test.ts).
+    state.ducks.push({ defId: "duckTree", level: 1, shards: 0, nextHitIn: 1 });
+    state.rosters.arena = ["duckTree"];
   });
 
   it("moves a duck between rosters (one roster at a time)", () => {
-    expect(assignToRoster(state, "mine", 0, "quackers")).toBe(true);
-    expect(state.rosters.mine).toEqual(["quackers"]);
+    expect(assignToRoster(state, "mine", 0, "duckTree")).toBe(true);
+    expect(state.rosters.mine).toEqual(["duckTree"]);
     expect(state.rosters.arena).toEqual([]);
   });
 
   it("rejects slots beyond the unlocked count", () => {
-    expect(assignToRoster(state, "mine", 1, "quackers")).toBe(false);
+    expect(assignToRoster(state, "mine", 1, "duckTree")).toBe(false);
     state.skillNodes = ["mineslot2"];
     refreshStats(state, 0);
-    expect(assignToRoster(state, "mine", 1, "quackers")).toBe(true);
-    expect(state.rosters.mine).toEqual(["bill", "quackers"]);
+    expect(assignToRoster(state, "mine", 1, "duckTree")).toBe(true);
+    expect(state.rosters.mine).toEqual(["bill", "duckTree"]);
   });
 });

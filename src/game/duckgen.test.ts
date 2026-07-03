@@ -35,7 +35,7 @@ describe("full duck roster", () => {
   it("assigns every duck a trait and a role", () => {
     for (const def of DUCK_DEFS) {
       expect(def.trait).toBeTruthy();
-      expect(["miner", "fighter", "hybrid"]).toContain(def.role);
+      expect(["miner", "fighter", "hybrid", "pond"]).toContain(def.role);
     }
   });
 
@@ -79,5 +79,58 @@ describe("Duck Tree (leaf-exclusive)", () => {
     expect(duckTree).toBeDefined();
     expect(duckTree!.rarity).toBe("divine");
     expect(duckTree!.lockedBy).toEqual({ kind: "leaf", id: "duckTree" });
+  });
+});
+
+// PLAN2.md §4 Phase B: role-matched trait pools. Combat traits (brave,
+// cowardly, energetic, stoic) must never appear on miners or pond ducks;
+// mining traits (efficient, greedy) must never appear on fighters or pond
+// ducks. Hybrids may hold either family.
+describe("role-matched trait pools (PLAN2.md §4 Phase B)", () => {
+  const COMBAT_TRAITS = ["brave", "cowardly", "energetic", "stoic"];
+  const MINING_TRAITS = ["efficient", "greedy"];
+
+  it("never puts a combat trait on a miner or pond duck", () => {
+    const offenders = DUCK_DEFS.filter(
+      (d) => (d.role === "miner" || d.role === "pond") && COMBAT_TRAITS.includes(d.trait),
+    );
+    expect(offenders).toEqual([]);
+  });
+
+  it("never puts a mining trait on a fighter or pond duck", () => {
+    const offenders = DUCK_DEFS.filter(
+      (d) => (d.role === "fighter" || d.role === "pond") && MINING_TRAITS.includes(d.trait),
+    );
+    expect(offenders).toEqual([]);
+  });
+});
+
+// Ids/names/rarities must stay byte-identical to the pre-Phase-B roster,
+// since existing saves reference duck ids. Snapshot recorded from the
+// pre-change GENERATED_DUCKS output (id + name + rarity for all 147 ducks).
+describe("duckgen determinism (PLAN2.md §4 Phase B)", () => {
+  it("re-rolled roster keeps ids/names/rarities identical to the pre-change snapshot", () => {
+    const snapshotFirstTen = [
+      { id: "d_mudpiequack", name: "MudpieQuack", rarity: "common" },
+      { id: "d_pondwaddler", name: "PondWaddler", rarity: "common" },
+      { id: "d_wobbledabbler", name: "WobbleDabbler", rarity: "common" },
+      { id: "d_snappaddle", name: "SnapPaddle", rarity: "common" },
+      { id: "d_frostwing", name: "FrostWing", rarity: "common" },
+      { id: "d_reedwing", name: "ReedWing", rarity: "common" },
+      { id: "d_ponddrifter", name: "PondDrifter", rarity: "common" },
+      { id: "d_featherbill", name: "FeatherBill", rarity: "common" },
+      { id: "d_ripplequack", name: "RippleQuack", rarity: "common" },
+      { id: "d_honkdown", name: "HonkDown", rarity: "common" },
+    ];
+    const snapshotLastFive = [
+      { id: "d_quackensteinfirstoffeathers", name: "Quackenstein, First of Feathers", rarity: "divine" },
+      { id: "d_thecelestialmallard", name: "The Celestial Mallard", rarity: "divine" },
+      { id: "d_aetherwingduckofdawn", name: "Aetherwing, Duck of Dawn", rarity: "divine" },
+      { id: "d_theunfeatheredone", name: "The Unfeathered One", rarity: "divine" },
+      { id: "d_theradiantprogenitor", name: "The Radiant Progenitor", rarity: "divine" },
+    ];
+    const current = GENERATED_DUCKS.map((d) => ({ id: d.id, name: d.name, rarity: d.rarity }));
+    expect(current.slice(0, 10)).toEqual(snapshotFirstTen);
+    expect(current.slice(-5)).toEqual(snapshotLastFive);
   });
 });

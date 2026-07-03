@@ -412,6 +412,7 @@ const ROLE_LABEL: Record<string, string> = {
   miner: "Miner",
   fighter: "Fighter",
   hybrid: "Hybrid",
+  pond: "Pond",
 };
 
 // Shared tooltip body for every place a duck is rendered: name, rarity,
@@ -434,5 +435,9 @@ export function duckTooltipHtml(state: GameState, duck: OwnedDuck): string {
   parts.push(`<div class="tt-stats">${stats.join(" · ")}</div>`);
   parts.push(`<div class="tt-meta">${trait.desc}</div>`);
   if (def.passive) parts.push(`<div class="tt-passive">Passive: ${def.passive}</div>`);
+  if (def.pondAura) {
+    const auraLabel = def.pondAura.kind === "combat" ? "Attack & Defense" : "Gold & XP";
+    parts.push(`<div class="tt-passive">Pond aura: +${Math.round(def.pondAura.power * 100)}% ${auraLabel} (global, while in pond)</div>`);
+  }
   return parts.join("");
 }

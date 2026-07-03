@@ -122,6 +122,61 @@ describe("save/load", () => {
     expect(load(storage)).toBeNull();
   });
 
+  it("evicts ducks whose role is no longer eligible for their roster on load", () => {
+    const storage = fakeStorage();
+    // A save from before role enforcement shipped (PLAN2.md §4 Phase B):
+    // quackers (fighter) sitting in mine, bill (miner) sitting in arena,
+    // puddle (pond) sitting in arena. All three should be evicted back to
+    // the bench (state.ducks keeps them; only the roster arrays change).
+    storage.setItem(
+      "crittingDucks.save",
+      JSON.stringify({
+        version: 2,
+        state: {
+          version: 2,
+          ducks: [
+            { defId: "bill", level: 1, shards: 0, nextHitIn: 1 },
+            { defId: "quackers", level: 1, shards: 0, nextHitIn: 1 },
+            { defId: "puddle", level: 1, shards: 0, nextHitIn: 1 },
+          ],
+          rosters: { mine: ["quackers"], arena: ["bill", "puddle"], pond: [] },
+        },
+      }),
+    );
+
+    const loaded = load(storage);
+
+    expect(loaded).not.toBeNull();
+    expect(loaded!.rosters.mine).not.toContain("quackers");
+    expect(loaded!.rosters.arena).not.toContain("bill");
+    expect(loaded!.rosters.arena).not.toContain("puddle");
+    // Evicted ducks stay owned, just off the roster.
+    expect(loaded!.ducks.map((d) => d.defId)).toEqual(["bill", "quackers", "puddle"]);
+  });
+
+  it("keeps role-eligible ducks in their roster on load", () => {
+    const storage = fakeStorage();
+    storage.setItem(
+      "crittingDucks.save",
+      JSON.stringify({
+        version: 2,
+        state: {
+          version: 2,
+          ducks: [
+            { defId: "bill", level: 1, shards: 0, nextHitIn: 1 },
+            { defId: "quackers", level: 1, shards: 0, nextHitIn: 1 },
+          ],
+          rosters: { mine: ["bill"], arena: ["quackers"], pond: [] },
+        },
+      }),
+    );
+
+    const loaded = load(storage);
+
+    expect(loaded!.rosters.mine).toContain("bill");
+    expect(loaded!.rosters.arena).toContain("quackers");
+  });
+
   it("falls back to null and stashes corrupt JSON instead of wiping it", () => {
     const storage = fakeStorage();
     storage.setItem("crittingDucks.save", "{not valid json");

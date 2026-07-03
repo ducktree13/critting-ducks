@@ -27,7 +27,7 @@ export interface DuckDef {
   id: string;
   name: string;
   rarity: Rarity;
-  role: "miner" | "fighter" | "hybrid";
+  role: "miner" | "fighter" | "hybrid" | "pond";
   trait: TraitId;
   miningPower: number;
   attackDamage: number;
@@ -37,6 +37,10 @@ export interface DuckDef {
   critChanceBonus: number;
   critDamageBonus: number;
   passive?: PassiveId;
+  // Global aura applied while this duck sits in the pond roster (PLAN2.md
+  // §4 Phase B): combat boosts team attack/defense, economy boosts gold/xp.
+  // Power scales with rarity, see balance.ts POND_AURA.
+  pondAura?: { kind: "combat" | "economy"; power: number };
   lockedBy?: { kind: LockKind; id: string }; // absent from gacha pools until unlocked
 }
 

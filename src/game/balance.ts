@@ -142,6 +142,21 @@ export const GEAR = {
 
 export const RARITY_ORDER: readonly Rarity[] = RARITY_TIERS;
 
+// Pond aura power by rarity (PLAN2.md §4 Phase B): while a pond-role duck
+// sits in state.rosters.pond, its aura applies globally. Combat auras add to
+// attackDamageMult and defenseMult; economy auras add to goldMult and xpMult.
+export const POND_AURA = {
+  byRarity: {
+    common: 0.02,
+    uncommon: 0.03,
+    rare: 0.045,
+    epic: 0.065,
+    legendary: 0.09,
+    mythic: 0.12,
+    divine: 0.16,
+  } as Record<Rarity, number>,
+} as const;
+
 export const ASCENSION = {
   maxAscensions: 3,
   statMultPerAscension: 0.25, // +25% to base stats per ascension

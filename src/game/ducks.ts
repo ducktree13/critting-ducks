@@ -7,22 +7,31 @@ import type { DuckDef, EquipSlot, EquipmentStats, GameState, OwnedDuck } from ".
 // ~1/10 of v1, attack damage ~1/2), plus ~147 more from duckgen.ts to reach
 // the full 160-duck roster (40/35/30/25/15/10/5 across the seven rarities).
 const HAND_CURATED_DUCKS: readonly DuckDef[] = [
-  { id: "bill", name: "Bill", rarity: "common", role: "miner", trait: "stoic", miningPower: 0.1, attackDamage: 0.5, attacksPerSecond: 1.0, hp: 20, defense: 0, critChanceBonus: 0, critDamageBonus: 0 },
-  { id: "pebbles", name: "Pebbles", rarity: "common", role: "miner", trait: "stoic", miningPower: 0.08, attackDamage: 0.5, attacksPerSecond: 1.3, hp: 20, defense: 0, critChanceBonus: 0, critDamageBonus: 0 },
+  // stoic (defense) is a fighter trait, not miner — Bill/Pebbles swapped to
+  // miner-pool traits that fit their personalities (PLAN2.md §4 Phase B).
+  { id: "bill", name: "Bill", rarity: "common", role: "miner", trait: "loyal", miningPower: 0.1, attackDamage: 0.5, attacksPerSecond: 1.0, hp: 20, defense: 0, critChanceBonus: 0, critDamageBonus: 0 },
+  { id: "pebbles", name: "Pebbles", rarity: "common", role: "miner", trait: "efficient", miningPower: 0.08, attackDamage: 0.5, attacksPerSecond: 1.3, hp: 20, defense: 0, critChanceBonus: 0, critDamageBonus: 0 },
   { id: "quackers", name: "Quackers", rarity: "common", role: "fighter", trait: "brave", miningPower: 0.02, attackDamage: 1.5, attacksPerSecond: 1.0, hp: 30, defense: 1, critChanceBonus: 0, critDamageBonus: 0 },
   { id: "waddles", name: "Waddles", rarity: "common", role: "fighter", trait: "stoic", miningPower: 0.02, attackDamage: 1, attacksPerSecond: 0.8, hp: 45, defense: 3, critChanceBonus: 0, critDamageBonus: 0 },
   { id: "goldie", name: "Goldie", rarity: "uncommon", role: "miner", trait: "lucky", miningPower: 0.15, attackDamage: 0.5, attacksPerSecond: 1.0, hp: 25, defense: 0, critChanceBonus: 0.05, critDamageBonus: 0 },
   { id: "drake", name: "Drake", rarity: "uncommon", role: "fighter", trait: "energetic", miningPower: 0.03, attackDamage: 2.5, attacksPerSecond: 1.0, hp: 35, defense: 2, critChanceBonus: 0.05, critDamageBonus: 0 },
-  { id: "puddle", name: "Puddle", rarity: "uncommon", role: "hybrid", trait: "loyal", miningPower: 0.12, attackDamage: 2, attacksPerSecond: 0.9, hp: 30, defense: 1, critChanceBonus: 0, critDamageBonus: 0 },
+  // Puddle becomes the hand-curated pond specialist (PLAN2.md §4 Phase B):
+  // role pond, economy aura, loyal (already in the pond trait pool).
+  { id: "puddle", name: "Puddle", rarity: "uncommon", role: "pond", trait: "loyal", miningPower: 0.12, attackDamage: 2, attacksPerSecond: 0.9, hp: 30, defense: 1, critChanceBonus: 0, critDamageBonus: 0, pondAura: { kind: "economy", power: 0.03 } },
   { id: "sirquack", name: "Sir Quacksalot", rarity: "rare", role: "fighter", trait: "stoic", miningPower: 0.04, attackDamage: 4, attacksPerSecond: 1.0, hp: 60, defense: 4, critChanceBonus: 0, critDamageBonus: 0.25 },
   { id: "nugget", name: "Nugget", rarity: "rare", role: "miner", trait: "greedy", miningPower: 0.3, attackDamage: 1, attacksPerSecond: 1.0, hp: 30, defense: 1, critChanceBonus: 0.1, critDamageBonus: 0 },
   { id: "drillbert", name: "Drillbert", rarity: "epic", role: "miner", trait: "efficient", miningPower: 0.5, attackDamage: 1.5, attacksPerSecond: 1.5, hp: 40, defense: 2, critChanceBonus: 0.05, critDamageBonus: 0, passive: "teamOre10" },
   { id: "thunder", name: "Thunderquack", rarity: "epic", role: "fighter", trait: "brave", miningPower: 0.05, attackDamage: 7, attacksPerSecond: 1.4, hp: 70, defense: 4, critChanceBonus: 0.1, critDamageBonus: 0, passive: "teamDmg10" },
-  { id: "goose", name: "The Golden Goose", rarity: "legendary", role: "miner", trait: "stoic", miningPower: 1.0, attackDamage: 2.5, attacksPerSecond: 1.2, hp: 50, defense: 2, critChanceBonus: 0.15, critDamageBonus: 0, passive: "goldenCrit" },
+  // stoic (defense) doesn't fit a miner — swapped to greedy, on-theme for a
+  // "Golden Goose" and already in the miner trait pool.
+  { id: "goose", name: "The Golden Goose", rarity: "legendary", role: "miner", trait: "greedy", miningPower: 1.0, attackDamage: 2.5, attacksPerSecond: 1.2, hp: 50, defense: 2, critChanceBonus: 0.15, critDamageBonus: 0, passive: "goldenCrit" },
   { id: "deathbill", name: "Deathbill", rarity: "legendary", role: "fighter", trait: "energetic", miningPower: 0.1, attackDamage: 12.5, attacksPerSecond: 1.2, hp: 90, defense: 6, critChanceBonus: 0.15, critDamageBonus: 0.5, passive: "streakShield" },
   // Leaf-exclusive (PLAN2.md §9): never drops from packs or the shard shop —
   // only from clicking a falling leaf in Act 2, at a 0.5% chance per leaf.
-  { id: "duckTree", name: "Duck Tree", rarity: "divine", role: "hybrid", trait: "radiant", miningPower: 3.0, attackDamage: 30, attacksPerSecond: 1.3, hp: 800, defense: 30, critChanceBonus: 0.2, critDamageBonus: 0.3, lockedBy: { kind: "leaf", id: "duckTree" } },
+  // Stays hybrid (so it can also fight/mine) but carries a divine economy
+  // pond aura, usable if ever placed in the pond (hybrids may hold an aura;
+  // see assignToRoster in state.ts for which roles may enter which roster).
+  { id: "duckTree", name: "Duck Tree", rarity: "divine", role: "hybrid", trait: "radiant", miningPower: 3.0, attackDamage: 30, attacksPerSecond: 1.3, hp: 800, defense: 30, critChanceBonus: 0.2, critDamageBonus: 0.3, pondAura: { kind: "economy", power: 0.16 }, lockedBy: { kind: "leaf", id: "duckTree" } },
 ];
 
 export const DUCK_DEFS: readonly DuckDef[] = [...HAND_CURATED_DUCKS, ...GENERATED_DUCKS];

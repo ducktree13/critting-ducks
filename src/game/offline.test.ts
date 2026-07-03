@@ -92,8 +92,10 @@ describe("computeOfflineProgress", () => {
     const stats = noBuffStats();
     const report = computeOfflineProgress(state, 3600, stats);
     // pondIncomePerSec * elapsed (no *rate), since pond isn't gated by the
-    // mine's offline-rate tree.
-    const expectedGoldPerSec = passivePowerOf(state, state.ducks[1]) * 0.4; // POND.goldPerPassivePowerPerSec
+    // mine's offline-rate tree. Puddle also carries a +3% economy pond aura
+    // (PLAN2.md §4 Phase B), which folds into stats.goldMult here since
+    // `stats` was computed with Puddle already in the pond roster.
+    const expectedGoldPerSec = passivePowerOf(state, state.ducks[1]) * 0.4 * stats.goldMult; // POND.goldPerPassivePowerPerSec
     expect(report.goldGained).toBeCloseTo(expectedGoldPerSec * 3600);
   });
 });
