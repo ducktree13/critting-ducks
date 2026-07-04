@@ -823,6 +823,61 @@ body.quackening-active main.world.streak-shake {
   filter: saturate(1.06);
 }
 
+/* ---- Mine hillside scene (Phase H): timber cave mouth + rail + lantern +
+   ore sparkles on the near face of the backdrop's left hillside. Sky is
+   left unpainted in the SVG so this sits seamlessly on #world-backdrop. ---- */
+
+.mine-lantern-glow {
+  transition: opacity 300ms var(--ease-out), r 300ms var(--ease-out);
+}
+
+[data-mode="night"] .mine-scene .mine-lantern-glow {
+  opacity: 0.55;
+  r: 28;
+}
+
+[data-mode="night"] .mine-scene .mine-lantern-light {
+  fill: var(--gold);
+}
+
+.mine-sparkles .twinkle {
+  animation: cd-twinkle 3.4s ease-in-out infinite;
+}
+
+/* ---- Arena clearing scene (Phase H): sandy floor + tiered stone stands +
+   banner pennants + torches (night-only flame/glow) behind the enemy/duck
+   rows. Sky is left unpainted in the SVG so this sits seamlessly on
+   #world-backdrop. ---- */
+
+.arena-flame,
+.arena-flame-glow {
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+
+[data-mode="night"] .arena-scene .arena-flame {
+  opacity: 1;
+  animation: arena-flame-flicker 1.2s ease-in-out infinite;
+}
+
+[data-mode="night"] .arena-scene .arena-flame-glow {
+  opacity: 0.3;
+  animation: arena-flame-flicker 1.2s ease-in-out infinite reverse;
+}
+
+@keyframes arena-flame-flicker {
+  0%, 100% { transform: scaleY(1) translateY(0); }
+  50% { transform: scaleY(1.12) translateY(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mine-sparkles .twinkle,
+  [data-mode="night"] .arena-scene .arena-flame,
+  [data-mode="night"] .arena-scene .arena-flame-glow {
+    animation: none !important;
+  }
+}
+
 /* ---- THE QUACKENING (streak >= 100) ---- */
 
 .quackening-flash {

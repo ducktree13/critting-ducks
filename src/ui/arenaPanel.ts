@@ -18,16 +18,58 @@ const ENEMY_COLORS: Record<string, string> = {
   pondlord: "#8a5ad9",
 };
 
-// Colosseum backdrop (PLAN2.md §12): tiered stands + a sandy floor, sitting
-// behind the enemy/team content via a negative z-index.
+// Arena clearing backdrop (Phase H, PLAN2.md world redesign): a static SVG
+// scene sitting behind the enemy/team content via a negative z-index. Reads
+// as a clearing on the backdrop's right — no sky paint of its own
+// (transparent above the ground shapes) so it sits seamlessly over
+// #world-backdrop. Two tiered stone stands with banner pennants sit behind
+// a sandy floor (enemy side far/top, duck side near/bottom, matching DOM
+// order); torches only glow at night, crowd dots cheer continuously.
 function colosseumSceneSvg(): string {
   return `<svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-    <path d="M-20 40 Q200 -10 420 40 L420 90 Q200 45 -20 90 Z" fill="var(--card-border)" opacity="0.55"/>
-    <path d="M-20 90 Q200 45 420 90 L420 135 Q200 92 -20 135 Z" fill="var(--card-border)" opacity="0.4"/>
+    <!-- Tiered stone stands, far tier behind near tier -->
+    <path class="arena-stand-far" d="M-20 40 Q200 -6 420 40 L420 78 Q200 40 -20 78 Z"
+      fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))" opacity="0.85"/>
+    <g class="arena-crenellation-far">
+      ${Array.from({ length: 12 }, (_, i) => `<rect x="${-4 + i * 36}" y="4" width="18" height="14" fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))" opacity="0.85"/>`).join("")}
+    </g>
+
+    <path class="arena-stand-near" d="M-20 78 Q200 40 420 78 L420 122 Q200 88 -20 122 Z"
+      fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))"/>
+    <g class="arena-crenellation-near">
+      ${Array.from({ length: 12 }, (_, i) => `<rect x="${-4 + i * 36}" y="42" width="20" height="16" fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))"/>`).join("")}
+    </g>
+
+    <!-- Banner pennants atop the stands -->
+    <g class="arena-banners">
+      <line x1="60" y1="8" x2="60" y2="46" stroke="var(--surface-border)" stroke-width="2.4"/>
+      <polygon points="60,10 84,18 60,26" fill="var(--accent)"/>
+      <line x1="200" y1="-2" x2="200" y2="40" stroke="var(--surface-border)" stroke-width="2.4"/>
+      <polygon points="200,0 224,8 200,16" fill="var(--accent)"/>
+      <line x1="340" y1="8" x2="340" y2="46" stroke="var(--surface-border)" stroke-width="2.4"/>
+      <polygon points="340,10 316,18 340,26" fill="var(--accent)"/>
+    </g>
+
+    <!-- Crowd dots, always cheering -->
     <g class="crowd">
       ${Array.from({ length: 14 }, (_, i) => `<circle cx="${20 + i * 27}" cy="${58 - (i % 3) * 4}" r="4" fill="var(--accent)" opacity="0.5"/>`).join("")}
     </g>
-    <ellipse cx="200" cy="230" rx="220" ry="60" fill="var(--accent)" opacity="0.12"/>
+
+    <!-- Torches: flame only shows/glows at night -->
+    <g class="arena-torch" style="--torch-x:34px">
+      <line x1="34" y1="150" x2="34" y2="210" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round"/>
+      <path class="arena-flame" d="M34 150 q-8 -10 0 -22 q8 12 0 22 z" fill="var(--scene-detail)"/>
+      <circle class="arena-flame-glow" cx="34" cy="140" r="16" fill="var(--scene-detail)" opacity="0.25"/>
+    </g>
+    <g class="arena-torch" style="--torch-x:366px">
+      <line x1="366" y1="150" x2="366" y2="210" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round"/>
+      <path class="arena-flame" d="M366 150 q-8 -10 0 -22 q8 12 0 22 z" fill="var(--scene-detail)"/>
+      <circle class="arena-flame-glow" cx="366" cy="140" r="16" fill="var(--scene-detail)" opacity="0.25"/>
+    </g>
+
+    <!-- Sandy floor: enemy side far (top), duck side near (bottom) -->
+    <ellipse cx="200" cy="240" rx="230" ry="66" fill="color-mix(in srgb, var(--gold) 18%, var(--ground))"
+      stroke="var(--surface-border)" stroke-width="2"/>
   </svg>`;
 }
 

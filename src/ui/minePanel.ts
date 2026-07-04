@@ -47,20 +47,68 @@ let goldTargetEl: HTMLElement | null = null;
 let lastRosterKey = "";
 let lastOreCountersKey = "";
 
-// Cave-mouth backdrop (PLAN2.md §12): a static SVG scene sitting behind the
-// rock/vein/duck-row content via a negative z-index, so ducks read as
-// walking a loop in front of a cave rather than floating on blank panel bg.
+// Mine hillside backdrop (Phase H, PLAN2.md world redesign): a static SVG
+// scene sitting behind the rock/vein/duck-row content via a negative
+// z-index. Reads as the near face of the world backdrop's left hillside —
+// no sky paint of its own (transparent above the hill shapes) so it sits
+// seamlessly over #world-backdrop, with a timber-framed cave mouth, a
+// mine-cart rail leading in, ore sparkles on the hill face, and a lantern
+// by the mouth that brightens at night.
 function caveSceneSvg(): string {
   return `<svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
-      <radialGradient id="cave-mouth" cx="50%" cy="20%" r="80%">
-        <stop offset="0%" stop-color="#000" stop-opacity="0.55"/>
+      <radialGradient id="cave-mouth" cx="50%" cy="15%" r="85%">
+        <stop offset="0%" stop-color="#000" stop-opacity="0.6"/>
         <stop offset="100%" stop-color="#000" stop-opacity="0"/>
       </radialGradient>
     </defs>
-    <path d="M0 260 L0 150 Q60 40 200 20 Q340 40 400 150 L400 260 Z" fill="var(--card-border)" opacity="0.5"/>
-    <ellipse cx="200" cy="70" rx="120" ry="60" fill="url(#cave-mouth)"/>
-    <path d="M90 130 Q200 95 310 130 L300 170 Q200 145 100 170 Z" fill="var(--card-border)" opacity="0.7"/>
+
+    <!-- Hill mass: near face of the backdrop's left hillside, strata bands -->
+    <path class="mine-hill" d="M0 260 L0 120 Q70 30 200 14 Q330 30 400 120 L400 260 Z"
+      fill="color-mix(in srgb, var(--surface-border) 40%, var(--ground))"/>
+    <path class="mine-strata" d="M0 150 Q100 118 200 128 Q300 118 400 150 L400 165 Q300 133 200 143 Q100 133 0 165 Z"
+      fill="color-mix(in srgb, var(--surface-border) 30%, var(--ground))" opacity="0.6"/>
+    <path class="mine-strata" d="M0 190 Q100 162 200 170 Q300 162 400 190 L400 204 Q300 176 200 184 Q100 176 0 204 Z"
+      fill="color-mix(in srgb, var(--surface-border) 24%, var(--ground))" opacity="0.55"/>
+
+    <!-- Mine-cart rail: two rails + sleepers, running from the duck row into the mouth -->
+    <g class="mine-rail">
+      <line x1="70" y1="256" x2="185" y2="180" stroke="var(--surface-border)" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="330" y1="256" x2="215" y2="180" stroke="var(--surface-border)" stroke-width="3.5" stroke-linecap="round"/>
+      <line x1="92" y1="240" x2="308" y2="240" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+      <line x1="106" y1="220" x2="294" y2="220" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+      <line x1="122" y1="200" x2="278" y2="200" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+      <line x1="140" y1="184" x2="260" y2="184" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.85"/>
+    </g>
+
+    <!-- Timber posts + lintel framing the cave mouth -->
+    <g class="mine-timber">
+      <rect x="112" y="90" width="14" height="100" rx="3" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2"/>
+      <rect x="274" y="90" width="14" height="100" rx="3" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2"/>
+      <rect x="104" y="78" width="192" height="18" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2"/>
+    </g>
+
+    <!-- Cave mouth: dark opening with depth gradient -->
+    <path d="M118 190 Q200 70 282 190 L282 96 Q200 88 118 96 Z"
+      fill="color-mix(in srgb, var(--surface-border) 75%, var(--ground))"/>
+    <ellipse cx="200" cy="120" rx="82" ry="56" fill="url(#cave-mouth)"/>
+
+    <!-- Hanging lantern beside the mouth -->
+    <g class="mine-lantern">
+      <circle class="mine-lantern-glow" cx="300" cy="130" r="22" fill="var(--scene-detail)" opacity="0.18"/>
+      <line x1="300" y1="96" x2="300" y2="112" stroke="var(--surface-border)" stroke-width="2"/>
+      <rect x="292" y="112" width="16" height="20" rx="3" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="1.6"/>
+      <circle class="mine-lantern-light" cx="300" cy="122" r="4.5" fill="var(--scene-detail)"/>
+    </g>
+
+    <!-- Ore sparkles scattered on the hill face -->
+    <g class="mine-sparkles">
+      <path class="twinkle" style="animation-delay:0.4s" d="M48 172 l4 -8 l4 8 l-4 8 z" fill="var(--gold)"/>
+      <path d="M66 200 l3.4 -7 l3.4 7 l-3.4 7 z" fill="var(--gold)"/>
+      <path class="twinkle" style="animation-delay:1.5s" d="M340 168 l4 -8 l4 8 l-4 8 z" fill="var(--gold)"/>
+      <path d="M362 210 l3 -6 l3 6 l-3 6 z" fill="var(--gold)"/>
+      <path d="M28 224 l3.4 -7 l3.4 7 l-3.4 7 z" fill="var(--gold)"/>
+    </g>
   </svg>`;
 }
 
@@ -151,9 +199,9 @@ function retrigger(el: HTMLElement, cls: string): void {
 function rockSvg(ore: OreId): string {
   const c = ORE_COLORS[ore];
   return `<svg viewBox="0 0 200 160" width="180" height="144" role="img" aria-label="${ORE_NAMES[ore]} rock">
-    <polygon points="30,140 12,90 45,40 100,18 160,38 188,95 168,140" fill="#8a8578"/>
+    <polygon points="30,140 12,90 45,40 100,18 160,38 188,95 168,140" fill="color-mix(in srgb, var(--surface-border) 45%, var(--ground))"/>
     <polygon points="60,120 50,85 80,60 120,55 145,85 135,120" fill="${c}"/>
-    <polygon points="80,95 95,72 118,80 110,102" fill="#ffffff" opacity="0.35"/>
+    <polygon points="80,95 95,72 118,80 110,102" fill="var(--scene-detail)" opacity="0.35"/>
   </svg>`;
 }
 
