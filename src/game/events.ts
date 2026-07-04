@@ -18,6 +18,7 @@ export interface GameEventMap {
   bubblePopped: { kind: "gold" | "xp" | "duck"; amount: number; isCrit: boolean };
   expeditionReady: { id: string };
   expeditionClaimed: { success: boolean; isCrit: boolean; gold: number; xp: number };
+  gear: { defId: string | null; itemId: string };
 }
 
 export type GameEventName = keyof GameEventMap;

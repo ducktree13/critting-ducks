@@ -1,6 +1,7 @@
-import { ASCENSION, GEAR, MATERIAL_NAMES } from "../game/balance";
+import { ASCENSION } from "../game/balance";
 import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
-import { equipItem, equippedItemsFor, sellEquipment, unequipItem } from "../game/gear";
+import { equipItem, equippedItemsFor, unequipItem } from "../game/gear";
+import { on } from "../game/events";
 import { ascendDuck, ascensionCost, canAscend, canUpgrade, upgradeAll, upgradeCost } from "../game/packs";
 import { assignToRoster, getStats, isRoleEligible, toggleFavorite } from "../game/state";
 import { TRAITS } from "../game/traits";
@@ -40,8 +41,6 @@ export function initInventoryMenu(state: GameState): void {
         <div class="inventory-grid" id="inv-grid"></div>
         <div class="inventory-card" id="inv-card"></div>
       </div>
-      <div class="inventory-materials" id="inv-materials"></div>
-      <div class="inventory-gear" id="inv-gear"></div>
     </div>
   `;
   overlay.addEventListener("click", (e) => {
@@ -70,6 +69,12 @@ export function initInventoryMenu(state: GameState): void {
     renderUpgradeAllButton();
   });
   document.body.appendChild(overlay);
+
+  // Gear changes made from the Items menu (or elsewhere) must refresh the
+  // duck card's equip-slot display when this menu is open.
+  on("gear", () => {
+    if (overlay.classList.contains("open")) renderCard();
+  });
 }
 
 function renderUpgradeAllButton(): void {
@@ -81,40 +86,8 @@ export function openInventory(focusDefId?: string): void {
   if (focusDefId && gameState.ducks.some((d) => d.defId === focusDefId)) selectedDefId = focusDefId;
   renderGrid();
   renderCard();
-  renderMaterials();
-  renderUnequippedGear();
   renderUpgradeAllButton();
   overlay.classList.add("open");
-}
-
-function renderMaterials(): void {
-  const el = overlay.querySelector("#inv-materials")!;
-  el.innerHTML = (Object.keys(MATERIAL_NAMES) as (keyof typeof MATERIAL_NAMES)[])
-    .map((id) => `<span>${MATERIAL_NAMES[id]}: ${gameState.materials[id]}</span>`)
-    .join("");
-}
-
-function renderUnequippedGear(): void {
-  const el = overlay.querySelector("#inv-gear")!;
-  const unequipped = gameState.equipment.filter((e) => e.equippedBy === null);
-  if (unequipped.length === 0) {
-    el.innerHTML = `<p class="inv-hint">No unequipped gear. Battle or craft to find some.</p>`;
-    return;
-  }
-  el.innerHTML = unequipped
-    .map(
-      (item) => `
-      <div class="gear-row rarity-${item.rarity}">
-        <span>${item.name} <small>(${item.slot})</small></span>
-        <button class="settings-btn" data-sell="${item.id}">Sell for ${GEAR.sellPrice[item.rarity]}g</button>
-      </div>`,
-    )
-    .join("");
-  el.querySelectorAll<HTMLButtonElement>("[data-sell]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (sellEquipment(gameState, btn.dataset.sell!)) renderUnequippedGear();
-    });
-  });
 }
 
 function closeInventory(): void {
@@ -317,7 +290,6 @@ function openEquipPicker(defId: string, slot: EquipSlot): void {
       else if (btn.dataset.item) equipItem(gameState, defId, btn.dataset.item);
       overlay.remove();
       renderCard();
-      renderUnequippedGear();
     });
   });
   document.body.appendChild(overlay);

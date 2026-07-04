@@ -96,6 +96,7 @@ export function equipItem(state: GameState, defId: string, itemId: string): bool
     if (other.equippedBy === defId && other.slot === item.slot) other.equippedBy = null;
   }
   item.equippedBy = defId;
+  emit("gear", { defId, itemId });
   return true;
 }
 
@@ -103,6 +104,7 @@ export function unequipItem(state: GameState, itemId: string): boolean {
   const item = state.equipment.find((e) => e.id === itemId);
   if (!item) return false;
   item.equippedBy = null;
+  emit("gear", { defId: null, itemId });
   return true;
 }
 

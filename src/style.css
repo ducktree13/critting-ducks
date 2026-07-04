@@ -1612,26 +1612,6 @@ main.world {
 
 /* Rarity border colors: see src/components.css (design/STYLE.md §4) */
 
-.inventory-materials {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--card-border);
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-
-.inventory-gear {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
-  max-height: 140px;
-  overflow-y: auto;
-}
-
 .gear-row {
   display: flex;
   justify-content: space-between;
@@ -1981,6 +1961,91 @@ main.world {
   font-weight: 600;
   cursor: pointer;
   /* fill/color/border/radius/shadow: src/components.css */
+}
+
+/* ---- Items menu (Phase R5a): equipment grid + materials/ores stock ---- */
+
+.item-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px;
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  text-align: center;
+}
+
+.item-tile.selected {
+  border-color: var(--accent);
+}
+
+.item-glyph {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.item-glyph-lg {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.item-card-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+}
+
+.item-worn {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.item-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.items-section {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--card-border);
+}
+
+.items-section h4 {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.items-materials,
+.items-ores {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.items-stock-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
+  background: var(--card);
+  font-size: 0.78rem;
+}
+
+.items-stock-icon {
+  font-size: 1rem;
 }
 
 /* ---- Floaters ----

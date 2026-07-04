@@ -439,22 +439,22 @@ button:disabled {
    rows. Hue is never the only cue in the actual card art (shape signatures
    live in the SVG); this border is the chrome-level echo of that hue. */
 
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-uncommon {
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-uncommon {
   border-color: var(--rarity-uncommon);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-rare {
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-rare {
   border-color: var(--rarity-rare);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-epic {
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-epic {
   border-color: var(--rarity-epic);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-legendary {
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-legendary {
   border-color: var(--rarity-legendary);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-mythic {
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-mythic {
   border-color: var(--rarity-mythic);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row).rarity-divine {
+:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-divine {
   border-color: var(--rarity-divine);
 }
 
