@@ -21,6 +21,15 @@ let floaterCursor = 0;
 let particlePool: HTMLElement[] = [];
 let particleCursor = 0;
 
+// Extension point (R4b): the arena panel resolves which enemy element a hit
+// landed on (first living .enemy-unit, matching game/arena.ts's auto-target).
+// When set, arena-panel floaters/bursts anchor over the struck enemy instead
+// of over the attacking duck. Returns the target element or null.
+let arenaEnemyTargetResolver: (() => HTMLElement | null) | null = null;
+export function setArenaEnemyTargetResolver(fn: () => HTMLElement | null): void {
+  arenaEnemyTargetResolver = fn;
+}
+
 function makeFloaterEl(anchors: { mine: HTMLElement; arena: HTMLElement }): HTMLElement {
   const el = document.createElement("div");
   el.className = "floater";
@@ -59,13 +68,19 @@ export function initFloaters(anchors: { mine: HTMLElement; arena: HTMLElement })
     const amount = e.panel === "arena" ? e.dmg : e.gold;
     el.textContent = `+${fmt(amount)}${e.isCrit ? "!" : ""}`;
 
-    const duckEl = anchor.querySelector<HTMLElement>(`[data-duck="${e.duckId}"]`);
+    // Arena damage numbers anchor over the STRUCK ENEMY (first living unit)
+    // rather than the attacking duck; mine keeps anchoring over the duck.
+    const targetEl =
+      e.panel === "arena" && arenaEnemyTargetResolver
+        ? arenaEnemyTargetResolver()
+        : null;
+    const originEl = targetEl ?? anchor.querySelector<HTMLElement>(`[data-duck="${e.duckId}"]`);
     let originX: number;
     let originY: number;
-    if (duckEl) {
+    if (originEl) {
       // getBoundingClientRect (not offsetLeft/Top) so this doesn't care which
       // ancestor establishes the positioning context for `anchor`.
-      const duckRect = duckEl.getBoundingClientRect();
+      const duckRect = originEl.getBoundingClientRect();
       const anchorRect = anchor.getBoundingClientRect();
       el.style.top = "auto";
       el.style.left = `${duckRect.left - anchorRect.left + duckRect.width / 2}px`;
@@ -99,13 +114,21 @@ export function initFloaters(anchors: { mine: HTMLElement; arena: HTMLElement })
   });
 }
 
-function spawnCritBurst(x: number, y: number): void {
+// Impact burst at a screen-space point, reusing the pooled crit-particle nodes
+// (R4b: arena panel spawns one at the enemy on each strike, bigger on crit).
+// `scale` widens the spread for crit hits. No-op under reduced motion.
+export function spawnImpactBurst(x: number, y: number, scale = 1): void {
+  if (reducedMotion) return;
+  spawnCritBurst(x, y, scale);
+}
+
+function spawnCritBurst(x: number, y: number, scale = 1): void {
   for (let i = 0; i < PARTICLES_PER_BURST; i++) {
     const el = particlePool[particleCursor];
     particleCursor = (particleCursor + 1) % particlePool.length;
 
     const angle = (Math.PI * 2 * i) / PARTICLES_PER_BURST + (Math.random() - 0.5) * 0.3;
-    const dist = 26 + Math.random() * 14;
+    const dist = (26 + Math.random() * 14) * scale;
     const dx = Math.cos(angle) * dist;
     const dy = Math.sin(angle) * dist;
 

@@ -894,6 +894,19 @@ body.quackening-active main.world.streak-shake {
     transform: none !important;
     filter: none !important;
   }
+  /* R4b: arena dashes/knockback/topple/walk-in/shake are all JS-gated on
+     reduced motion, but neutralize any leftover class transforms too so
+     nothing slides — only the flash/glow feedback (retained) remains. */
+  .arena-body.arena-shake,
+  .enemy-unit.toppling,
+  .enemy-unit.walk-in,
+  .enemy-unit.enemy-lunge {
+    animation: none !important;
+  }
+  .arena-team-row .duck-slot.arena-dashing {
+    transition: none !important;
+    transform: none !important;
+  }
 }
 
 /* ---- THE QUACKENING (streak >= 100) ---- */

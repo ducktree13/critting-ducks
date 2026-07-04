@@ -4,6 +4,7 @@ import { getStats } from "../game/state";
 import type { GameState } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { makeDuckDraggable, makeDuckDropTarget } from "./dragDuck";
+import { setArenaEnemyTargetResolver, spawnImpactBurst } from "./floaters";
 import { fmt } from "./format";
 import { renderMissionTracker } from "./missionsPanel";
 import { openRosterPicker } from "./rosterPicker";
@@ -18,58 +19,67 @@ const ENEMY_COLORS: Record<string, string> = {
   pondlord: "#8a5ad9",
 };
 
-// Arena clearing backdrop (Phase H, PLAN2.md world redesign): a static SVG
-// scene sitting behind the enemy/team content via a negative z-index. Reads
-// as a clearing on the backdrop's right — no sky paint of its own
-// (transparent above the ground shapes) so it sits seamlessly over
-// #world-backdrop. Two tiered stone stands with banner pennants sit behind
-// a sandy floor (enemy side far/top, duck side near/bottom, matching DOM
-// order); torches only glow at night, crowd dots cheer continuously.
+// Arena colosseum backdrop (Phase H + R4b, PLAN2.md world redesign): a static
+// SVG scene sitting behind the battlefield content via a negative z-index.
+// Reads as a colosseum — no sky paint of its own (transparent above the stand
+// shapes) so it sits seamlessly over #world-backdrop. The container
+// (.arena-scene) is TALL (~373x744 in the world layout), so the viewBox is
+// authored TALL (400x780) to match; earlier the 400x260 wide viewBox scaled
+// up under `slice` and cropped the whole composition off-frame. All KEY
+// content (stands, pennants, torches, floor) sits within a safe central
+// column (~x=60..340) so the width `slice` crops only ever trim empty margins.
+// Top→bottom: two tiered crenellated stone stands with banner pennants across
+// the top third, always-cheering crowd dots; a big sandy floor ellipse filling
+// the bottom half (this IS the battlefield ground the ducks/enemies stand on);
+// torches flank the floor (night-only flame/glow).
 function colosseumSceneSvg(): string {
-  return `<svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-    <!-- Tiered stone stands, far tier behind near tier -->
-    <path class="arena-stand-far" d="M-20 40 Q200 -6 420 40 L420 78 Q200 40 -20 78 Z"
+  return `<svg viewBox="0 0 400 780" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <!-- Tiered stone stands across the top third, far tier behind near tier -->
+    <path class="arena-stand-far" d="M-20 120 Q200 40 420 120 L420 190 Q200 118 -20 190 Z"
       fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))" opacity="0.85"/>
     <g class="arena-crenellation-far">
-      ${Array.from({ length: 12 }, (_, i) => `<rect x="${-4 + i * 36}" y="4" width="18" height="14" fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))" opacity="0.85"/>`).join("")}
+      ${Array.from({ length: 12 }, (_, i) => `<rect x="${-4 + i * 36}" y="60" width="18" height="20" fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))" opacity="0.85"/>`).join("")}
     </g>
 
-    <path class="arena-stand-near" d="M-20 78 Q200 40 420 78 L420 122 Q200 88 -20 122 Z"
+    <path class="arena-stand-near" d="M-20 190 Q200 118 420 190 L420 262 Q200 176 -20 262 Z"
       fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))"/>
     <g class="arena-crenellation-near">
-      ${Array.from({ length: 12 }, (_, i) => `<rect x="${-4 + i * 36}" y="42" width="20" height="16" fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))"/>`).join("")}
+      ${Array.from({ length: 12 }, (_, i) => `<rect x="${-4 + i * 36}" y="128" width="20" height="24" fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))"/>`).join("")}
     </g>
 
     <!-- Banner pennants atop the stands -->
     <g class="arena-banners">
-      <line x1="60" y1="8" x2="60" y2="46" stroke="var(--surface-border)" stroke-width="2.4"/>
-      <polygon points="60,10 84,18 60,26" fill="var(--accent)"/>
-      <line x1="200" y1="-2" x2="200" y2="40" stroke="var(--surface-border)" stroke-width="2.4"/>
-      <polygon points="200,0 224,8 200,16" fill="var(--accent)"/>
-      <line x1="340" y1="8" x2="340" y2="46" stroke="var(--surface-border)" stroke-width="2.4"/>
-      <polygon points="340,10 316,18 340,26" fill="var(--accent)"/>
+      <line x1="76" y1="60" x2="76" y2="118" stroke="var(--surface-border)" stroke-width="3"/>
+      <polygon points="76,64 104,74 76,84" fill="var(--accent)"/>
+      <line x1="200" y1="46" x2="200" y2="108" stroke="var(--surface-border)" stroke-width="3"/>
+      <polygon points="200,50 228,60 200,70" fill="var(--accent)"/>
+      <line x1="324" y1="60" x2="324" y2="118" stroke="var(--surface-border)" stroke-width="3"/>
+      <polygon points="324,64 296,74 324,84" fill="var(--accent)"/>
     </g>
 
-    <!-- Crowd dots, always cheering -->
+    <!-- Crowd dots, always cheering, seated on the two tiers -->
     <g class="crowd">
-      ${Array.from({ length: 14 }, (_, i) => `<circle cx="${20 + i * 27}" cy="${58 - (i % 3) * 4}" r="4" fill="var(--accent)" opacity="0.5"/>`).join("")}
+      ${Array.from({ length: 14 }, (_, i) => `<circle cx="${34 + i * 24}" cy="${150 - (i % 3) * 6}" r="5" fill="var(--accent)" opacity="0.5"/>`).join("")}
+      ${Array.from({ length: 14 }, (_, i) => `<circle cx="${46 + i * 24}" cy="${224 - (i % 3) * 6}" r="5.5" fill="var(--accent)" opacity="0.5"/>`).join("")}
     </g>
 
-    <!-- Torches: flame only shows/glows at night -->
-    <g class="arena-torch" style="--torch-x:34px">
-      <line x1="34" y1="150" x2="34" y2="210" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round"/>
-      <path class="arena-flame" d="M34 150 q-8 -10 0 -22 q8 12 0 22 z" fill="var(--scene-detail)"/>
-      <circle class="arena-flame-glow" cx="34" cy="140" r="16" fill="var(--scene-detail)" opacity="0.25"/>
-    </g>
-    <g class="arena-torch" style="--torch-x:366px">
-      <line x1="366" y1="150" x2="366" y2="210" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round"/>
-      <path class="arena-flame" d="M366 150 q-8 -10 0 -22 q8 12 0 22 z" fill="var(--scene-detail)"/>
-      <circle class="arena-flame-glow" cx="366" cy="140" r="16" fill="var(--scene-detail)" opacity="0.25"/>
-    </g>
+    <!-- Sandy floor: a big ellipse filling the bottom half — the battlefield -->
+    <ellipse cx="200" cy="600" rx="250" ry="200" fill="color-mix(in srgb, var(--gold) 18%, var(--ground))"
+      stroke="var(--surface-border)" stroke-width="2.5"/>
+    <!-- Inner sand shading ring for depth -->
+    <ellipse cx="200" cy="600" rx="200" ry="158" fill="color-mix(in srgb, var(--gold) 10%, var(--ground))" opacity="0.6"/>
 
-    <!-- Sandy floor: enemy side far (top), duck side near (bottom) -->
-    <ellipse cx="200" cy="240" rx="230" ry="66" fill="color-mix(in srgb, var(--gold) 18%, var(--ground))"
-      stroke="var(--surface-border)" stroke-width="2"/>
+    <!-- Torches flanking the floor: flame/glow only at night -->
+    <g class="arena-torch">
+      <line x1="60" y1="470" x2="60" y2="560" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round"/>
+      <circle class="arena-flame-glow" cx="60" cy="454" r="26" fill="var(--scene-detail)" opacity="0.25"/>
+      <path class="arena-flame" d="M60 470 q-11 -14 0 -30 q11 16 0 30 z" fill="var(--scene-detail)"/>
+    </g>
+    <g class="arena-torch">
+      <line x1="340" y1="470" x2="340" y2="560" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round"/>
+      <circle class="arena-flame-glow" cx="340" cy="454" r="26" fill="var(--scene-detail)" opacity="0.25"/>
+      <path class="arena-flame" d="M340 470 q-11 -14 0 -30 q11 16 0 30 z" fill="var(--scene-detail)"/>
+    </g>
   </svg>`;
 }
 
@@ -91,15 +101,13 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
     <div class="area-chip">Arena <span class="panel-ticker" id="arena-ticker"></span></div>
     <div class="panel-body arena-body">
       <div class="arena-scene">${colosseumSceneSvg()}</div>
+      <div class="enemy-name" id="enemy-name"></div>
       <div class="mission-slot" id="arena-mission"></div>
-      <div class="arena-enemy">
-        <div class="enemy-name" id="enemy-name"></div>
+      <div class="arena-field">
+        <div class="duck-row arena-team-row" id="arena-ducks"></div>
         <div class="enemy-group" id="enemy-group"></div>
       </div>
-      <div class="arena-team well">
-        <div class="hp-bar team"><span class="hp-fill" id="team-hp"></span><span class="hp-label" id="team-hp-label"></span></div>
-        <div class="duck-row" id="arena-ducks"></div>
-      </div>
+      <div class="hp-bar team"><span class="hp-fill" id="team-hp"></span><span class="hp-label" id="team-hp-label"></span></div>
       <div class="arena-overlay" id="arena-overlay"></div>
     </div>
   `;
@@ -115,18 +123,32 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
   renderRoster(state);
   renderEnemy(state);
 
+  // Floaters resolve arena damage numbers over the struck enemy (first living
+  // unit, matching game/arena.ts auto-target) rather than the attacking duck.
+  setArenaEnemyTargetResolver(() => firstLivingEnemyArt());
+
   on("hit", (e) => {
     if (e.panel !== "arena") return;
-    // Flash the first living enemy's portrait (ducks auto-target it).
-    const artEl =
-      enemiesEl.querySelector<HTMLElement>(".enemy-unit:not(.dead) .enemy-art") ??
-      enemiesEl.querySelector<HTMLElement>(".enemy-art");
-    if (artEl) retrigger(artEl, "flash");
+    // Ducks auto-target the first living enemy (game/arena.ts). targetId is the
+    // enemy TYPE id, shared by every unit in the group, so it can't pick a
+    // specific unit — resolve the first non-dead .enemy-unit from the DOM.
+    const targetUnit = firstLivingEnemyUnit();
     const duckEl = duckRowEl.querySelector<HTMLElement>(`[data-duck="${e.duckId}"]`);
-    if (duckEl) retrigger(duckEl, "lunge");
+    if (duckEl && targetUnit) dashDuck(duckEl, e.duckId, targetUnit, e.isCrit);
+    else if (targetUnit) {
+      const art = targetUnit.querySelector<HTMLElement>(".enemy-art");
+      if (art) retrigger(art, "flash");
+    }
   });
   on("enemyhit", (e) => {
     retrigger(teamBarEl.parentElement as HTMLElement, e.isCrit ? "flash-crit" : "flash");
+    // The attacking enemy isn't identified in the payload — lunge the first
+    // living unit toward the duck team (left), concurrent with the bar flash.
+    const enemyEl = firstLivingEnemyUnit();
+    if (enemyEl) lungeEnemy(enemyEl);
+  });
+  on("wave", (e) => {
+    if (e.boss) shakeArena();
   });
 }
 
@@ -134,6 +156,99 @@ function retrigger(el: HTMLElement, cls: string): void {
   el.classList.remove(cls);
   void el.offsetWidth;
   el.classList.add(cls);
+}
+
+const prefersReducedMotion =
+  typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// First non-dead enemy unit in the DOM (falls back to the first unit). Mirrors
+// game/arena.ts's firstLivingEnemy auto-target so the visual strike lands on
+// the same enemy the game just damaged.
+function firstLivingEnemyUnit(): HTMLElement | null {
+  return (
+    enemiesEl.querySelector<HTMLElement>(".enemy-unit:not(.dead)") ??
+    enemiesEl.querySelector<HTMLElement>(".enemy-unit")
+  );
+}
+function firstLivingEnemyArt(): HTMLElement | null {
+  const unit = firstLivingEnemyUnit();
+  return unit?.querySelector<HTMLElement>(".enemy-art") ?? unit;
+}
+
+// Per-duck dash guard so overlapping hits don't restart the animation in
+// flight (mirrors minePanel.ts's per-duck walking Set).
+const dashing = new Set<string>();
+const DASH_OUT_MS = 200;
+const STRIKE_MS = 90;
+const DASH_BACK_MS = 250;
+
+// R4b: on an arena hit the attacking duck dashes ~70% of the way toward its
+// target enemy, a brief strike flourish (arc/rotate), then returns. At the
+// strike moment an impact burst spawns at the enemy and the enemy art flashes.
+// Under reduced motion the dash is skipped; only the flash feedback remains.
+function dashDuck(duckEl: HTMLElement, duckId: string, targetUnit: HTMLElement, isCrit: boolean): void {
+  const art = targetUnit.querySelector<HTMLElement>(".enemy-art");
+
+  const strike = (): void => {
+    if (art) retrigger(art, "flash");
+    const r = (art ?? targetUnit).getBoundingClientRect();
+    spawnImpactBurst(r.left + r.width / 2, r.top + r.height / 2, isCrit ? 1.7 : 1);
+  };
+
+  if (prefersReducedMotion) {
+    strike();
+    return;
+  }
+  if (dashing.has(duckId)) return;
+
+  const from = duckEl.getBoundingClientRect();
+  const to = targetUnit.getBoundingClientRect();
+  const dx = (to.left + to.width / 2 - (from.left + from.width / 2)) * 0.7;
+  const dy = (to.top + to.height / 2 - (from.top + from.height / 2)) * 0.7;
+
+  dashing.add(duckId);
+  duckEl.classList.add("arena-dashing");
+  duckEl.style.setProperty("--dash-x", `${dx}px`);
+  duckEl.style.setProperty("--dash-y", `${dy}px`);
+  duckEl.style.setProperty("--dash-ms", `${DASH_OUT_MS}ms`);
+  duckEl.style.setProperty("--dash-rot", "0deg");
+
+  const strikeTimer = window.setTimeout(() => {
+    // Strike frame: small arc/rotate flourish at the far point.
+    duckEl.style.setProperty("--dash-rot", isCrit ? "-14deg" : "-8deg");
+    strike();
+  }, DASH_OUT_MS);
+
+  const backTimer = window.setTimeout(() => {
+    duckEl.style.setProperty("--dash-ms", `${DASH_BACK_MS}ms`);
+    duckEl.style.setProperty("--dash-x", "0px");
+    duckEl.style.setProperty("--dash-y", "0px");
+    duckEl.style.setProperty("--dash-rot", "0deg");
+  }, DASH_OUT_MS + STRIKE_MS);
+
+  window.setTimeout(() => {
+    duckEl.classList.remove("arena-dashing");
+    duckEl.style.removeProperty("--dash-x");
+    duckEl.style.removeProperty("--dash-y");
+    duckEl.style.removeProperty("--dash-ms");
+    duckEl.style.removeProperty("--dash-rot");
+    dashing.delete(duckId);
+    clearTimeout(strikeTimer);
+    clearTimeout(backTimer);
+  }, DASH_OUT_MS + STRIKE_MS + DASH_BACK_MS);
+}
+
+// R4b: brief forward lunge (toward the duck team on the left) + return.
+function lungeEnemy(enemyEl: HTMLElement): void {
+  if (prefersReducedMotion) return;
+  retrigger(enemyEl, "enemy-lunge");
+}
+
+// R4b: boss-wave entrance screen-shake, reusing the streak-shake keyframe
+// pattern on the arena body.
+function shakeArena(): void {
+  if (prefersReducedMotion) return;
+  retrigger(panel, "arena-shake");
 }
 
 function enemySvg(typeId: string, size: number, boss: boolean): string {
@@ -172,12 +287,16 @@ function renderEnemy(state: GameState): void {
   const label = count > 1 ? `${type.name} ×${count}` : type.name;
   enemyNameEl.innerHTML = `${boss ? "👑 " : ""}${label} <small>· Wave ${wave} · atk ${fmt(enemyAttackFor(wave))}</small>`;
 
+  // A brand-new group (different type/count than what was shown) walks in from
+  // the right; a same-type refill (retry) just re-renders in place.
+  const walkIn = !prefersReducedMotion && enemyKey(state) !== lastEnemyKey && lastEnemyKey !== "";
+
   enemiesEl.innerHTML = arena.enemies
     .map(
       (_, i) => `
-      <div class="enemy-unit" data-enemy="${i}">
-        <div class="enemy-art">${enemySvg(type.id, portraitSize, boss)}</div>
+      <div class="enemy-unit${walkIn ? " walk-in" : ""}" data-enemy="${i}" style="--depth:${i}">
         <div class="hp-bar enemy mini"><span class="hp-fill" data-enemy-hp="${i}"></span></div>
+        <div class="enemy-art">${enemySvg(type.id, portraitSize, boss)}</div>
       </div>`,
     )
     .join("");
@@ -231,7 +350,15 @@ export function renderArenaPanel(state: GameState): void {
     if (fill) {
       fill.style.width = `${enemy.maxHp > 0 ? Math.max((enemy.hp / enemy.maxHp) * 100, 0) : 0}%`;
     }
-    if (unit) unit.classList.toggle("dead", enemy.hp <= 0);
+    if (unit) {
+      const isDead = enemy.hp <= 0;
+      // First frame this unit is dead: play the topple (rotate/translate/fade)
+      // on top of the grey-out. `dead` stays applied so it reads as defeated.
+      if (isDead && !unit.classList.contains("dead") && !prefersReducedMotion) {
+        retrigger(unit, "toppling");
+      }
+      unit.classList.toggle("dead", isDead);
+    }
   });
   teamBarEl.style.width = `${a.teamMaxHp > 0 ? Math.max((a.teamHp / a.teamMaxHp) * 100, 0) : 0}%`;
   teamBarLabelEl.textContent = `${fmt(Math.max(a.teamHp, 0))} / ${fmt(a.teamMaxHp)}`;
