@@ -135,7 +135,10 @@ main.world {
   display: grid;
   height: calc(100vh - 56px);
   grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.3fr) minmax(260px, 1fr);
-  grid-template-areas: "mine tree arena";
+  grid-template-rows: 1fr minmax(140px, 0.30fr);
+  grid-template-areas:
+    "mine tree arena"
+    "mine pond arena";
 }
 
 .world-backdrop {
@@ -143,8 +146,23 @@ main.world {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* Placeholder sky gradient until chunk 2 fills the backdrop scene. */
-  background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+}
+
+.world-scene-svg {
+  display: block;
+}
+
+.world-scene-svg .scene-stars { display: none; }
+[data-mode="night"] .world-scene-svg .scene-stars { display: block; }
+.world-scene-svg .scene-clouds { display: block; }
+[data-mode="night"] .world-scene-svg .scene-clouds { display: none; }
+
+.world-scene-svg .cloud {
+  animation: cd-drift linear infinite alternate;
+}
+
+.world-scene-svg .twinkle {
+  animation: cd-twinkle 3.4s ease-in-out infinite;
 }
 
 .world-area {
@@ -158,6 +176,7 @@ main.world {
 
 .area-mine { grid-area: mine; }
 .area-tree { grid-area: tree; }
+.area-pond { grid-area: pond; }
 .area-arena { grid-area: arena; }
 
 .world-area .panel-body {
@@ -216,7 +235,8 @@ main.world {
   body { overflow: auto; }
   main.world {
     grid-template-columns: 1fr;
-    grid-template-areas: "tree" "mine" "arena";
+    grid-template-rows: none;
+    grid-template-areas: "tree" "pond" "mine" "arena";
     height: auto;
   }
 }
@@ -438,47 +458,8 @@ main.world {
   100% { transform: rotate(0deg) translateY(0); }
 }
 
-.pond-strip {
-  flex: 0 0 auto;
-  border-top: 1px solid var(--card-border);
-  border-radius: 8px 8px 0 0;
-  background: color-mix(in srgb, #4a90b8 12%, var(--card));
-  padding: 6px 10px;
-}
-
-.pond-header {
-  display: flex;
-  justify-content: space-between;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.pond-slots {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-}
-
-.pond-duck {
-  animation: pond-swim 3.5s ease-in-out infinite;
-}
-
-@keyframes pond-swim {
-  0%, 100% { transform: translateX(-6px) rotate(-3deg); }
-  50% { transform: translateX(6px) rotate(3deg); }
-}
-
-.pond-empty {
-  width: 40px;
-  height: 40px;
-  border: 2px dashed var(--card-border);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  cursor: pointer;
-}
+/* ---- Pond area (Phase F chunk 2): circular pond scene + floating seats,
+   its own world-area (see components.css for the pond-scene/seat rules). ---- */
 
 #falling-leaves {
   position: absolute;

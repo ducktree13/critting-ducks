@@ -25,11 +25,13 @@ import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
 import { initInventoryMenu } from "./ui/inventoryMenu";
 import { initMinePanel, renderMinePanel } from "./ui/minePanel";
+import { initPondArea, renderPondArea } from "./ui/pondArea";
 import { initShopModal } from "./ui/shopModal";
 import { initTheme } from "./ui/theme";
 import { initTreePanel, renderTreePanel } from "./ui/treePanel";
 import { initTutorial, renderTutorial } from "./ui/tutorial";
 import { showWelcomeBack } from "./ui/welcomeBack";
+import { initWorldScene } from "./ui/worldScene";
 
 const storage = window.localStorage;
 const state: GameState = load(storage) ?? createInitialState();
@@ -62,12 +64,16 @@ app.innerHTML = `
     <div class="world-backdrop" id="world-backdrop" aria-hidden="true"></div>
     <section class="world-area area-mine"  id="mine-panel"></section>
     <section class="world-area area-tree"  id="tree-panel"></section>
+    <section class="world-area area-pond"  id="pond-area"></section>
     <section class="world-area area-arena" id="arena-panel"></section>
   </main>
 `;
 
+initWorldScene(app.querySelector<HTMLElement>("#world-backdrop")!);
+
 const minePanelEl = app.querySelector<HTMLElement>("#mine-panel")!;
 const treePanelEl = app.querySelector<HTMLElement>("#tree-panel")!;
+const pondAreaEl = app.querySelector<HTMLElement>("#pond-area")!;
 const arenaPanelEl = app.querySelector<HTMLElement>("#arena-panel")!;
 
 // Set when importing/resetting so the unload handler can't clobber the
@@ -105,6 +111,7 @@ initHud(app.querySelector("header.hud")!);
 initTheme(state, app.querySelector<HTMLElement>("#hud-theme")!);
 initMinePanel(minePanelEl, state);
 initTreePanel(treePanelEl, state);
+initPondArea(pondAreaEl, state);
 initArenaPanel(arenaPanelEl, state);
 initFloaters({ mine: minePanelEl, arena: arenaPanelEl });
 initTutorial(state);
@@ -124,6 +131,7 @@ function render(s: GameState): void {
   renderHud(s);
   renderMinePanel(s);
   renderTreePanel(s);
+  renderPondArea(s);
   renderArenaPanel(s);
   renderTutorial(s);
 }

@@ -1133,3 +1133,106 @@ body.quackening-active .area-chip {
     transition: none;
   }
 }
+
+/* ---- Pond area (Phase F chunk 2): circular dark-water pond, its own
+   world-area — replaces the old bottom-of-tree pond strip. ---- */
+
+.pond-body {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px 16px;
+}
+
+.pond-scene {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 360 / 200;
+}
+
+.pond-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.pond-ripple {
+  animation: pond-ripple-drift 5s ease-in-out infinite;
+}
+
+@keyframes pond-ripple-drift {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.4; }
+}
+
+.pond-ducks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pond-seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.pond-seat.occupied {
+  animation: pond-swim-sway 3.6s ease-in-out infinite;
+}
+
+@keyframes pond-swim-sway {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0) rotate(-2.5deg); }
+  50% { transform: translate(-50%, -50%) translateY(-4px) rotate(2.5deg); }
+}
+
+.pond-seat-ripple {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  width: 34px;
+  height: 10px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--scene-detail) 30%, transparent);
+}
+
+.pond-seat.empty {
+  border: 2px dashed var(--surface-border);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--text-muted);
+}
+
+.pond-seat-plus {
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.pond-income-chip {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pond-seat.occupied {
+    animation: none;
+  }
+  .pond-ripple {
+    animation: none;
+  }
+}

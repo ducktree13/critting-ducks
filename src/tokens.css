@@ -26,6 +26,18 @@
   --accent:#eaa63c; --accent-hover:#f0b558; --accent-ink:#43301a; --accent-soft:#f7e6bf;
   --panel-head:#8aa86f; --panel-head-ink:#faf3e3;
   --font-display:'Chelsea Market',cursive;
+  /* ---- Derived scene tokens (Phase F): computed once from the base tokens
+     above via color-mix so a single definition themes all 8 themes x 2
+     modes (var() resolves at use-site). Consumed by worldScene.ts (pond
+     water) and pondArea.ts now; the foliage tokens and bark-light are
+     consumed by chunk 3 (tree bark + foliage) — defined here so the
+     token block ships once. ---- */
+  --pond-water:      color-mix(in srgb, var(--sky-top) 30%, var(--surface-border));
+  --pond-water-deep: color-mix(in srgb, var(--sky-top) 16%, var(--surface-border));
+  --foliage-deep:    color-mix(in srgb, var(--surface-border) 35%, var(--panel-head));
+  --foliage-mid:     var(--panel-head);
+  --foliage-light:   color-mix(in srgb, var(--scene-detail) 22%, var(--panel-head));
+  --bark-light:      color-mix(in srgb, var(--surface-border) 14%, var(--surface));
 }
 [data-mode="night"] {
   --crit:#ff6752; --crit-glow:rgba(255,103,82,0.55); --gold:#e8c25a; --xp:#8fc7dd; --hp:#e07a7a;
