@@ -8,9 +8,7 @@ import { renderMissionTracker } from "./missionsPanel";
 import { attachTooltip } from "./tooltip";
 import {
   generateTree,
-  stageDepth,
-  stageFor,
-  stageScale,
+  thinAnchors,
   type Anchor,
   type GeneratedTree,
   type Segment,
@@ -107,8 +105,21 @@ interface Seated {
 }
 
 const GROUND_Y = 572;
-const FIT_W = 320; // usable width inside the 400 viewBox
+const FIT_W = 360; // usable width inside the 400 viewBox (widened in R2 so the
+// 30 act-1 nodes spread far enough apart to seat without overlap)
 const FIT_TOP = 40; // top margin
+
+// The skeleton renders at a constant tall scale (a hair under a perfect fit) so
+// the tree is a full barren silhouette from the first frame; foliage — not tree
+// size — is the visible progression.
+const TREE_SCALE = 0.95;
+// Target node separation in viewBox space between any two seated nodes. Nodes
+// render at r=13 (26px diameter), so ~32 units keeps a clear gap. Act-1's
+// 30-node tree (the tightest) tops out around 33 units with FIT_W=360; we aim
+// at 32 and relax toward the 26px floor (== node diameter, no overlap) only if
+// a tree can't reach it.
+const TARGET_SEP_PX = 32;
+const TARGET_SEP_FLOOR_PX = 26;
 
 // Chain depth: number of requires-hops back to a root, for topo seating order.
 function chainDepth(node: SkillNode): number {
@@ -138,17 +149,23 @@ function apply(fit: { s: number; tx: number; ty: number }, x: number, y: number)
   return { x: fit.tx + x * fit.s, y: fit.ty + y * fit.s };
 }
 
-function seatTree(treeId: TreeId, stage: number): Seated {
+function seatTree(treeId: TreeId): Seated {
   const nodes = nodesForTree(treeId);
   const cap = treeId === "act1" ? 30 : 16;
-  const tree = generateTree(treeId, 4, cap);
+  const tree = generateTree(treeId);
   const fit = fitTransform(tree);
-  // Stages render the same tree scaled 0.5 -> 1 (§6). Fold the stage scale into
-  // the fit about the pinned root so the whole tree grows in size with owned
-  // count; re-center horizontally at the reduced scale.
-  const sc = stageScale(stage);
-  fit.s *= sc;
+  // Constant tall render scale — no stage growth. The skeleton is the same size
+  // from S0; foliage accumulation is the visible progression.
+  fit.s *= TREE_SCALE;
   fit.tx = 200 - ((tree.bounds.minX + tree.bounds.maxX) / 2) * fit.s;
+
+  // Thin the raw anchors in FINAL rendered space: convert the target on-screen
+  // separation back into tree-space units through the fit so seated nodes end
+  // up >= TARGET_SEP_PX apart in the viewBox. Relax toward the floor only if the
+  // set can't seat all `cap` nodes at the target.
+  const minSep = TARGET_SEP_PX / fit.s;
+  const floorSep = TARGET_SEP_FLOOR_PX / fit.s;
+  const seatable = thinAnchors(tree.anchors, cap, minSep, floorSep);
 
   // Order nodes topologically (chain depth, then cost) and anchors by
   // root-distance; zip them so parents always sit closer to the root.
@@ -157,7 +174,7 @@ function seatTree(treeId: TreeId, stage: number): Seated {
     const db = chainDepth(b);
     return da !== db ? da - db : a.cost - b.cost;
   });
-  const anchors = [...tree.anchors].sort((a, b) => a.dist - b.dist);
+  const anchors = seatable.sort((a, b) => a.dist - b.dist);
 
   const pos = new Map<string, Anchor>();
   for (let i = 0; i < ordered.length; i++) {
@@ -426,29 +443,21 @@ function buildCrown(
 // growth stage allows; branches arrive one stage before their nodes.
 function buildTreeSvg(state: GameState, treeId: TreeId): string {
   const nodes = nodesForTree(treeId);
-  const total = nodes.length;
-  const owned = nodes.filter((n) => isOwned(state, n.id)).length;
-  const stage = stageFor(owned, total);
-  const seated = seatTree(treeId, stage);
+  const seated = seatTree(treeId);
   const { tree, pos, fit } = seated;
 
-  // Which recursion depth is visible: branches arrive one stage early.
-  const shownDepth = stageDepth(stage, 4) + 1; // "bare one stage ahead"
-  const visibleSegs = tree.segments.filter((s) => s.depth <= shownDepth);
-  const prevDepth = stageDepth(lastStage[treeId] ?? stage, 4) + 1;
+  // The full skeleton renders from the first frame — no stage-gated depth reveal.
+  const visibleSegs = tree.segments;
 
-  // Silhouette (all visible limbs, expanded +2.6px, ink fill).
+  // Silhouette (all limbs, expanded +2.6px, ink fill).
   const silhouette = visibleSegs
     .map((s) => `<polygon class="tree-ink" points="${segPolygon(fit, s, 2.6)}"/>`)
     .join("");
   // Bark fills — two tones by depth parity.
   const bark = visibleSegs
     .map((s) => {
-      const grow = s.depth > prevDepth ? " grow" : "";
-      const p = apply(fit, s.parentTipX, s.parentTipY);
-      const origin = grow ? ` style="transform-origin:${p.x.toFixed(1)}px ${p.y.toFixed(1)}px"` : "";
       const tone = s.depth % 2 === 0 ? "tree-bark-a" : "tree-bark-b";
-      return `<polygon class="${tone}${grow}" points="${segPolygon(fit, s, 0)}"${origin}/>`;
+      return `<polygon class="${tone}" points="${segPolygon(fit, s, 0)}"/>`;
     })
     .join("");
   // Core-shadow ribbons on major limbs only.
@@ -505,7 +514,7 @@ function buildTreeSvg(state: GameState, treeId: TreeId): string {
     const a = pos.get(node.id)!;
     if (!isVisible(state, node.id)) {
       nodeEls.push(
-        `<g class="tree-node hidden" data-node="${node.id}"><circle class="face" cx="${a.x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="11"/></g>`,
+        `<g class="tree-node hidden" data-node="${node.id}"><circle class="face" cx="${a.x.toFixed(1)}" cy="${a.y.toFixed(1)}" r="13"/></g>`,
       );
       continue;
     }
@@ -516,11 +525,11 @@ function buildTreeSvg(state: GameState, treeId: TreeId): string {
     const iconFill = ICON_FILLED.has(node.effect.kind === "stat" ? node.effect.stat : node.effect.kind);
     nodeEls.push(`
       <g class="tree-node${own ? " owned" : ""}" data-node="${node.id}" style="--node-color:${type.color};--node-ink:${type.ink}">
-        <circle class="hit" cx="${cx}" cy="${cy}" r="17"/>
-        <circle class="ring" cx="${cx}" cy="${cy}" r="12"/>
-        <circle class="face" cx="${cx}" cy="${cy}" r="11"/>
-        <g class="icon" transform="translate(${cx} ${cy})" ${iconFill ? "" : ""}>${type.icon}</g>
-        ${own ? "" : `<g class="cost-pill" transform="translate(${cx} ${(a.y + 26).toFixed(1)})"><rect x="-16" y="-8" width="32" height="15" rx="7"/><text y="3">${fmt(node.cost)}</text></g>`}
+        <circle class="hit" cx="${cx}" cy="${cy}" r="19"/>
+        <circle class="ring" cx="${cx}" cy="${cy}" r="14"/>
+        <circle class="face" cx="${cx}" cy="${cy}" r="13"/>
+        <g class="icon" transform="translate(${cx} ${cy}) scale(1.18)" ${iconFill ? "" : ""}>${type.icon}</g>
+        ${own ? "" : `<g class="cost-pill" transform="translate(${cx} ${(a.y + 29).toFixed(1)})"><rect x="-17" y="-8" width="34" height="16" rx="8"/><text y="4">${fmt(node.cost)}</text></g>`}
       </g>`);
     if (own && outerSet.has(node.id)) {
       leaves.push(leafFan(node.id, a.x, a.y, node.id === freshNodeId));
@@ -543,8 +552,6 @@ function buildTreeSvg(state: GameState, treeId: TreeId): string {
   // Grass mound: a low rounded hump under the trunk with a deep-foliage shadow
   // edge, plus a couple of root-flare tufts. Replaces the bare ground line.
   const gMound = buildGrassMound();
-
-  lastStage[treeId] = stage;
 
   return `
     ${groundEllipse}
@@ -605,10 +612,6 @@ function buildGrassMound(): string {
 // spark + (nothing else) uses fill; icons that are stroke-based skip fill.
 const ICON_FILLED = new Set<string>(["critChance", "critMult", "buffDuration"]);
 
-// Track the last-rendered stage per tree so a stage advance can animate only
-// the newly-revealed segments (scale-in from parent joint).
-const lastStage: Partial<Record<TreeId, number>> = {};
-
 function nodeTooltipHtml(nodeId: string): string {
   const node = getSkillNode(nodeId);
   const owned = isOwned(gameState, nodeId);
@@ -638,6 +641,145 @@ function wireTreeSvg(svg: SVGSVGElement): void {
   });
 }
 
+// ---- Wheel zoom + drag pan on focused tree SVGs (act1 + act2 focus, NOT the
+// 2x2 overview). The base viewBox is 0 0 VB_W VB_H; zoom shrinks it (min 1x =
+// full, max ZOOM_MAX). Pan clamps so the content can't leave the viewport.
+// State is module-local per treeId and re-applied after event-driven rebuilds
+// (innerHTML is replaced, so the <svg> element is fresh each time). Node clicks
+// stay per-element so they survive viewBox changes; a drag on empty background
+// pans only after a small movement threshold, distinguishing it from a click.
+const VB_W = 400;
+const VB_H = 600;
+const ZOOM_MAX = 3;
+const DRAG_THRESHOLD = 5; // px of movement before a press becomes a pan
+
+interface ViewBox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+const zoomState: Partial<Record<TreeId, ViewBox>> = {};
+
+function defaultViewBox(): ViewBox {
+  return { x: 0, y: 0, w: VB_W, h: VB_H };
+}
+
+// Clamp a viewBox so it stays within the base 0..VB_W / 0..VB_H content bounds
+// and never zooms out past 1x (w<=VB_W) or in past ZOOM_MAX.
+function clampViewBox(vb: ViewBox): ViewBox {
+  const minW = VB_W / ZOOM_MAX;
+  const w = Math.min(VB_W, Math.max(minW, vb.w));
+  const h = w * (VB_H / VB_W);
+  const x = Math.min(VB_W - w, Math.max(0, vb.x));
+  const y = Math.min(VB_H - h, Math.max(0, vb.y));
+  return { x, y, w, h };
+}
+
+function applyViewBox(svg: SVGSVGElement, vb: ViewBox): void {
+  svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+}
+
+// Map a pointer event to viewBox coordinates given the current viewBox.
+function pointerToVb(svg: SVGSVGElement, e: { clientX: number; clientY: number }, vb: ViewBox): { x: number; y: number } {
+  const rect = svg.getBoundingClientRect();
+  const fx = (e.clientX - rect.left) / (rect.width || 1);
+  const fy = (e.clientY - rect.top) / (rect.height || 1);
+  return { x: vb.x + fx * vb.w, y: vb.y + fy * vb.h };
+}
+
+function wireTreeZoom(svg: SVGSVGElement, treeId: TreeId): void {
+  // Re-apply any preserved zoom for this tree after a rebuild.
+  let vb = clampViewBox(zoomState[treeId] ?? defaultViewBox());
+  zoomState[treeId] = vb;
+  applyViewBox(svg, vb);
+
+  const commit = (next: ViewBox): void => {
+    vb = clampViewBox(next);
+    zoomState[treeId] = vb;
+    applyViewBox(svg, vb);
+  };
+
+  // Cursor-anchored wheel zoom. passive:false so we can preventDefault and the
+  // page doesn't scroll while wheeling over the tree.
+  svg.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      const anchor = pointerToVb(svg, e, vb);
+      const factor = Math.exp(-e.deltaY * 0.0015); // wheel up -> zoom in
+      const newW = vb.w / factor;
+      const clampedW = Math.min(VB_W, Math.max(VB_W / ZOOM_MAX, newW));
+      const scale = clampedW / vb.w;
+      const newH = clampedW * (VB_H / VB_W);
+      // keep the anchor point fixed under the cursor
+      const nx = anchor.x - (anchor.x - vb.x) * scale;
+      const ny = anchor.y - (anchor.y - vb.y) * scale;
+      commit({ x: nx, y: ny, w: clampedW, h: newH });
+    },
+    { passive: false },
+  );
+
+  // Drag on empty background pans; a press on a node bubbles here but node
+  // handlers stopPropagation, and we only start panning past DRAG_THRESHOLD.
+  let dragging = false;
+  let moved = false;
+  let startClient = { x: 0, y: 0 };
+  let startVb = vb;
+
+  svg.addEventListener("pointerdown", (e) => {
+    // ignore presses that originate on an interactive node (let it click)
+    if ((e.target as Element).closest(".tree-node:not(.hidden)")) return;
+    dragging = true;
+    moved = false;
+    startClient = { x: e.clientX, y: e.clientY };
+    startVb = vb;
+  });
+
+  svg.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dxPx = e.clientX - startClient.x;
+    const dyPx = e.clientY - startClient.y;
+    if (!moved && Math.hypot(dxPx, dyPx) < DRAG_THRESHOLD) return;
+    if (!moved) {
+      moved = true;
+      svg.setPointerCapture(e.pointerId);
+      svg.classList.add("panning");
+    }
+    const rect = svg.getBoundingClientRect();
+    const vx = (dxPx / (rect.width || 1)) * startVb.w;
+    const vy = (dyPx / (rect.height || 1)) * startVb.h;
+    commit({ x: startVb.x - vx, y: startVb.y - vy, w: startVb.w, h: startVb.h });
+  });
+
+  const endDrag = (e: PointerEvent): void => {
+    if (!dragging) return;
+    dragging = false;
+    if (moved) {
+      try {
+        svg.releasePointerCapture(e.pointerId);
+      } catch {
+        /* pointer may already be released */
+      }
+      svg.classList.remove("panning");
+    }
+  };
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  // Double-click empty background resets to 1x.
+  svg.addEventListener("dblclick", (e) => {
+    if ((e.target as Element).closest(".tree-node:not(.hidden)")) return;
+    commit(defaultViewBox());
+  });
+}
+
+function resetTreeZoom(treeId: TreeId): void {
+  zoomState[treeId] = defaultViewBox();
+  const svg = bodyEl.querySelector<SVGSVGElement>(".tree-svg");
+  if (svg) applyViewBox(svg, zoomState[treeId]!);
+}
+
 // Overview (all four act-2 trees in a 2x2 grid) vs. focus (one tree, with
 // prev/next switcher). Toggled by the Overview/Focus button in the switcher
 // row; only meaningful in chapter 2. Replaces the old panels-minimized coupling.
@@ -660,8 +802,16 @@ function rebuildLayout(): void {
   lastAffordableKey = "";
 
   if (state.chapter === 1) {
-    bodyEl.innerHTML = `<svg class="tree-svg" id="tree-svg-act1" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, "act1")}</svg>`;
-    wireTreeSvg(bodyEl.querySelector<SVGSVGElement>("#tree-svg-act1")!);
+    bodyEl.innerHTML = `
+      <div class="tree-switcher well">
+        <b>${TREE_NAMES.act1}</b>
+        <button class="tree-nav" id="tree-reset" aria-label="Reset zoom" title="Reset zoom">⌂</button>
+      </div>
+      <svg class="tree-svg" id="tree-svg-act1" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, "act1")}</svg>`;
+    const svg = bodyEl.querySelector<SVGSVGElement>("#tree-svg-act1")!;
+    wireTreeSvg(svg);
+    wireTreeZoom(svg, "act1");
+    bodyEl.querySelector("#tree-reset")!.addEventListener("click", () => resetTreeZoom("act1"));
     return;
   }
 
@@ -692,13 +842,17 @@ function rebuildLayout(): void {
       <button class="tree-nav" id="tree-prev" aria-label="Previous tree">◀</button>
       <b>${TREE_NAMES[current]}</b>
       <button class="tree-nav" id="tree-next" aria-label="Next tree">▶</button>
+      <button class="tree-nav" id="tree-reset" aria-label="Reset zoom" title="Reset zoom">⌂</button>
       <button class="tree-nav" id="tree-overview-toggle">Overview</button>
     </div>
     <svg class="tree-svg" id="tree-svg-current" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, current)}</svg>
   `;
-  wireTreeSvg(bodyEl.querySelector<SVGSVGElement>("#tree-svg-current")!);
+  const svg = bodyEl.querySelector<SVGSVGElement>("#tree-svg-current")!;
+  wireTreeSvg(svg);
+  wireTreeZoom(svg, current);
   bodyEl.querySelector("#tree-prev")!.addEventListener("click", () => cycleTree(-1));
   bodyEl.querySelector("#tree-next")!.addEventListener("click", () => cycleTree(1));
+  bodyEl.querySelector("#tree-reset")!.addEventListener("click", () => resetTreeZoom(current));
   bodyEl.querySelector("#tree-overview-toggle")!.addEventListener("click", () => toggleOverview());
 }
 

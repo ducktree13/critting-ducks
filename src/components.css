@@ -1067,17 +1067,6 @@ body.quackening-active .area-chip {
   stroke-linecap: round;
 }
 
-/* --- Growth: new limb segments scale in from their parent joint --- */
-.tree-bark-a.grow,
-.tree-bark-b.grow {
-  transform-box: fill-box;
-  animation: tree-grow 480ms var(--ease-out) backwards;
-}
-@keyframes tree-grow {
-  from { transform: scale(0.05); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
 /* --- Foliage: individual ink-outlined leaves in two greens --- */
 .tree-foliage .leaf {
   stroke: var(--surface-border);
@@ -1175,8 +1164,6 @@ body.quackening-active .area-chip {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tree-bark-a.grow,
-  .tree-bark-b.grow,
   .tree-foliage .leaf.pop,
   .tree-crown .crown-blob.pop,
   .tree-node.affordable .ring,

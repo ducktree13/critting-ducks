@@ -74,7 +74,7 @@ export interface Anchor {
 
 export interface GeneratedTree {
   segments: Segment[];
-  anchors: Anchor[]; // sorted by distance-from-root, thinned + capped
+  anchors: Anchor[]; // ALL raw anchors, sorted by distance-from-root (unthinned)
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
   rootX: number;
   rootY: number;
@@ -200,10 +200,16 @@ function walk(
   return { x, y, angle: a, tipW, dist };
 }
 
-// Greedy min-separation thinning: keep anchors that are >= sep from all kept.
-function thinAnchors(sorted: Anchor[], cap: number): Anchor[] {
-  // adaptive separation: shrink from 30 -> 14 until we have >= cap candidates
-  for (let sep = 30; sep >= 14; sep -= 2) {
+// Greedy min-separation thinning: keep anchors (in root-distance order) that
+// are >= `minSep` (tree-space units) from all previously-kept anchors. The
+// caller supplies `minSep` computed from the final render fit so on-screen
+// separation is what actually gets enforced. If the greedy pass at `minSep`
+// can't reach `cap` candidates, relax stepwise down to `floorSep` — never
+// below that — so nodes stay visibly apart.
+export function thinAnchors(sorted: Anchor[], cap: number, minSep: number, floorSep: number): Anchor[] {
+  let best: Anchor[] = [];
+  const step = Math.max(1, (minSep - floorSep) / 6);
+  for (let sep = minSep; sep >= floorSep - 1e-6; sep -= step) {
     const kept: Anchor[] = [];
     for (const a of sorted) {
       let ok = true;
@@ -217,11 +223,10 @@ function thinAnchors(sorted: Anchor[], cap: number): Anchor[] {
       }
       if (ok) kept.push(a);
     }
-    if (kept.length >= cap || sep === 14) {
-      return kept.slice(0, cap);
-    }
+    if (kept.length > best.length) best = kept;
+    if (kept.length >= cap) return kept.slice(0, cap);
   }
-  return sorted.slice(0, cap);
+  return best.slice(0, cap);
 }
 
 // A small stable string hash -> uint32, used to fold the tree id into the seed.
@@ -249,10 +254,14 @@ function speciesFor(treeId: TreeId): SpeciesParams {
   return treeId === "act1" ? OAK : OAK_SAPLING;
 }
 
-// Generate the full tree at a given recursion depth (growth stage), seeded
-// deterministically from the tree id. `anchorCap` bounds seatable anchors.
-export function generateTree(treeId: TreeId, maxDepth: number, anchorCap: number): GeneratedTree {
+// Generate the full tree (always full recursion depth) seeded deterministically
+// from the tree id. Returns ALL raw anchors sorted inner->outer; the caller
+// thins them (via thinAnchors) against the final render fit so on-screen node
+// spacing is enforced. The skeleton is constant across the whole run — the
+// visible progression is owned-gated foliage, not tree growth.
+export function generateTree(treeId: TreeId): GeneratedTree {
   const p = speciesFor(treeId);
+  const maxDepth = p.maxDepth;
   const seed = (MASTER_SEED ^ hashStr(treeId) ^ (TREE_SEED_SALT[treeId] * 0x9e3779b1)) >>> 0;
   const prng = mulberry32(seed);
   const rng = () => prng.next();
@@ -276,10 +285,10 @@ export function generateTree(treeId: TreeId, maxDepth: number, anchorCap: number
   // The trunk + crown.
   walk(segs, rawAnchors, rng, p, rootX, rootY, 0, UP, p.trunkLen, p.trunkW, 0, maxDepth, true, p.pull);
 
-  // Sort anchors inner->outer, thin, cap.
+  // Sort anchors inner->outer (thinning is deferred to the caller, which knows
+  // the final render fit and thus the on-screen min separation to enforce).
   rawAnchors.sort((a, b) => a.dist - b.dist);
-  const anchors = thinAnchors(rawAnchors, anchorCap);
-  anchors.sort((a, b) => a.dist - b.dist);
+  const anchors = rawAnchors;
 
   // Bounds over all segment endpoints (for auto-fit).
   let minX = Infinity;
@@ -299,30 +308,4 @@ export function generateTree(treeId: TreeId, maxDepth: number, anchorCap: number
   }
 
   return { segments: segs, anchors, bounds: { minX, minY, maxX, maxY }, rootX, rootY };
-}
-
-// Growth stage from owned count (§6). Act-2 (14-node) thresholds scale down.
-export function stageFor(ownedCount: number, totalNodes: number): number {
-  if (totalNodes >= 25) {
-    // Act 1 (30 nodes): S0=0, S1=1-7, S2=8-17, S3=18+
-    if (ownedCount === 0) return 0;
-    if (ownedCount <= 7) return 1;
-    if (ownedCount <= 17) return 2;
-    return 3;
-  }
-  // Act 2 (14 nodes): proportional thresholds (~×0.47)
-  if (ownedCount === 0) return 0;
-  if (ownedCount <= 3) return 1;
-  if (ownedCount <= 8) return 2;
-  return 3;
-}
-
-// Recursion depth revealed at each stage, and the scale it renders at (0.5->1).
-export function stageDepth(stage: number, maxDepth: number): number {
-  // S0 -> depth 1 (bare sprout), S1 -> 2, S2 -> 3, S3 -> full.
-  return Math.min(maxDepth, stage + 1);
-}
-
-export function stageScale(stage: number): number {
-  return 0.5 + (stage / 3) * 0.5; // S0 0.5 ... S3 1.0
 }

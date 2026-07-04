@@ -400,6 +400,19 @@ main.world {
   flex: 1;
 }
 
+/* Focused (zoomable) trees: grab cursor + suppress browser touch gestures so
+   wheel-zoom and drag-pan aren't hijacked by page scroll / pinch. The 2x2
+   overview cells are not zoomable and keep default behavior. */
+#tree-svg-act1,
+#tree-svg-current {
+  cursor: grab;
+  touch-action: none;
+}
+#tree-svg-act1.panning,
+#tree-svg-current.panning {
+  cursor: grabbing;
+}
+
 .tree-switcher {
   display: flex;
   align-items: center;
