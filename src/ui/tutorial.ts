@@ -45,6 +45,15 @@ export function initTutorial(state: GameState): void {
 // reordered.
 const PACK_STEP_INDEX = TUTORIAL_STEPS.findIndex((s) => s.highlight === "#hud-shop");
 
+// Edge-detection cache so a per-frame call can early-out cheaply once the
+// tutorial is done (the common case for the rest of a session) and can skip
+// re-querying/writing the spotlight rect when the highlighted target's
+// bounding box hasn't actually moved (e.g. static header buttons).
+let lastDone = false;
+let lastStep = -1;
+let lastTargetSelector: string | null | undefined;
+let lastRectKey = "";
+
 export function renderTutorial(state: GameState): void {
   advanceTutorial(state);
 
@@ -56,26 +65,42 @@ export function renderTutorial(state: GameState): void {
   packBtn?.classList.toggle("tutorial-glow", wantsPackGlow);
 
   if (state.tutorial.done) {
-    overlay.classList.remove("show");
+    if (!lastDone) {
+      overlay.classList.remove("show");
+      lastDone = true;
+    }
     return;
   }
+  lastDone = false;
   overlay.classList.add("show");
 
   const step = TUTORIAL_STEPS[state.tutorial.step];
-  titleEl.textContent = step.title;
-  bodyEl.textContent = step.body;
-  nextBtn.style.display = step.manual ? "inline-block" : "none";
-  nextBtn.textContent = state.tutorial.step === TUTORIAL_STEPS.length - 1 ? "Finish" : "Next";
+  if (state.tutorial.step !== lastStep) {
+    titleEl.textContent = step.title;
+    bodyEl.textContent = step.body;
+    nextBtn.style.display = step.manual ? "inline-block" : "none";
+    nextBtn.textContent = state.tutorial.step === TUTORIAL_STEPS.length - 1 ? "Finish" : "Next";
+    lastStep = state.tutorial.step;
+    lastTargetSelector = undefined; // force a fresh rect query for the new step
+  }
 
   const target = step.highlight ? document.querySelector(step.highlight) : null;
   if (target) {
     const r = target.getBoundingClientRect();
-    spotlightEl.style.display = "block";
-    spotlightEl.style.left = `${r.left - 6}px`;
-    spotlightEl.style.top = `${r.top - 6}px`;
-    spotlightEl.style.width = `${r.width + 12}px`;
-    spotlightEl.style.height = `${r.height + 12}px`;
-  } else {
+    // Round to whole pixels: sub-pixel layout jitter from repeated reflow
+    // shouldn't force a style write every frame.
+    const rectKey = `${step.highlight}|${Math.round(r.left)}|${Math.round(r.top)}|${Math.round(r.width)}|${Math.round(r.height)}`;
+    if (rectKey !== lastRectKey) {
+      spotlightEl.style.display = "block";
+      spotlightEl.style.left = `${r.left - 6}px`;
+      spotlightEl.style.top = `${r.top - 6}px`;
+      spotlightEl.style.width = `${r.width + 12}px`;
+      spotlightEl.style.height = `${r.height + 12}px`;
+      lastRectKey = rectKey;
+    }
+  } else if (lastTargetSelector !== null) {
     spotlightEl.style.display = "none";
+    lastRectKey = "";
+    lastTargetSelector = null;
   }
 }

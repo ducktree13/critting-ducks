@@ -37,6 +37,13 @@ let gameState: GameState;
 let freshNodeId: string | null = null; // most recently bought — its leaves pop
 let lastLayoutKey = "";
 
+// Cache for the per-frame affordability pass: the queried node list (only
+// re-queried when the layout is rebuilt) and the last cache key it was
+// evaluated against (gold floor + level + owned count — the only inputs that
+// can flip canBuy's result for a given node set).
+let cachedAffordableNodes: SVGGElement[] | null = null;
+let lastAffordableKey = "";
+
 // ---- Node type -> icon + color (§6). Icons are tiny SVG paths drawn in a
 // local ~[-6,6] box, translated to the anchor. Color is a CSS var per type. --
 interface NodeType {
@@ -389,6 +396,10 @@ function layoutKey(state: GameState): string {
 function rebuildLayout(): void {
   const state = gameState;
   lastLayoutKey = layoutKey(state);
+  // bodyEl.innerHTML is about to be replaced, so any cached node references
+  // from the affordability pass below are stale — force a re-query.
+  cachedAffordableNodes = null;
+  lastAffordableKey = "";
 
   if (state.chapter === 1) {
     bodyEl.innerHTML = `<svg class="tree-svg" id="tree-svg-act1" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, "act1")}</svg>`;
@@ -552,10 +563,22 @@ export function initTreePanel(root: HTMLElement, state: GameState): void {
 export function renderTreePanel(state: GameState): void {
   if (layoutKey(state) !== lastLayoutKey) rebuildLayout();
 
-  // Cheap per-frame pass: pulse nodes the player can afford right now.
-  bodyEl.querySelectorAll<SVGGElement>(".tree-node:not(.hidden):not(.owned)").forEach((g) => {
-    g.classList.toggle("affordable", canBuy(state, g.dataset.node!));
-  });
+  // Per-frame pass: pulse nodes the player can afford right now. The node
+  // list only changes when the layout rebuilds (invalidated above), and
+  // canBuy's result only depends on gold/level/owned-count, so skip the
+  // querySelectorAll + canBuy sweep entirely unless one of those moved.
+  const affordableKey = `${Math.floor(state.gold)}|${state.level}|${state.skillNodes.length}`;
+  if (!cachedAffordableNodes) {
+    cachedAffordableNodes = Array.from(
+      bodyEl.querySelectorAll<SVGGElement>(".tree-node:not(.hidden):not(.owned)"),
+    );
+  }
+  if (affordableKey !== lastAffordableKey) {
+    for (const g of cachedAffordableNodes) {
+      g.classList.toggle("affordable", canBuy(state, g.dataset.node!));
+    }
+    lastAffordableKey = affordableKey;
+  }
 
   const totalNodes = SKILL_NODES.length;
   tickerEl.textContent =

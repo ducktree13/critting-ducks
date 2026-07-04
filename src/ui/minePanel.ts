@@ -45,6 +45,7 @@ let tickerEl: HTMLElement;
 let missionEl: HTMLElement;
 let goldTargetEl: HTMLElement | null = null;
 let lastRosterKey = "";
+let lastOreCountersKey = "";
 
 // Cave-mouth backdrop (PLAN2.md §12): a static SVG scene sitting behind the
 // rock/vein/duck-row content via a negative z-index, so ducks read as
@@ -226,12 +227,28 @@ function rosterKey(state: GameState): string {
   return state.rosters.mine.join(",") + "|" + getStats(state).mineSlots;
 }
 
+function oreCountersKey(state: GameState): string {
+  // fmt() collapses to formatted strings, so the key must reflect the
+  // *displayed* text (not raw ore counts) to avoid rebuilding on sub-display
+  // fluctuations while still rebuilding whenever a shown value changes.
+  return (Object.keys(ORE_VALUES) as OreId[])
+    .filter((ore) => state.ores[ore] > 0)
+    .map((ore) => `${ore}:${fmt(state.ores[ore])}`)
+    .join(",");
+}
+
 export function renderMinePanel(state: GameState): void {
   if (rosterKey(state) !== lastRosterKey) renderRoster(state);
-  oreCountersEl.innerHTML = (Object.keys(ORE_VALUES) as OreId[])
-    .filter((ore) => state.ores[ore] > 0)
-    .map((ore) => `<span class="ore-counter">${ORE_NAMES[ore]}: ${fmt(state.ores[ore])}</span>`)
-    .join("");
+
+  const oreKey = oreCountersKey(state);
+  if (oreKey !== lastOreCountersKey) {
+    oreCountersEl.innerHTML = (Object.keys(ORE_VALUES) as OreId[])
+      .filter((ore) => state.ores[ore] > 0)
+      .map((ore) => `<span class="ore-counter">${ORE_NAMES[ore]}: ${fmt(state.ores[ore])}</span>`)
+      .join("");
+    lastOreCountersKey = oreKey;
+  }
+
   tickerEl.textContent = `${state.rosters.mine.length} mining`;
   renderMissionTracker("mine", missionEl, state);
 }

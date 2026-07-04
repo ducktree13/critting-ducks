@@ -84,6 +84,8 @@ let confettiCursor = 0;
 let panelsEl: HTMLElement | null = null;
 let flashEl: HTMLElement | null = null;
 let bannerEl: HTMLElement | null = null;
+let sceneEls: HTMLElement[] | null = null;
+let lastSceneHot: boolean | null = null;
 
 // Edge-detection state, compared every renderHud() frame.
 let prevStreak = 0;
@@ -92,6 +94,16 @@ let quackeningActive = false;
 
 let emberAccumulator = 0;
 let lastEmberTs = 0;
+
+// Gate textContent/style writes on the formatted string actually changing —
+// some engines invalidate layout on any textContent assignment even when the
+// new value equals the old one, and these run every rAF frame.
+let lastGoldText = "";
+let lastGoldRateText = "";
+let lastXpWidth = "";
+let lastXpLabelText = "";
+let lastXpRateText = "";
+let lastStreakText = "";
 
 function buildParticleLayers(): void {
   // Ember layer, parked on the streak wrapper.
@@ -343,13 +355,38 @@ function goldTooltipHtml(): string {
 export function renderHud(state: GameState): void {
   latestState = state;
   const now = Date.now();
-  goldEl.textContent = fmt(state.gold);
-  goldRateEl.textContent = `${fmt(goldRate.perHour(now))}/hr`;
+
+  const goldText = fmt(state.gold);
+  if (goldText !== lastGoldText) {
+    goldEl.textContent = goldText;
+    lastGoldText = goldText;
+  }
+  const goldRateText = `${fmt(goldRate.perHour(now))}/hr`;
+  if (goldRateText !== lastGoldRateText) {
+    goldRateEl.textContent = goldRateText;
+    lastGoldRateText = goldRateText;
+  }
   const need = xpToNext(state.level);
-  xpFillEl.style.width = `${Math.min((state.xp / need) * 100, 100)}%`;
-  xpLabelEl.textContent = `Lv ${state.level}`;
-  xpRateEl.textContent = `${fmt(xpRate.perHour(now))} xp/hr`;
-  streakEl.textContent = String(state.streak.current);
+  const xpWidth = `${Math.min((state.xp / need) * 100, 100)}%`;
+  if (xpWidth !== lastXpWidth) {
+    xpFillEl.style.width = xpWidth;
+    lastXpWidth = xpWidth;
+  }
+  const xpLabelText = `Lv ${state.level}`;
+  if (xpLabelText !== lastXpLabelText) {
+    xpLabelEl.textContent = xpLabelText;
+    lastXpLabelText = xpLabelText;
+  }
+  const xpRateText = `${fmt(xpRate.perHour(now))} xp/hr`;
+  if (xpRateText !== lastXpRateText) {
+    xpRateEl.textContent = xpRateText;
+    lastXpRateText = xpRateText;
+  }
+  const streakText = String(state.streak.current);
+  if (streakText !== lastStreakText) {
+    streakEl.textContent = streakText;
+    lastStreakText = streakText;
+  }
   streakEl.classList.toggle("hot", state.streak.current > 0);
 
   const streak = state.streak.current;
@@ -387,9 +424,16 @@ export function renderHud(state: GameState): void {
   // Blazing+: +6% scene saturation, applied to the scene layers only (never
   // the whole page) per §7/§8. Queried lazily (not cached at init) since the
   // mine/arena panels populate .mine-scene/.arena-scene after initHud runs.
+  // .mine-scene/.arena-scene are queried lazily (not cached at init, since
+  // the mine/arena panels populate them after initHud runs) but the query
+  // result itself is stable afterward, so cache it on first lookup and only
+  // touch classList when the hot/cold state actually flips.
   const sceneHot = heat === "blazing" || heat === "quackening";
-  const sceneEls = document.querySelectorAll<HTMLElement>(".mine-scene, .arena-scene");
-  for (const scene of sceneEls) scene.classList.toggle("heat-saturate", sceneHot);
+  if (sceneHot !== lastSceneHot) {
+    if (!sceneEls) sceneEls = Array.from(document.querySelectorAll<HTMLElement>(".mine-scene, .arena-scene"));
+    for (const scene of sceneEls) scene.classList.toggle("heat-saturate", sceneHot);
+    lastSceneHot = sceneHot;
+  }
 
   prevStreak = streak;
   prevHeat = heat;

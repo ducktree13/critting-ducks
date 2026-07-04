@@ -363,16 +363,15 @@ export interface DuckSvgOptions {
   reveal?: boolean;
 }
 
-// One parametric "Duckling" (design/STYLE.md §5): legs, feet, body+tail, wing,
-// head, hair curl, bill, eye, accessories — params derived deterministically
-// from defId — wrapped in the optional rarity ring + shape signature and
-// ascension star pips.
-export function duckSvg(defId: string, size: number, ascensionOrOpts: number | DuckSvgOptions = 0): string {
-  const opts: DuckSvgOptions = typeof ascensionOrOpts === "number" ? { ascension: ascensionOrOpts } : ascensionOrOpts;
-  const ascension = opts.ascension ?? 0;
-  const ringed = opts.ringed ?? true;
-  const reveal = opts.reveal ?? false;
+// Portraits are a pure function of (defId, size, ascension, ringed) — the
+// rig params are hash-derived from defId, so re-parsing the same combination
+// on every roster rebuild / picker open is wasted work. `reveal` drives a
+// one-shot pack-reveal animation and is intentionally excluded from both the
+// key and the cache (those calls always render fresh, uncached).
+const DUCK_SVG_CACHE_LIMIT = 300;
+const duckSvgCache = new Map<string, string>();
 
+function duckSvgUncached(defId: string, size: number, ascension: number, ringed: boolean, reveal: boolean): string {
   const def = getDuckDef(defId);
   const params = rigParamsFor(defId, def.rarity);
   const rig = buildRig(def.rarity, params);
@@ -393,6 +392,34 @@ export function duckSvg(defId: string, size: number, ascensionOrOpts: number | D
   </svg>`;
 
   return wrapperClass ? `<span class="${wrapperClass}">${svg}</span>` : svg;
+}
+
+// One parametric "Duckling" (design/STYLE.md §5): legs, feet, body+tail, wing,
+// head, hair curl, bill, eye, accessories — params derived deterministically
+// from defId — wrapped in the optional rarity ring + shape signature and
+// ascension star pips.
+export function duckSvg(defId: string, size: number, ascensionOrOpts: number | DuckSvgOptions = 0): string {
+  const opts: DuckSvgOptions = typeof ascensionOrOpts === "number" ? { ascension: ascensionOrOpts } : ascensionOrOpts;
+  const ascension = opts.ascension ?? 0;
+  const ringed = opts.ringed ?? true;
+  const reveal = opts.reveal ?? false;
+
+  if (reveal) return duckSvgUncached(defId, size, ascension, ringed, reveal);
+
+  const key = `${defId}|${size}|${ascension}|${ringed}`;
+  const cached = duckSvgCache.get(key);
+  if (cached !== undefined) return cached;
+
+  const svg = duckSvgUncached(defId, size, ascension, ringed, reveal);
+  if (duckSvgCache.size >= DUCK_SVG_CACHE_LIMIT) {
+    // Simple FIFO eviction: drop the oldest entry (Map preserves insertion
+    // order) rather than any LRU bookkeeping — good enough for a bounded art
+    // cache that's dominated by a small, frequently-reused roster.
+    const oldestKey = duckSvgCache.keys().next().value;
+    if (oldestKey !== undefined) duckSvgCache.delete(oldestKey);
+  }
+  duckSvgCache.set(key, svg);
+  return svg;
 }
 
 // Small crest badge markup for legendary+ card frames (inventory duck card,
