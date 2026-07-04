@@ -1,5 +1,6 @@
 import { enemyAttackFor, enemyTypeForWave, isBossWave } from "../game/arena";
 import { on } from "../game/events";
+import { equippedItemsFor } from "../game/gear";
 import { getStats } from "../game/state";
 import type { GameState } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
@@ -149,6 +150,12 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
   });
   on("wave", (e) => {
     if (e.boss) shakeArena();
+  });
+
+  // Gear swaps don't change rosterKey; rebuild the team row when a duck shown
+  // in the arena has its equipment change (R5b).
+  on("gear", (e) => {
+    if (e.defId == null || state.rosters.arena.includes(e.defId)) renderRoster(state);
   });
 }
 
@@ -315,7 +322,7 @@ function renderRoster(state: GameState): void {
     if (defId) {
       const ascension = state.ducks.find((d) => d.defId === defId)?.ascension ?? 0;
       slots.push(
-        `<div class="duck-slot fighter" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64, { ascension, ringed: false })}</div>`,
+        `<div class="duck-slot fighter" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64, { ascension, ringed: false, equipment: equippedItemsFor(state, defId) })}</div>`,
       );
     } else {
       slots.push(`<div class="duck-slot empty" data-slot="${i}" title="Assign a duck">+</div>`);

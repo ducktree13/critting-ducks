@@ -73,7 +73,10 @@ export function initInventoryMenu(state: GameState): void {
   // Gear changes made from the Items menu (or elsewhere) must refresh the
   // duck card's equip-slot display when this menu is open.
   on("gear", () => {
-    if (overlay.classList.contains("open")) renderCard();
+    if (overlay.classList.contains("open")) {
+      renderCard();
+      renderGrid(); // grid tiles now show equipped gear too (R5b)
+    }
   });
 }
 
@@ -107,7 +110,7 @@ function renderGrid(): void {
       const def = getDuckDef(duck.defId);
       return `
         <button class="inv-tile rarity-${def.rarity}${duck.defId === selectedDefId ? " selected" : ""}" data-duck="${duck.defId}">
-          ${duckSvg(duck.defId, 48, duck.ascension ?? 0)}
+          ${duckSvg(duck.defId, 48, { ascension: duck.ascension ?? 0, equipment: equippedItemsFor(gameState, duck.defId) })}
           ${duck.favorite ? `<span class="inv-fav">♥</span>` : ""}
           <small>${def.name}</small>
         </button>`;
@@ -188,7 +191,7 @@ function renderCard(): void {
     .join("");
 
   card.innerHTML = `
-    <div class="inv-card-art">${rarityCrestBadge(def.rarity)}${duckSvg(duck.defId, 96, duck.ascension ?? 0)}</div>
+    <div class="inv-card-art">${rarityCrestBadge(def.rarity)}${duckSvg(duck.defId, 96, { ascension: duck.ascension ?? 0, equipment: equipped })}</div>
     <div class="inv-card-body">
       <div class="inv-card-title">
         <b>${def.name}</b>

@@ -1,5 +1,6 @@
 import { ORE_LEVEL_GATES, ORE_VALUES } from "../game/balance";
 import { on } from "../game/events";
+import { equippedItemsFor } from "../game/gear";
 import { getStats, refreshStats } from "../game/state";
 import type { GameState, OreId } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
@@ -187,6 +188,12 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
     const duckEl = duckRowEl.querySelector<HTMLElement>(`[data-duck="${e.duckId}"]`);
     if (duckEl) walkIntoCave(duckEl, e.duckId);
   });
+
+  // Equipping/unequipping gear doesn't change rosterKey, so force a roster
+  // rebuild when a duck currently shown in the mine has its gear change (R5b).
+  on("gear", (e) => {
+    if (e.defId == null || state.rosters.mine.includes(e.defId)) renderRoster(state);
+  });
 }
 
 const MAX_PIPS = 16;
@@ -349,7 +356,7 @@ function renderRoster(state: GameState): void {
     if (defId) {
       const ascension = state.ducks.find((d) => d.defId === defId)?.ascension ?? 0;
       slots.push(
-        `<div class="duck-slot" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64, { ascension, ringed: false })}</div>`,
+        `<div class="duck-slot" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64, { ascension, ringed: false, equipment: equippedItemsFor(state, defId) })}</div>`,
       );
     } else {
       slots.push(`<div class="duck-slot empty" data-slot="${i}" title="Assign a duck">+</div>`);
