@@ -9,7 +9,7 @@
 /* ---- Type scale (§2) ---- */
 
 h1, h2, h3,
-.panel h2,
+.area-chip,
 .shop-head h3,
 .picker-box h3,
 .inventory-head h3,
@@ -26,8 +26,8 @@ button,
   font-family: var(--font-display);
 }
 
-.panel h2 {
-  font-size: 20px;
+.area-chip {
+  font-size: 16px;
   letter-spacing: 0.01em;
 }
 
@@ -65,7 +65,6 @@ button,
 
 /* ---- Shape & chrome baseline (§3) ---- */
 
-.panel,
 .vein,
 .pack-btn,
 .upgrade-btn,
@@ -84,7 +83,6 @@ button,
 .ach-row,
 .mission-tracker,
 .tree-nav,
-.panel-toggle,
 .icon-btn,
 .hp-bar,
 .xp-bar,
@@ -100,7 +98,6 @@ button,
   border: var(--border-w) solid var(--surface-border);
 }
 
-.panel,
 .shop-box,
 .picker-box,
 .inventory-box,
@@ -126,14 +123,12 @@ button,
 .ach-row,
 .mission-tracker,
 .tree-nav,
-.panel-toggle,
 .toast,
 .hover-tooltip {
   border-radius: var(--radius-s);
 }
 
 /* Cartoon offset shadow: surfaces 3px, floating chrome/modals 4-6px */
-.panel,
 .vein,
 .pack-btn,
 .upgrade-btn,
@@ -150,7 +145,6 @@ button,
 .expedition-row,
 .ach-row,
 .tree-nav,
-.panel-toggle,
 .toast {
   box-shadow: 0 3px 0 var(--shadow-drop);
 }
@@ -177,7 +171,6 @@ button,
 .wb-close,
 .settings-btn,
 .tree-nav,
-.panel-toggle,
 .icon-btn {
   transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out),
     background-color var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
@@ -187,8 +180,7 @@ button,
 .vein,
 .pack-btn,
 .settings-btn,
-.tree-nav,
-.panel-toggle {
+.tree-nav {
   background: var(--surface);
   color: var(--text);
 }
@@ -211,7 +203,6 @@ button,
 .wb-close:hover,
 .settings-btn:hover:not(:disabled),
 .tree-nav:hover,
-.panel-toggle:hover,
 .vein:hover:not(.active):not(.locked):not(:disabled) {
   background: var(--accent-hover);
   color: var(--accent-ink);
@@ -232,8 +223,7 @@ button,
 .tt-primary:active,
 .wb-close:active,
 .settings-btn:active:not(:disabled),
-.tree-nav:active,
-.panel-toggle:active {
+.tree-nav:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 var(--shadow-drop);
 }
@@ -247,7 +237,6 @@ button:focus-visible,
 .wb-close:focus-visible,
 .settings-btn:focus-visible,
 .tree-nav:focus-visible,
-.panel-toggle:focus-visible,
 .icon-btn:focus-visible,
 .picker-row:focus-visible,
 .tree-node:focus-visible,
@@ -302,42 +291,9 @@ button:disabled {
   color: var(--locked-text);
 }
 
-/* ---- Panels (§3) ---- */
-
-.panel {
-  background: var(--surface);
-}
-
-.panel h2 {
-  background: var(--panel-head);
-  color: var(--panel-head-ink);
-  border-bottom: var(--border-w) solid var(--surface-border);
-  border-radius: calc(var(--radius-m) - var(--border-w)) calc(var(--radius-m) - var(--border-w)) 0 0;
-}
-
-.panel-toggle {
-  background: var(--surface-raised);
-}
-
-/* Minimized panel reads as a 52px vertical rail (§3) */
-.panel.minimized {
-  width: 52px;
-  min-width: 52px;
-  flex: 0 0 52px;
-}
-
-.panel.minimized h2 {
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  width: 52px;
-  padding: 12px 0;
-  border-radius: calc(var(--radius-m) - var(--border-w)) calc(var(--radius-m) - var(--border-w)) 0 0;
-  gap: 10px;
-}
-
-.panel.minimized .panel-toggle {
-  writing-mode: horizontal-tb;
-}
+/* Frameless world areas (Phase E chunk 1): no panel fill/border/header band —
+   the title chip (.area-chip) and interactive wells (.well) carry the chrome,
+   defined in style.css. */
 
 /* ---- Tooltips (§3) ---- */
 
@@ -782,13 +738,13 @@ button:disabled {
 }
 
 /* Screen shake on tier cross / QUACKENING entry: 220ms/400ms decaying ±4px,
-   applied to <main class="panels">. */
+   applied to <main class="world">. */
 
-main.panels.streak-shake {
+main.world.streak-shake {
   animation: streak-shake-decay 220ms var(--ease-out);
 }
 
-body.quackening-active main.panels.streak-shake {
+body.quackening-active main.world.streak-shake {
   animation-duration: 400ms;
 }
 
@@ -939,7 +895,7 @@ body.quackening-active main.panels.streak-shake {
 
 /* While QUACKENING holds, HUD + panel borders get the iridescent sweep too. */
 
-body.quackening-active main.panel {
+body.quackening-active .area-chip {
   border-image: var(--rarity-divine-grad) 1;
   transition: border-color 400ms var(--ease-snap);
 }
@@ -950,7 +906,7 @@ body.quackening-active main.panel {
   .streak-wrap[data-heat="hot"],
   .streak-wrap[data-heat="blazing"],
   .streak-wrap[data-heat="quackening"],
-  main.panels.streak-shake,
+  main.world.streak-shake,
   .quackening-banner.anim {
     animation: none !important;
   }

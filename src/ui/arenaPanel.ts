@@ -19,9 +19,7 @@ const ENEMY_COLORS: Record<string, string> = {
 };
 
 // Colosseum backdrop (PLAN2.md §12): tiered stands + a sandy floor, sitting
-// behind the enemy/team content via a negative z-index. The `.expanded`
-// modifier (toggled by layout.ts when mine+tree are both minimized) scales
-// the scene up and animates the crowd for the "full scene" version.
+// behind the enemy/team content via a negative z-index.
 function colosseumSceneSvg(): string {
   return `<svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <path d="M-20 40 Q200 -10 420 40 L420 90 Q200 45 -20 90 Z" fill="var(--card-border)" opacity="0.55"/>
@@ -48,7 +46,7 @@ let lastEnemyKey = "";
 export function initArenaPanel(root: HTMLElement, state: GameState): void {
   panel = root;
   panel.innerHTML = `
-    <h2>Arena <span class="panel-ticker" id="arena-ticker"></span></h2>
+    <div class="area-chip">Arena <span class="panel-ticker" id="arena-ticker"></span></div>
     <div class="panel-body arena-body">
       <div class="arena-scene">${colosseumSceneSvg()}</div>
       <div class="mission-slot" id="arena-mission"></div>
@@ -56,7 +54,7 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
         <div class="enemy-name" id="enemy-name"></div>
         <div class="enemy-group" id="enemy-group"></div>
       </div>
-      <div class="arena-team">
+      <div class="arena-team well">
         <div class="hp-bar team"><span class="hp-fill" id="team-hp"></span><span class="hp-label" id="team-hp-label"></span></div>
         <div class="duck-row" id="arena-ducks"></div>
       </div>

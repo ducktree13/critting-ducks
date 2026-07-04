@@ -385,12 +385,17 @@ function wireTreeSvg(svg: SVGSVGElement): void {
   });
 }
 
+// Overview (all four act-2 trees in a 2x2 grid) vs. focus (one tree, with
+// prev/next switcher). Toggled by the Overview/Focus button in the switcher
+// row; only meaningful in chapter 2. Replaces the old panels-minimized coupling.
+let overviewOn = false;
+
 function isOverviewMode(state: GameState): boolean {
-  return state.chapter === 2 && state.settings.panelsMinimized.mine && state.settings.panelsMinimized.arena;
+  return state.chapter === 2 && overviewOn;
 }
 
 function layoutKey(state: GameState): string {
-  return `${state.chapter}|${isOverviewMode(state)}|${state.settings.act2Tree}`;
+  return `${state.chapter}|${overviewOn}|${state.settings.act2Tree}`;
 }
 
 function rebuildLayout(): void {
@@ -409,6 +414,10 @@ function rebuildLayout(): void {
 
   if (isOverviewMode(state)) {
     bodyEl.innerHTML = `
+      <div class="tree-switcher well">
+        <b>All Trees</b>
+        <button class="tree-nav" id="tree-overview-toggle">Focus</button>
+      </div>
       <div class="tree-overview">
         ${ACT2_TREE_IDS.map(
           (id) => `
@@ -420,21 +429,29 @@ function rebuildLayout(): void {
       </div>
     `;
     bodyEl.querySelectorAll<SVGSVGElement>("svg[data-tree]").forEach(wireTreeSvg);
+    bodyEl.querySelector("#tree-overview-toggle")!.addEventListener("click", () => toggleOverview());
     return;
   }
 
   const current = state.settings.act2Tree;
   bodyEl.innerHTML = `
-    <div class="tree-switcher">
+    <div class="tree-switcher well">
       <button class="tree-nav" id="tree-prev" aria-label="Previous tree">◀</button>
       <b>${TREE_NAMES[current]}</b>
       <button class="tree-nav" id="tree-next" aria-label="Next tree">▶</button>
+      <button class="tree-nav" id="tree-overview-toggle">Overview</button>
     </div>
     <svg class="tree-svg" id="tree-svg-current" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, current)}</svg>
   `;
   wireTreeSvg(bodyEl.querySelector<SVGSVGElement>("#tree-svg-current")!);
   bodyEl.querySelector("#tree-prev")!.addEventListener("click", () => cycleTree(-1));
   bodyEl.querySelector("#tree-next")!.addEventListener("click", () => cycleTree(1));
+  bodyEl.querySelector("#tree-overview-toggle")!.addEventListener("click", () => toggleOverview());
+}
+
+function toggleOverview(): void {
+  overviewOn = !overviewOn;
+  rebuildLayout();
 }
 
 function cycleTree(dir: 1 | -1): void {
@@ -531,12 +548,12 @@ export function initTreePanel(root: HTMLElement, state: GameState): void {
   panel = root;
   gameState = state;
   panel.innerHTML = `
-    <h2>Skill Tree <span class="panel-ticker" id="tree-ticker"></span></h2>
+    <div class="area-chip">Skill Tree <span class="panel-ticker" id="tree-ticker"></span></div>
     <div class="panel-body tree-body">
       <div class="mission-slot" id="tree-mission"></div>
       <div id="tree-canvas"></div>
       <div id="falling-leaves"></div>
-      <div class="pond-strip" id="pond-strip">
+      <div class="pond-strip well" id="pond-strip">
         <div class="pond-header"><small>🌊 Pond</small><small id="pond-ticker"></small></div>
         <div class="pond-slots" id="pond-slots"></div>
       </div>

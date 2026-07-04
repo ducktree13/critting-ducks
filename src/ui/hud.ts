@@ -196,7 +196,7 @@ export function initHud(header: HTMLElement): void {
   streakEl = header.querySelector("#hud-streak")!;
   pipEls = Array.from(header.querySelectorAll<HTMLElement>(".pip"));
 
-  panelsEl = document.querySelector<HTMLElement>("main.panels");
+  panelsEl = document.querySelector<HTMLElement>("main.world");
 
   buildParticleLayers();
 

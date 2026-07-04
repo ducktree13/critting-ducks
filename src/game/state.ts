@@ -81,7 +81,6 @@ export function createInitialState(): GameState {
     expeditions: [],
     settings: {
       darkMode: false,
-      panelsMinimized: { mine: false, tree: false, arena: false },
       act2Tree: "mining2",
     },
     lastSaved: now,

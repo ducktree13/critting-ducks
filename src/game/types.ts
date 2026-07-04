@@ -169,7 +169,6 @@ export interface GameState {
   expeditions: ExpeditionInstance[];
   settings: {
     darkMode: boolean;
-    panelsMinimized: { mine: boolean; tree: boolean; arena: boolean };
     act2Tree: Act2TreeId;
   };
   lastSaved: number;

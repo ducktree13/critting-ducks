@@ -117,10 +117,11 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
     // meaning the player already exists — first-timers get
     // createInitialState() directly and never pass through this merge).
     tutorial: partial.tutorial ?? { step: 0, done: true, finaleGranted: true },
+    // Explicitly rebuild settings so keys dropped from the schema (e.g. the
+    // removed panelsMinimized) shed silently from stale saves.
     settings: {
-      ...base.settings,
-      ...partial.settings,
-      panelsMinimized: { ...base.settings.panelsMinimized, ...partial.settings?.panelsMinimized },
+      darkMode: partial.settings?.darkMode ?? base.settings.darkMode,
+      act2Tree: partial.settings?.act2Tree ?? base.settings.act2Tree,
     },
   };
 }

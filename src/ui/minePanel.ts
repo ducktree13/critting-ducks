@@ -67,14 +67,14 @@ function caveSceneSvg(): string {
 export function initMinePanel(root: HTMLElement, state: GameState): void {
   panel = root;
   panel.innerHTML = `
-    <h2>Mine <span class="panel-ticker" id="mine-ticker"></span></h2>
+    <div class="area-chip">Mine <span class="panel-ticker" id="mine-ticker"></span></div>
     <div class="panel-body mine-body">
       <div class="mine-scene">${caveSceneSvg()}</div>
       <div class="mission-slot" id="mine-mission"></div>
       <div class="mine-rock" id="mine-rock"></div>
-      <div class="vein-row" id="vein-row"></div>
+      <div class="vein-row well" id="vein-row"></div>
       <div class="duck-row" id="mine-ducks"></div>
-      <div class="ore-counters" id="ore-counters"></div>
+      <div class="ore-counters well" id="ore-counters"></div>
     </div>
   `;
   rockEl = panel.querySelector("#mine-rock")!;

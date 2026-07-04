@@ -186,6 +186,35 @@ describe("save/load", () => {
     expect(loaded!.rosters.arena).toContain("quackers");
   });
 
+  it("sheds the removed panelsMinimized setting from stale saves", () => {
+    const storage = fakeStorage();
+    storage.setItem(
+      "crittingDucks.save",
+      JSON.stringify({
+        version: 2,
+        state: {
+          version: 2,
+          gold: 42,
+          settings: {
+            darkMode: true,
+            act2Tree: "combat2",
+            panelsMinimized: { mine: true, tree: true, arena: false },
+          },
+        },
+      }),
+    );
+
+    const loaded = load(storage);
+
+    expect(loaded).not.toBeNull();
+    expect(loaded!.gold).toBe(42);
+    // Live settings survive the migration…
+    expect(loaded!.settings.darkMode).toBe(true);
+    expect(loaded!.settings.act2Tree).toBe("combat2");
+    // …but the dropped key is gone.
+    expect("panelsMinimized" in loaded!.settings).toBe(false);
+  });
+
   it("falls back to null and stashes corrupt JSON instead of wiping it", () => {
     const storage = fakeStorage();
     storage.setItem("crittingDucks.save", "{not valid json");

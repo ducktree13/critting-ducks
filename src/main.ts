@@ -24,7 +24,6 @@ import { initExpeditionPanel } from "./ui/expeditionPanel";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
 import { initInventoryMenu } from "./ui/inventoryMenu";
-import { initLayout } from "./ui/layout";
 import { initMinePanel, renderMinePanel } from "./ui/minePanel";
 import { initShopModal } from "./ui/shopModal";
 import { initTheme } from "./ui/theme";
@@ -59,10 +58,11 @@ if (import.meta.env.DEV) {
 const app = document.querySelector<HTMLDivElement>("#app")!;
 app.innerHTML = `
   <header class="hud"></header>
-  <main class="panels">
-    <section class="panel" id="mine-panel"></section>
-    <section class="panel" id="tree-panel"></section>
-    <section class="panel" id="arena-panel"></section>
+  <main class="world">
+    <div class="world-backdrop" id="world-backdrop" aria-hidden="true"></div>
+    <section class="world-area area-mine"  id="mine-panel"></section>
+    <section class="world-area area-tree"  id="tree-panel"></section>
+    <section class="world-area area-arena" id="arena-panel"></section>
   </main>
 `;
 
@@ -107,11 +107,6 @@ initMinePanel(minePanelEl, state);
 initTreePanel(treePanelEl, state);
 initArenaPanel(arenaPanelEl, state);
 initFloaters({ mine: minePanelEl, arena: arenaPanelEl });
-initLayout(app.querySelector<HTMLElement>("main.panels")!, state, {
-  mine: minePanelEl,
-  tree: treePanelEl,
-  arena: arenaPanelEl,
-});
 initTutorial(state);
 ensureMissions(state, rng);
 

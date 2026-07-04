@@ -127,50 +127,101 @@ header.hud .hud-title {
   color: var(--accent-ink);
 }
 
-main.panels {
+/* ---- World scene layout (Phase E chunk 1): single-screen organic layout,
+   three frameless areas side by side over a shared backdrop. ---- */
+
+main.world {
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr 1.1fr 1fr;
-  gap: 12px;
   height: calc(100vh - 56px);
-  padding: 12px;
+  grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.3fr) minmax(260px, 1fr);
+  grid-template-areas: "mine tree arena";
 }
 
+.world-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  /* Placeholder sky gradient until chunk 2 fills the backdrop scene. */
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+}
+
+.world-area {
+  position: relative; /* floater anchor + scene stacking context */
+  z-index: 1;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.area-mine { grid-area: mine; }
+.area-tree { grid-area: tree; }
+.area-arena { grid-area: arena; }
+
+.world-area .panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  color: var(--fg);
+}
+
+/* Frameless areas carry a floating title chip instead of a header band. */
+.area-chip {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  margin: 0;
+  padding: 5px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  background: var(--panel-head);
+  color: var(--panel-head-ink);
+  border: var(--border-w) solid var(--surface-border);
+  border-radius: var(--radius-l);
+  box-shadow: 0 3px 0 var(--shadow-drop);
+  pointer-events: none;
+}
+
+/* Chip must clear the title so content doesn't hide under it. */
+.world-area .panel-body { padding-top: 44px; }
+
+/* Translucent "well" for interactive clusters inside frameless areas (§3). */
+.well {
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  border: var(--border-w) solid var(--surface-border);
+  border-radius: var(--radius-m);
+  padding: 8px;
+}
+
+/* An empty well (e.g. ore-counters before any ore is mined) shows nothing. */
+.well:empty {
+  display: none;
+  border: none;
+  padding: 0;
+}
+
+/* Above 1100px the world fills the viewport and the page never scrolls. */
+@media (min-width: 1101px) {
+  body { overflow: hidden; }
+}
+
+/* Below 1100px: vertical stack, tree first (focal area first paint). */
 @media (max-width: 1100px) {
-  main.panels {
+  body { overflow: auto; }
+  main.world {
     grid-template-columns: 1fr;
+    grid-template-areas: "tree" "mine" "arena";
     height: auto;
   }
 }
 
-.panel {
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.panel h2 {
-  margin: 0;
-  padding: 12px 16px;
-  font-size: 1rem;
-  border-bottom: 1px solid var(--card-border);
-}
-
-.panel .panel-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  color: var(--muted);
-}
-
 /* ---- Mine panel ---- */
-
-.panel {
-  position: relative; /* floater anchor */
-}
 
 .mine-body {
   display: flex;
@@ -375,7 +426,7 @@ main.panels {
   min-height: 0;
 }
 
-.panel.felling {
+.world-area.felling {
   animation: tree-felling 1.2s ease-in-out;
 }
 
@@ -616,19 +667,6 @@ main.panels {
 @keyframes crowd-cheer {
   0%, 100% { transform: translateY(0); opacity: 0.5; }
   50% { transform: translateY(-3px); opacity: 0.8; }
-}
-
-/* Full colosseum scene (PLAN2.md §12): mine + tree minimized, arena alone. */
-.panel.expanded .arena-scene svg {
-  opacity: 1;
-}
-
-.panel.expanded .duck-slot.fighter svg {
-  transform: scale(1.35) scaleX(-1);
-}
-
-.panel.expanded .enemy-art svg {
-  transform: scale(1.35);
 }
 
 .arena-enemy {
@@ -1179,51 +1217,13 @@ main.panels {
   text-transform: capitalize;
 }
 
-/* ---- Panel minimize/expand ---- */
-
-.panel h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+/* ---- Area title chip ticker ---- */
 
 .panel-ticker {
-  color: var(--muted);
+  color: var(--panel-head-ink);
+  opacity: 0.85;
   font-size: 0.78rem;
   font-weight: 400;
-}
-
-.panel-toggle {
-  margin-left: auto;
-  border: 1px solid var(--card-border);
-  background: var(--bg);
-  color: var(--fg);
-  border-radius: 5px;
-  width: 22px;
-  height: 22px;
-  line-height: 1;
-  cursor: pointer;
-  font: inherit;
-}
-
-.panel.minimized {
-  min-width: 0;
-}
-
-.panel.minimized .panel-body {
-  display: none;
-}
-
-.panel.minimized h2 {
-  writing-mode: vertical-rl;
-  padding: 12px 8px;
-  height: 100%;
-  justify-content: flex-start;
-}
-
-.panel.minimized .panel-toggle {
-  writing-mode: horizontal-tb;
-  margin-left: 0;
 }
 
 /* ---- Duck inventory menu ---- */
