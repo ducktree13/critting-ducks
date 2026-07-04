@@ -1,10 +1,11 @@
 import type { EquipmentItem, MaterialId, MissionSection } from "./types";
 
 export interface GameEventMap {
-  hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; gold: number; xp: number; ore: number; dmg: number };
+  hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; gold: number; xp: number; ore: number; dmg: number; targetId?: string };
   crit: { panel: "mine" | "arena"; duckId: string };
   levelup: { level: number };
-  enemyhit: { dmg: number };
+  enemyhit: { dmg: number; isCrit: boolean };
+  firstDefeat: { enemyId: string; name: string; xp: number };
   wave: { wave: number; boss: boolean; gold: number; xp: number };
   buy: { nodeId: string };
   gacha: { results: { defId: string; isNew: boolean; shardsGained: number }[] };

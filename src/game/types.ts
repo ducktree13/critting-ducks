@@ -115,14 +115,20 @@ export interface StreakState {
   shieldReadyAt: number;
 }
 
+export interface ArenaEnemy {
+  id: string; // enemy TYPE id (ENEMY_TYPES / BOSS_ENEMY)
+  hp: number;
+  maxHp: number;
+  nextHitIn: number;
+}
+
 export interface ArenaState {
   wave: number;
-  enemyHp: number;
-  enemyMaxHp: number;
-  enemyNextHitIn: number;
+  enemies: ArenaEnemy[];
   teamHp: number;
   teamMaxHp: number;
   retryAt: number;
+  defeated: string[]; // enemy TYPE ids ever killed (for first-defeat bonus)
 }
 
 export interface GameState {

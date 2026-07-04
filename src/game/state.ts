@@ -1,4 +1,4 @@
-import { ARENA_BASE, BASE_STATS, LEVEL_REWARDS, ORE_LEVEL_GATES, PASSIVES, STREAK_BALANCE, XP_CURVE } from "./balance";
+import { ARENA_BASE, BASE_STATS, ENEMY_TYPES, LEVEL_REWARDS, ORE_LEVEL_GATES, PASSIVES, STREAK_BALANCE, XP_CURVE } from "./balance";
 import { getDuckDef, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getSkillNode } from "./skilltree";
@@ -62,12 +62,18 @@ export function createInitialState(): GameState {
     },
     arena: {
       wave: 1,
-      enemyHp: ARENA_BASE.baseEnemyHp,
-      enemyMaxHp: ARENA_BASE.baseEnemyHp,
-      enemyNextHitIn: 1 / ARENA_BASE.enemyAttackSpeed,
+      enemies: [
+        {
+          id: ENEMY_TYPES[0].id,
+          hp: ARENA_BASE.baseEnemyHp,
+          maxHp: ARENA_BASE.baseEnemyHp,
+          nextHitIn: 1 / ARENA_BASE.enemyAttackSpeed,
+        },
+      ],
       teamHp: 0,
       teamMaxHp: 0,
       retryAt: 0,
+      defeated: [],
     },
     chapter: 1,
     leaves: [],

@@ -248,7 +248,40 @@ export const ARENA_BASE = {
   baseXpReward: 5,
   xpRewardGrowth: 1.1,
   xpPerHit: 2,
+  // Per-kill XP (C2 feature 2), granted on each enemy death separate from the
+  // wave-completion XP. base * growth^(wave-1).
+  xpPerKill: 1.5,
+  xpPerKillGrowth: 1.08,
+  // First-time-defeat bonus (C2 feature 3), once per enemy TYPE ever:
+  // firstDefeatXp flat + firstDefeatKillMult × that wave's xpPerKill.
+  firstDefeatXp: 40,
+  firstDefeatKillMult: 10,
+  // Enemy crit (C2 feature 4).
+  enemyCritChance: 0.05,
+  bossCritChance: 0.1,
+  enemyCritMult: 1.75,
   shardChance: 0.1, // per victory; 1.0 on boss waves
   retrySec: 3, // real-time pause after a wipe
   nextWaveDelaySec: 1, // real-time pause between waves
 } as const;
+
+// Enemy group composition per wave (C2 feature 1). Each living enemy attacks
+// on its own timer dealing groupAttackMult × the solo attack; group members
+// each carry a fraction of the wave's single-enemy HP so a group is roughly as
+// hard as the solo wave was (2×0.55 HP, 2×0.65 attack ≈ parity).
+export const ARENA_GROUPS = {
+  minGroupWave: 10, // waves below this are always single (bosses always solo)
+  pairHpMult: 0.55, // wave%3==2 → 2 enemies at this fraction of solo HP
+  trioHpMult: 0.4, // wave%3==0 → 3 enemies at this fraction of solo HP
+  groupAttackMult: 0.65, // each group member deals this fraction of solo attack
+} as const;
+
+// Enemy identity lives in game logic (C2 feature 1); the UI maps id → art.
+// The four non-boss types cycle by wave index; "pondlord" is every boss.
+export const ENEMY_TYPES: readonly { id: string; name: string }[] = [
+  { id: "pond-slime", name: "Pond Slime" },
+  { id: "angry-goose", name: "Angry Goose" },
+  { id: "breadcrumb-golem", name: "Breadcrumb Golem" },
+  { id: "rubber-shark", name: "Rubber Shark" },
+];
+export const BOSS_ENEMY = { id: "pondlord", name: "The Pondlord" } as const;

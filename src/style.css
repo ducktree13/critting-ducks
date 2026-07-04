@@ -658,6 +658,34 @@ main.panels {
   100% { filter: brightness(1); transform: translateX(0); }
 }
 
+/* C2: 1-3 enemy portraits in a row, each with its own mini HP bar. */
+.enemy-group {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.enemy-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.enemy-unit.dead {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.hp-bar.mini {
+  width: 90px;
+  height: 10px;
+}
+
 .hp-bar {
   position: relative;
   width: min(260px, 90%);
@@ -678,6 +706,17 @@ main.panels {
 
 @keyframes bar-flash {
   50% { box-shadow: 0 0 0 3px var(--crit); }
+}
+
+/* C2: enemy crit — stronger, crit-colored team-bar flash. */
+.hp-bar.flash-crit {
+  animation: bar-flash-crit 0.35s ease-out;
+}
+
+@keyframes bar-flash-crit {
+  30% { box-shadow: 0 0 0 5px var(--crit); filter: brightness(1.5); transform: translateX(-3px); }
+  60% { box-shadow: 0 0 0 3px var(--crit); transform: translateX(3px); }
+  100% { transform: translateX(0); }
 }
 
 .hp-bar .hp-label {

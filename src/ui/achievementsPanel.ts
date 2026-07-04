@@ -41,6 +41,7 @@ export function initAchievementsPanel(state: GameState): void {
     else showToast(`🍂 Leaf: +${fmt(e.amount)} ${e.kind}${e.isCrit ? " (crit!)" : ""}`);
   });
   on("expeditionReady", () => showToast(`🗺 An expedition is ready to claim!`));
+  on("firstDefeat", (e) => showToast(`⚔ First defeat: ${e.name}! +${fmt(e.xp)} XP`));
 }
 
 export function openAchievements(): void {

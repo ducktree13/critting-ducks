@@ -1,4 +1,4 @@
-import { enemyAttackAt, isBossWave } from "../game/arena";
+import { enemyAttackFor, enemyTypeForWave, isBossWave } from "../game/arena";
 import { on } from "../game/events";
 import { getStats } from "../game/state";
 import type { GameState } from "../game/types";
@@ -9,10 +9,14 @@ import { renderMissionTracker } from "./missionsPanel";
 import { openRosterPicker } from "./rosterPicker";
 import { attachTooltip } from "./tooltip";
 
-const ENEMY_NAMES = ["Pond Slime", "Angry Goose", "Breadcrumb Golem", "Rubber Shark"];
-const BOSS_NAME = "The Pondlord";
-const ENEMY_COLORS = ["#7aa85a", "#d9d9e8", "#c8a05a", "#5a9ad9"];
-const BOSS_COLOR = "#8a5ad9";
+// UI maps enemy TYPE id → art colour (identity/names now live in game logic).
+const ENEMY_COLORS: Record<string, string> = {
+  "pond-slime": "#7aa85a",
+  "angry-goose": "#d9d9e8",
+  "breadcrumb-golem": "#c8a05a",
+  "rubber-shark": "#5a9ad9",
+  pondlord: "#8a5ad9",
+};
 
 // Colosseum backdrop (PLAN2.md §12): tiered stands + a sandy floor, sitting
 // behind the enemy/team content via a negative z-index. The `.expanded`
@@ -30,10 +34,8 @@ function colosseumSceneSvg(): string {
 }
 
 let panel: HTMLElement;
-let enemyArtEl: HTMLElement;
+let enemiesEl: HTMLElement;
 let enemyNameEl: HTMLElement;
-let enemyBarEl: HTMLElement;
-let enemyBarLabelEl: HTMLElement;
 let teamBarEl: HTMLElement;
 let teamBarLabelEl: HTMLElement;
 let duckRowEl: HTMLElement;
@@ -52,8 +54,7 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
       <div class="mission-slot" id="arena-mission"></div>
       <div class="arena-enemy">
         <div class="enemy-name" id="enemy-name"></div>
-        <div class="enemy-art" id="enemy-art"></div>
-        <div class="hp-bar enemy"><span class="hp-fill" id="enemy-hp"></span><span class="hp-label" id="enemy-hp-label"></span></div>
+        <div class="enemy-group" id="enemy-group"></div>
       </div>
       <div class="arena-team">
         <div class="hp-bar team"><span class="hp-fill" id="team-hp"></span><span class="hp-label" id="team-hp-label"></span></div>
@@ -62,10 +63,8 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
       <div class="arena-overlay" id="arena-overlay"></div>
     </div>
   `;
-  enemyArtEl = panel.querySelector("#enemy-art")!;
+  enemiesEl = panel.querySelector("#enemy-group")!;
   enemyNameEl = panel.querySelector("#enemy-name")!;
-  enemyBarEl = panel.querySelector("#enemy-hp")!;
-  enemyBarLabelEl = panel.querySelector("#enemy-hp-label")!;
   teamBarEl = panel.querySelector("#team-hp")!;
   teamBarLabelEl = panel.querySelector("#team-hp-label")!;
   duckRowEl = panel.querySelector("#arena-ducks")!;
@@ -78,12 +77,16 @@ export function initArenaPanel(root: HTMLElement, state: GameState): void {
 
   on("hit", (e) => {
     if (e.panel !== "arena") return;
-    retrigger(enemyArtEl, "flash");
+    // Flash the first living enemy's portrait (ducks auto-target it).
+    const artEl =
+      enemiesEl.querySelector<HTMLElement>(".enemy-unit:not(.dead) .enemy-art") ??
+      enemiesEl.querySelector<HTMLElement>(".enemy-art");
+    if (artEl) retrigger(artEl, "flash");
     const duckEl = duckRowEl.querySelector<HTMLElement>(`[data-duck="${e.duckId}"]`);
     if (duckEl) retrigger(duckEl, "lunge");
   });
-  on("enemyhit", () => {
-    retrigger(teamBarEl.parentElement as HTMLElement, "flash");
+  on("enemyhit", (e) => {
+    retrigger(teamBarEl.parentElement as HTMLElement, e.isCrit ? "flash-crit" : "flash");
   });
 }
 
@@ -93,10 +96,9 @@ function retrigger(el: HTMLElement, cls: string): void {
   el.classList.add(cls);
 }
 
-function enemySvg(wave: number): string {
-  const boss = isBossWave(wave);
-  const color = boss ? BOSS_COLOR : ENEMY_COLORS[(wave - 1) % ENEMY_COLORS.length];
-  return `<svg viewBox="0 0 120 100" width="120" height="100" role="img" aria-label="enemy">
+function enemySvg(typeId: string, size: number, boss: boolean): string {
+  const color = ENEMY_COLORS[typeId] ?? "#7aa85a";
+  return `<svg viewBox="0 0 120 100" width="${size}" height="${(size * 100) / 120}" role="img" aria-label="enemy">
     ${boss ? `<polygon points="42,22 50,8 60,20 70,8 78,22" fill="#f5c518"/>` : ""}
     <path d="M20 80 q-6 -35 20 -50 q22 -14 44 2 q22 16 16 48 q-40 14 -80 0 z" fill="${color}"/>
     <circle cx="47" cy="55" r="4" fill="#1a1a1a"/>
@@ -105,15 +107,41 @@ function enemySvg(wave: number): string {
   </svg>`;
 }
 
-function enemyName(wave: number): string {
-  return isBossWave(wave) ? BOSS_NAME : ENEMY_NAMES[(wave - 1) % ENEMY_NAMES.length];
+// The wave the on-screen enemies belong to: during the between-wave pause
+// arena.wave has already advanced but the (dead) previous group is still
+// shown, so derive from the group's type id, not the wave counter.
+function displayedWave(state: GameState): number {
+  const arena = state.arena;
+  if (arena.retryAt === 0 || arena.enemies.length === 0) return arena.wave;
+  return enemyTypeForWave(arena.wave).id === arena.enemies[0].id ? arena.wave : arena.wave - 1;
+}
+
+// Key that changes whenever the portraits must be rebuilt.
+function enemyKey(state: GameState): string {
+  return `${displayedWave(state)}:${state.arena.enemies.length}`;
 }
 
 function renderEnemy(state: GameState): void {
-  const wave = state.arena.wave;
-  enemyNameEl.innerHTML = `${isBossWave(wave) ? "👑 " : ""}${enemyName(wave)} <small>· Wave ${wave} · atk ${fmt(enemyAttackAt(wave))}</small>`;
-  enemyArtEl.innerHTML = enemySvg(wave);
-  lastEnemyKey = String(wave);
+  const arena = state.arena;
+  const wave = displayedWave(state);
+  const boss = isBossWave(wave);
+  const type = enemyTypeForWave(wave);
+  const count = arena.enemies.length;
+  const portraitSize = count >= 3 ? 66 : count === 2 ? 88 : 120;
+
+  const label = count > 1 ? `${type.name} ×${count}` : type.name;
+  enemyNameEl.innerHTML = `${boss ? "👑 " : ""}${label} <small>· Wave ${wave} · atk ${fmt(enemyAttackFor(wave))}</small>`;
+
+  enemiesEl.innerHTML = arena.enemies
+    .map(
+      (_, i) => `
+      <div class="enemy-unit" data-enemy="${i}">
+        <div class="enemy-art">${enemySvg(type.id, portraitSize, boss)}</div>
+        <div class="hp-bar enemy mini"><span class="hp-fill" data-enemy-hp="${i}"></span></div>
+      </div>`,
+    )
+    .join("");
+  lastEnemyKey = enemyKey(state);
 }
 
 function rosterKey(state: GameState): string {
@@ -152,13 +180,19 @@ function renderRoster(state: GameState): void {
 
 export function renderArenaPanel(state: GameState): void {
   if (rosterKey(state) !== lastRosterKey) renderRoster(state);
-  if (String(state.arena.wave) !== lastEnemyKey) renderEnemy(state);
+  if (enemyKey(state) !== lastEnemyKey) renderEnemy(state);
   tickerEl.textContent = `Wave ${state.arena.wave}`;
   renderMissionTracker("arena", missionEl, state);
 
   const a = state.arena;
-  enemyBarEl.style.width = `${a.enemyMaxHp > 0 ? Math.max((a.enemyHp / a.enemyMaxHp) * 100, 0) : 0}%`;
-  enemyBarLabelEl.textContent = `${fmt(Math.max(a.enemyHp, 0))} / ${fmt(a.enemyMaxHp)}`;
+  a.enemies.forEach((enemy, i) => {
+    const unit = enemiesEl.querySelector<HTMLElement>(`.enemy-unit[data-enemy="${i}"]`);
+    const fill = enemiesEl.querySelector<HTMLElement>(`[data-enemy-hp="${i}"]`);
+    if (fill) {
+      fill.style.width = `${enemy.maxHp > 0 ? Math.max((enemy.hp / enemy.maxHp) * 100, 0) : 0}%`;
+    }
+    if (unit) unit.classList.toggle("dead", enemy.hp <= 0);
+  });
   teamBarEl.style.width = `${a.teamMaxHp > 0 ? Math.max((a.teamHp / a.teamMaxHp) * 100, 0) : 0}%`;
   teamBarLabelEl.textContent = `${fmt(Math.max(a.teamHp, 0))} / ${fmt(a.teamMaxHp)}`;
 

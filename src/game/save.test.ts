@@ -91,6 +91,15 @@ describe("save/load", () => {
     expect(loaded!.streak.best).toBe(17);
     expect(loaded!.arena.wave).toBe(12);
     expect(loaded!.settings.darkMode).toBe(true);
+    // C2 migration: the old scalar enemy becomes a 1-element enemies array,
+    // preserving hp/maxHp/timer, and defeated defaults to [].
+    expect(loaded!.arena.enemies).toHaveLength(1);
+    expect(loaded!.arena.enemies[0].hp).toBe(50);
+    expect(loaded!.arena.enemies[0].maxHp).toBe(100);
+    expect(loaded!.arena.enemies[0].nextHitIn).toBe(1);
+    expect(loaded!.arena.enemies[0].id).toBe("rubber-shark"); // wave 12 → (12-1)%4=3
+    expect(loaded!.arena.defeated).toEqual([]);
+    expect("enemyHp" in loaded!.arena).toBe(false);
   });
 
   it("export → import round-trips through the migrate/merge pipeline", () => {

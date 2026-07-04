@@ -1,6 +1,47 @@
+import { ARENA_BASE, ENEMY_TYPES } from "./balance";
 import { getDuckDef } from "./ducks";
 import { createInitialState, isRoleEligible } from "./state";
-import type { GameState } from "./types";
+import type { ArenaState, GameState } from "./types";
+
+// C2 migration: pre-C2 saves stored a scalar enemy (enemyHp/enemyMaxHp/
+// enemyNextHitIn). Fold those into a 1-element enemies array (preserving wave
+// progress) and default the new `enemies`/`defeated` fields.
+function migrateArena(base: ArenaState, partial: Partial<ArenaState> | undefined): ArenaState {
+  const merged = { ...base, ...partial } as ArenaState & {
+    enemyHp?: number;
+    enemyMaxHp?: number;
+    enemyNextHitIn?: number;
+  };
+  // Only trust an enemies array the SAVE itself carried; otherwise (pre-C2
+  // save) fold the old scalar fields into a 1-element array. `merged.enemies`
+  // is never enough to check — the base defaults always provide one.
+  const savedEnemies = partial?.enemies;
+  if (!Array.isArray(savedEnemies) || savedEnemies.length === 0) {
+    const wave = merged.wave ?? 1;
+    const typeId = ENEMY_TYPES[(wave - 1) % ENEMY_TYPES.length].id;
+    const maxHp = merged.enemyMaxHp ?? ARENA_BASE.baseEnemyHp;
+    merged.enemies = [
+      {
+        id: typeId,
+        hp: merged.enemyHp ?? maxHp,
+        maxHp,
+        nextHitIn: merged.enemyNextHitIn ?? 1 / ARENA_BASE.enemyAttackSpeed,
+      },
+    ];
+  }
+  if (!Array.isArray(merged.defeated)) merged.defeated = [];
+  delete merged.enemyHp;
+  delete merged.enemyMaxHp;
+  delete merged.enemyNextHitIn;
+  return {
+    wave: merged.wave,
+    enemies: merged.enemies,
+    teamHp: merged.teamHp,
+    teamMaxHp: merged.teamMaxHp,
+    retryAt: merged.retryAt,
+    defeated: merged.defeated,
+  };
+}
 
 const SAVE_KEY = "crittingDucks.save";
 const CORRUPT_KEY = "crittingDucks.save.corrupt";
@@ -60,7 +101,7 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
       ...partial.streak,
       buffExpiry: { ...base.streak.buffExpiry, ...partial.streak?.buffExpiry },
     },
-    arena: { ...base.arena, ...partial.arena },
+    arena: migrateArena(base.arena, partial.arena),
     chapter: partial.chapter ?? base.chapter,
     leaves: partial.leaves ?? base.leaves,
     nextLeafAt: partial.nextLeafAt ?? base.nextLeafAt,
