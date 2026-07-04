@@ -2,27 +2,17 @@ import { ASCENSION, GEAR, MATERIAL_NAMES } from "../game/balance";
 import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
 import { equipItem, equippedItemsFor, sellEquipment, unequipItem } from "../game/gear";
 import { ascendDuck, ascensionCost, canAscend, canUpgrade, upgradeAll, upgradeCost } from "../game/packs";
-import { toggleFavorite } from "../game/state";
+import { assignToRoster, getStats, isRoleEligible, toggleFavorite } from "../game/state";
 import { TRAITS } from "../game/traits";
-import type { EquipSlot, EquipmentItem, GameState, Rarity } from "../game/types";
+import type { EquipSlot, EquipmentItem, GameState, Panel } from "../game/types";
 import { showToast } from "./achievementsPanel";
 import { duckSvg, rarityCrestBadge } from "./duckArt";
 import { makeDuckDraggable } from "./dragDuck";
+import { duckComparator, type SortKey } from "./duckSort";
 import { attachTooltip } from "./tooltip";
 
 const SLOT_LABEL: Record<EquipSlot, string> = { weapon: "Weapon", armor: "Armor", charm: "Charm" };
-
-type SortKey = "favorite" | "rarity" | "role" | "level";
-
-const RARITY_RANK: Record<Rarity, number> = {
-  divine: 0,
-  mythic: 1,
-  legendary: 2,
-  epic: 3,
-  rare: 4,
-  uncommon: 5,
-  common: 6,
-};
+const PANEL_LABEL: Record<Panel, string> = { mine: "Mine", arena: "Arena", pond: "Pond" };
 
 let overlay: HTMLElement;
 let gameState: GameState;
@@ -40,7 +30,7 @@ export function initInventoryMenu(state: GameState): void {
         <select id="inv-sort" aria-label="Sort ducks">
           <option value="favorite">Favorites first</option>
           <option value="rarity">Rarity</option>
-          <option value="role">Profession</option>
+          <option value="role">Class</option>
           <option value="level">Level</option>
         </select>
         <button class="settings-btn" id="inv-upgrade-all">Upgrade All</button>
@@ -87,7 +77,8 @@ function renderUpgradeAllButton(): void {
   btn.disabled = !gameState.ducks.some((d) => canUpgrade(gameState, d.defId));
 }
 
-export function openInventory(): void {
+export function openInventory(focusDefId?: string): void {
+  if (focusDefId && gameState.ducks.some((d) => d.defId === focusDefId)) selectedDefId = focusDefId;
   renderGrid();
   renderCard();
   renderMaterials();
@@ -132,21 +123,7 @@ function closeInventory(): void {
 
 function sortedDucks() {
   const ducks = [...gameState.ducks];
-  ducks.sort((a, b) => {
-    const rarityDiff = RARITY_RANK[getDuckDef(a.defId).rarity] - RARITY_RANK[getDuckDef(b.defId).rarity];
-    switch (sortKey) {
-      case "favorite": {
-        const diff = (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0);
-        return diff !== 0 ? diff : rarityDiff;
-      }
-      case "rarity":
-        return rarityDiff;
-      case "role":
-        return getDuckDef(a.defId).role.localeCompare(getDuckDef(b.defId).role);
-      case "level":
-        return b.level - a.level;
-    }
-  });
+  ducks.sort(duckComparator(sortKey));
   return ducks;
 }
 
@@ -188,9 +165,14 @@ function renderCard(): void {
   const cost = upgradeCost(duck);
   const ascension = duck.ascension ?? 0;
   const maxedOut = duck.level >= 10 && ascension >= ASCENSION.maxAscensions;
-  const mine = gameState.rosters.mine.includes(duck.defId);
-  const arena = gameState.rosters.arena.includes(duck.defId);
-  const rosterLabel = mine ? "Rostered in Mine" : arena ? "Rostered in Arena" : "Not rostered";
+  const currentPanel: Panel | null = gameState.rosters.mine.includes(duck.defId)
+    ? "mine"
+    : gameState.rosters.arena.includes(duck.defId)
+      ? "arena"
+      : gameState.rosters.pond.includes(duck.defId)
+        ? "pond"
+        : null;
+  const rosterLabel = currentPanel ? `Rostered in ${PANEL_LABEL[currentPanel]}` : "Not rostered";
 
   const statLine: string[] = [];
   if (def.role !== "fighter") statLine.push(`Mining ${miningPowerOf(duck).toFixed(2)}`);
@@ -200,6 +182,26 @@ function renderCard(): void {
     statLine.push(`Defense ${defenseOf(gameState, duck).toFixed(1)}`);
   }
   if (def.critChanceBonus) statLine.push(`Crit +${Math.round(def.critChanceBonus * 100)}%`);
+
+  const stats = getStats(gameState);
+  const slotsFor: Record<Panel, number> = { mine: stats.mineSlots, arena: stats.arenaSlots, pond: stats.pondSlots };
+  const quickAssignHtml = (["mine", "arena", "pond"] as Panel[])
+    .map((panel) => {
+      const eligible = isRoleEligible(panel, def.role);
+      const hasFreeSlot = gameState.rosters[panel].length < slotsFor[panel];
+      const disabled = !eligible || !hasFreeSlot;
+      const title = !eligible
+        ? panel === "mine"
+          ? "Miners only"
+          : panel === "arena"
+            ? "Fighters only"
+            : "Pond ducks only"
+        : !hasFreeSlot
+          ? `${PANEL_LABEL[panel]} full`
+          : "";
+      return `<button class="settings-btn quick-assign-btn" data-quick-assign="${panel}" ${disabled ? "disabled" : ""} title="${title}">→ ${PANEL_LABEL[panel]}</button>`;
+    })
+    .join("");
 
   const equipped = equippedItemsFor(gameState, duck.defId);
   const slotsHtml = (["weapon", "armor", "charm"] as EquipSlot[])
@@ -233,6 +235,7 @@ function renderCard(): void {
         }
       </div>
       <div class="inv-card-roster">${rosterLabel}</div>
+      <div class="inv-card-quick-assign">${quickAssignHtml}</div>
       <div class="inv-card-equip">${slotsHtml}</div>
     </div>
   `;
@@ -240,6 +243,16 @@ function renderCard(): void {
     toggleFavorite(gameState, duck.defId);
     renderCard();
     renderGrid();
+  });
+  card.querySelectorAll<HTMLButtonElement>("[data-quick-assign]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const panel = btn.dataset.quickAssign as Panel;
+      const freeSlot = gameState.rosters[panel].length; // first free slot index
+      if (assignToRoster(gameState, panel, freeSlot, duck.defId)) {
+        showToast(`${def.name} assigned to ${PANEL_LABEL[panel]}`);
+        renderCard();
+      }
+    });
   });
   card.querySelector("#inv-ascend-btn")?.addEventListener("click", () => {
     if (ascendDuck(gameState, duck.defId)) {

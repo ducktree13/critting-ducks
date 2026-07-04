@@ -299,7 +299,7 @@ button:disabled {
 
 .hover-tooltip {
   background: var(--surface-border);
-  color: var(--text-inverse);
+  color: var(--scene-detail);
   transition: opacity var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out),
     visibility var(--dur-2) step-end;
   opacity: 0;
@@ -327,7 +327,7 @@ button:disabled {
 .tt-rarity,
 .tt-meta,
 .tt-odds {
-  color: var(--text-inverse);
+  color: var(--scene-detail);
   opacity: 0.75;
 }
 
@@ -588,6 +588,17 @@ button:disabled {
 .reveal-card,
 .inv-card-art {
   position: relative;
+}
+
+/* Reveal cards double as a shortcut into that duck's inventory card
+   (Phase R1): subtle hover/press cue signals the click-through. */
+.reveal-card[role="button"] {
+  cursor: pointer;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+.reveal-card[role="button"]:hover,
+.reveal-card[role="button"]:focus-visible {
+  transform: translateY(-3px);
 }
 
 /* ============================================================

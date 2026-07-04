@@ -9,6 +9,11 @@ export const MAX_ACCUMULATOR_SEC = 1.0; // clamp so a slow frame can't spiral
 export const FRAME_GAP_THRESHOLD_SEC = 5; // beyond this, treat as a hidden-tab gap
 export const AUTOSAVE_INTERVAL_MS = 15_000;
 
+// Starting gold (Phase R1): makes the tutorial's "buy the 30g first node"
+// step affordable ~5s after it appears, instead of requiring a full mine
+// grind first. Not counted in lifetime.gold since it wasn't "earned".
+export const STARTING_GOLD = 20;
+
 export const BASE_STATS = {
   critChance: 0.3,
   critChanceCap: 0.95,

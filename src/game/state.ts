@@ -1,4 +1,4 @@
-import { ARENA_BASE, BASE_STATS, ENEMY_TYPES, LEVEL_REWARDS, ORE_LEVEL_GATES, PASSIVES, STREAK_BALANCE, XP_CURVE } from "./balance";
+import { ARENA_BASE, BASE_STATS, ENEMY_TYPES, LEVEL_REWARDS, ORE_LEVEL_GATES, PASSIVES, STARTING_GOLD, STREAK_BALANCE, XP_CURVE } from "./balance";
 import { getDuckDef, makeOwnedDuck } from "./ducks";
 import { emit } from "./events";
 import { getSkillNode } from "./skilltree";
@@ -26,7 +26,7 @@ export function createInitialState(): GameState {
   };
   return {
     version: 2,
-    gold: 0,
+    gold: STARTING_GOLD,
     xp: 0,
     level: 1,
     lifetime: {

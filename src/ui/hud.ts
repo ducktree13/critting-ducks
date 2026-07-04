@@ -182,7 +182,7 @@ export function initHud(header: HTMLElement): void {
   `;
 
   header.querySelector("#hud-shop")!.addEventListener("click", openShop);
-  header.querySelector("#hud-ducks")!.addEventListener("click", openInventory);
+  header.querySelector("#hud-ducks")!.addEventListener("click", () => openInventory());
   header.querySelector("#hud-achievements")!.addEventListener("click", openAchievements);
   header.querySelector("#hud-craft")!.addEventListener("click", openCrafting);
   header.querySelector("#hud-expeditions")!.addEventListener("click", openExpeditions);

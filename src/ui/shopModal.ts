@@ -5,7 +5,9 @@ import { buyFromShardShop, currentShardShopSlots, msUntilRestock } from "../game
 import { toggleFavorite } from "../game/state";
 import type { GameState, PackId, Rng } from "../game/types";
 import { duckSvg, duckTooltipHtml, rarityCrestBadge } from "./duckArt";
+import { duckComparator, type SortKey } from "./duckSort";
 import { fmt } from "./format";
+import { openInventory } from "./inventoryMenu";
 import { attachTooltip } from "./tooltip";
 
 export interface SaveActions {
@@ -26,6 +28,7 @@ const PACK_IDS: PackId[] = ["standard", "five", "pack25", "pack100"];
 let overlay: HTMLElement;
 let gameState: GameState;
 let gameRng: Rng;
+let shardShopSortKey: SortKey = "rarity";
 
 export function initShopModal(state: GameState, rng: Rng, actions: SaveActions): void {
   gameState = state;
@@ -47,6 +50,11 @@ export function initShopModal(state: GameState, rng: Rng, actions: SaveActions):
       <div class="shop-reveal" id="shop-reveal"></div>
       <div class="shard-shop-head">
         <h4>Shard Shop</h4>
+        <select id="shard-shop-sort" aria-label="Sort ducks">
+          <option value="rarity">Rarity</option>
+          <option value="role">Class</option>
+          <option value="level">Level</option>
+        </select>
         <small id="shard-shop-restock"></small>
       </div>
       <small class="shard-shop-hint">Earn Shard Points from duplicate ducks.</small>
@@ -77,6 +85,11 @@ export function initShopModal(state: GameState, rng: Rng, actions: SaveActions):
   overlay.querySelector("#save-import")!.addEventListener("click", actions.onImport);
   overlay.querySelector("#save-reset")!.addEventListener("click", actions.onReset);
 
+  overlay.querySelector<HTMLSelectElement>("#shard-shop-sort")!.addEventListener("change", (e) => {
+    shardShopSortKey = (e.target as HTMLSelectElement).value as SortKey;
+    renderShardShop();
+  });
+
   document.body.appendChild(overlay);
 }
 
@@ -93,9 +106,17 @@ function renderShardShop(): void {
   const now = Date.now();
   const hours = Math.ceil(msUntilRestock(now) / 3_600_000);
   overlay.querySelector("#shard-shop-restock")!.textContent = `Restocks in ${hours}h`;
+  overlay.querySelector<HTMLSelectElement>("#shard-shop-sort")!.value = shardShopSortKey;
 
+  const ownedLevel = new Map(gameState.ducks.map((d) => [d.defId, d.level]));
   const slots = overlay.querySelector("#shard-shop-slots")!;
-  slots.innerHTML = currentShardShopSlots(gameState, now)
+  slots.innerHTML = [...currentShardShopSlots(gameState, now)]
+    .sort((a, b) =>
+      duckComparator(shardShopSortKey)(
+        { defId: a.defId, level: ownedLevel.get(a.defId) ?? 0 },
+        { defId: b.defId, level: ownedLevel.get(b.defId) ?? 0 },
+      ),
+    )
     .map((slot) => {
       const def = getDuckDef(slot.defId);
       const affordable = gameState.shardPoints >= slot.price;
@@ -176,7 +197,7 @@ function buyPack(pack: PackId): void {
     .map((r, i) => {
       const rayBurst = r.rarity === "divine" ? `<span class="duck-ray-burst" aria-hidden="true"></span>` : "";
       return `
-      <div class="reveal-card rarity-${r.rarity}" style="animation-delay: ${Math.min(i * 140, 2000)}ms">
+      <div class="reveal-card rarity-${r.rarity}" role="button" tabindex="0" data-duck="${r.defId}" style="animation-delay: ${Math.min(i * 140, 2000)}ms">
         ${rayBurst}
         ${rarityCrestBadge(r.rarity)}
         ${duckSvg(r.defId, 64, { reveal: true })}
@@ -189,6 +210,22 @@ function buyPack(pack: PackId): void {
   // they never linger in the DOM (transform/opacity only, per §8).
   reveal.querySelectorAll<HTMLElement>(".duck-ray-burst").forEach((el) => {
     el.addEventListener("animationend", () => el.remove());
+  });
+  // Clicking a reveal card jumps straight to that duck's inventory card
+  // (Phase R1): close the shop and open the inventory focused on it.
+  reveal.querySelectorAll<HTMLElement>(".reveal-card").forEach((card) => {
+    const openThisDuck = () => {
+      const defId = card.dataset.duck!;
+      closeShop();
+      openInventory(defId);
+    };
+    card.addEventListener("click", openThisDuck);
+    card.addEventListener("keydown", (e) => {
+      if ((e as KeyboardEvent).key === "Enter" || (e as KeyboardEvent).key === " ") {
+        e.preventDefault();
+        openThisDuck();
+      }
+    });
   });
   renderPackButtons();
   renderCollection();
