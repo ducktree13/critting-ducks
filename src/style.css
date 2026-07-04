@@ -255,13 +255,15 @@ main.world {
 
 /* ---- Mine panel ---- */
 
+/* R4a: the mine area reads as "ducks at a cave mouth on a hillside". The
+   scene fills the whole body; interactive content is positioned ON the scene
+   rather than stacked as opaque wells over an invisible backdrop. Percentages
+   track the tall (viewBox 0 0 400 780) composition: cave mouth ~30% down,
+   ground ledge ~84% down. */
 .mine-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
   color: var(--fg);
   position: relative;
+  min-height: 420px;
 }
 
 .mine-scene {
@@ -276,7 +278,36 @@ main.world {
   height: 100%;
 }
 
-.mine-rock.shake {
+/* Invisible probe at the cave-mouth center — JS measures its rect to aim the
+   walk-into-cave animation and launch the ore pip. */
+.mine-cave-anchor {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+/* Big ore rock embedded near the hill base beside the cave mouth. Centering
+   lives on the wrapper; the SVG inside is scaled down and carries the shake so
+   the shake transform doesn't fight the positioning translate. */
+.mine-rock {
+  position: absolute;
+  left: 62%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  z-index: 1;
+}
+
+.mine-rock svg {
+  width: 116px;
+  height: auto;
+  display: block;
+}
+
+.mine-rock.shake svg {
   animation: shake 0.18s ease-in-out;
 }
 
@@ -284,6 +315,46 @@ main.world {
   0%, 100% { transform: translate(0, 0) rotate(0); }
   25% { transform: translate(-3px, 1px) rotate(-1deg); }
   75% { transform: translate(3px, -1px) rotate(1deg); }
+}
+
+/* R4a: ducks stand on the ground ledge (bottom third of the tall scene). */
+.mine-body .duck-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 74%;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* Compact controls (vein picker + ore counters) pinned near the bottom edge,
+   below the duck row. */
+.mine-controls {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 2;
+}
+
+.mine-controls .vein-row {
+  padding: 6px;
+}
+
+.mine-controls .ore-counters {
+  justify-content: center;
+}
+
+.mine-body .mission-slot {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 0;
+  z-index: 2;
 }
 
 .vein-row {
@@ -347,6 +418,20 @@ main.world {
   100% { transform: translateY(0) scaleX(1); }
 }
 
+/* R4a walk-into-cave: JS sets --walk-x/-y (vector toward the cave mouth),
+   --walk-scale, --walk-bright, then flips them back for the return leg. The
+   idle bob is suspended so it doesn't fight the transition-driven transform.
+   The full round trip is ~1.1s (0.55s each leg, matching WALK_MS in JS). */
+.mine-body .duck-slot.mine-walking {
+  animation: none;
+  transition:
+    transform 0.55s ease-in-out,
+    filter 0.55s ease-in-out;
+  transform: translate(var(--walk-x, 0px), var(--walk-y, 0px)) scale(var(--walk-scale, 1));
+  filter: brightness(var(--walk-bright, 1));
+  z-index: 3;
+}
+
 .ore-pip {
   position: fixed;
   width: 10px;
@@ -379,6 +464,17 @@ main.world {
   flex-wrap: wrap;
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+/* Slim strip; give the mined ore counts a readable backing over the scene. */
+.mine-controls .ore-counters:not(:empty) {
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border-radius: var(--radius-m);
+  padding: 3px 10px;
+}
+
+.mine-controls .ore-counters:empty {
+  display: none;
 }
 
 /* ---- Skill tree ---- */

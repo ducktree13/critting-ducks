@@ -887,6 +887,13 @@ body.quackening-active main.world.streak-shake {
   [data-mode="night"] .arena-scene .arena-flame-glow {
     animation: none !important;
   }
+  /* JS already skips the walk-into-cave transform under reduced motion; this
+     neutralizes any leftover transition so nothing slides. */
+  .mine-body .duck-slot.mine-walking {
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }
 
 /* ---- THE QUACKENING (streak >= 100) ---- */
