@@ -90,10 +90,24 @@ function evictIneligibleRosterDucks(rosters: GameState["rosters"]): GameState["r
 
 function mergeWithDefaults(partial: Partial<GameState>): GameState {
   const base = createInitialState();
-  return {
+  // Pre-R3 saves stored leavesClicked/leaves/nextLeafAt instead of the pond
+  // bubbles system that replaced falling tree-leaves. Fold the old lifetime
+  // counter into bubblesPopped (sum if a save somehow carries both, but in
+  // practice only one will ever be present) and drop the old leaves array —
+  // any leaf mid-flight when the save was written just evaporates.
+  const oldPartial = partial as Partial<GameState> & { leavesClicked?: number; leaves?: unknown; nextLeafAt?: number } & {
+    lifetime?: Partial<GameState["lifetime"]> & { leavesClicked?: number };
+  };
+  const oldLeavesClicked = oldPartial.lifetime?.leavesClicked ?? 0;
+  const newBubblesPopped = partial.lifetime?.bubblesPopped ?? 0;
+  const merged: GameState = {
     ...base,
     ...partial,
-    lifetime: { ...base.lifetime, ...partial.lifetime },
+    lifetime: {
+      ...base.lifetime,
+      ...partial.lifetime,
+      bubblesPopped: newBubblesPopped + oldLeavesClicked,
+    },
     ores: { ...base.ores, ...partial.ores },
     rosters: evictIneligibleRosterDucks({ ...base.rosters, ...partial.rosters }),
     streak: {
@@ -103,8 +117,8 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
     },
     arena: migrateArena(base.arena, partial.arena),
     chapter: partial.chapter ?? base.chapter,
-    leaves: partial.leaves ?? base.leaves,
-    nextLeafAt: partial.nextLeafAt ?? base.nextLeafAt,
+    bubbles: partial.bubbles ?? base.bubbles,
+    nextBubbleAt: partial.nextBubbleAt ?? base.nextBubbleAt,
     expeditions: partial.expeditions ?? base.expeditions,
     packCredits: { ...base.packCredits, ...partial.packCredits },
     unlockedDucks: partial.unlockedDucks ?? base.unlockedDucks,
@@ -124,6 +138,11 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
       act2Tree: partial.settings?.act2Tree ?? base.settings.act2Tree,
     },
   };
+  // Drop stray old-schema keys the spreads above may have carried over
+  // (e.g. pre-R3 `leaves`/`nextLeafAt`) — they aren't part of GameState.
+  delete (merged as unknown as Record<string, unknown>).leaves;
+  delete (merged as unknown as Record<string, unknown>).nextLeafAt;
+  return merged;
 }
 
 export function save(state: GameState, storage: StorageLike): void {

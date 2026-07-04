@@ -1,6 +1,5 @@
 import { ACT2_TREE_IDS } from "../game/chapters";
 import { on } from "../game/events";
-import { clickLeaf } from "../game/leaves";
 import { buy, canBuy, getSkillNode, isOwned, isVisible, nodesForTree, SKILL_NODES } from "../game/skilltree";
 import type { GameState, NodeEffect, SkillNode, TreeId } from "../game/types";
 import { fmt } from "./format";
@@ -873,41 +872,6 @@ function playFellingAnimation(): void {
   setTimeout(() => panel.classList.remove("felling"), 1200);
 }
 
-// ---- Falling leaves (reward drops, PLAN2.md §9) ----
-
-function renderLeaves(state: GameState): void {
-  const layer = panel.querySelector<HTMLElement>("#falling-leaves")!;
-  const existing = new Set(Array.from(layer.children).map((c) => (c as HTMLElement).dataset.leaf));
-  const current = new Set(state.leaves.map((l) => l.id));
-
-  for (const el of Array.from(layer.children)) {
-    const id = (el as HTMLElement).dataset.leaf!;
-    if (!current.has(id)) el.remove();
-  }
-
-  for (const leaf of state.leaves) {
-    if (existing.has(leaf.id)) continue;
-    const el = document.createElement("button");
-    el.className = `falling-leaf${leaf.kind === "duck" ? " rare" : ""}`;
-    el.dataset.leaf = leaf.id;
-    el.style.left = `${20 + (hashLeaf(leaf.id) % 60)}%`;
-    el.textContent = leaf.kind === "duck" ? "🍂✨" : "🍂";
-    el.addEventListener("click", () => {
-      const clicked = state.leaves.find((l) => l.id === leaf.id);
-      if (clicked && clickLeaf(state, leaf.id)) {
-        el.remove();
-      }
-    });
-    layer.appendChild(el);
-  }
-}
-
-function hashLeaf(id: string): number {
-  let h = 0;
-  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return h % 100;
-}
-
 export function initTreePanel(root: HTMLElement, state: GameState): void {
   panel = root;
   gameState = state;
@@ -916,7 +880,6 @@ export function initTreePanel(root: HTMLElement, state: GameState): void {
     <div class="panel-body tree-body">
       <div class="mission-slot" id="tree-mission"></div>
       <div id="tree-canvas"></div>
-      <div id="falling-leaves"></div>
     </div>
   `;
   tickerEl = panel.querySelector<HTMLElement>("#tree-ticker")!;
@@ -962,5 +925,4 @@ export function renderTreePanel(state: GameState): void {
       : `${state.skillNodes.length}/${totalNodes} nodes`;
 
   renderMissionTracker("tree", missionEl, state);
-  renderLeaves(state);
 }

@@ -15,7 +15,7 @@ export interface GameEventMap {
   materialDrop: { material: MaterialId };
   equipmentDrop: { item: EquipmentItem };
   chapterAdvance: { chapter: number };
-  leafClicked: { kind: "gold" | "xp" | "duck"; amount: number; isCrit: boolean };
+  bubblePopped: { kind: "gold" | "xp" | "duck"; amount: number; isCrit: boolean };
   expeditionReady: { id: string };
   expeditionClaimed: { success: boolean; isCrit: boolean; gold: number; xp: number };
 }

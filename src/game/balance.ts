@@ -170,9 +170,11 @@ export const ASCENSION = {
   shardCostMult: 20,
 } as const;
 
-// Falling leaves (PLAN2.md §9): every 3–6 real-time minutes a leaf drops
-// from the (grown) tree; clicking it pays out before it fades.
-export const LEAVES = {
+// Pond bubbles (PLAN2.md §9/§10, Phase R3): every 3–6 real-time minutes a
+// bubble surfaces on the pond; popping it pays out before it fades. Spawns
+// from chapter 1 onward — the pond is core to the early game, not gated to
+// Act 2 like the tree-leaves system it replaces.
+export const BUBBLES = {
   minGapMs: 3 * 60 * 1000,
   maxGapMs: 6 * 60 * 1000,
   expiresAfterMs: 30 * 1000,

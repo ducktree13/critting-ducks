@@ -73,12 +73,12 @@ describe("GENERATED_DUCKS", () => {
   });
 });
 
-describe("Duck Tree (leaf-exclusive)", () => {
-  it("exists, is divine, and is locked behind the leaf source", () => {
+describe("Duck Tree (bubble-exclusive)", () => {
+  it("exists, is divine, and is locked behind the bubble source", () => {
     const duckTree = DUCK_DEFS.find((d) => d.id === "duckTree");
     expect(duckTree).toBeDefined();
     expect(duckTree!.rarity).toBe("divine");
-    expect(duckTree!.lockedBy).toEqual({ kind: "leaf", id: "duckTree" });
+    expect(duckTree!.lockedBy).toEqual({ kind: "bubble", id: "duckTree" });
   });
 });
 

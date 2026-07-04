@@ -18,11 +18,10 @@ describe("checkChapterTransition", () => {
     expect(state.chapter).toBe(1);
   });
 
-  it("advances to chapter 2 once Act 1 is fully owned, arming the leaf timer", () => {
+  it("advances to chapter 2 once Act 1 is fully owned", () => {
     state.skillNodes = nodesForTree("act1").map((n) => n.id);
     checkChapterTransition(state);
     expect(state.chapter).toBe(2);
-    expect(state.nextLeafAt).toBeGreaterThan(0);
   });
 
   it("fires chapterAdvance exactly once", () => {

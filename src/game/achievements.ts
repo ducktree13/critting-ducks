@@ -46,7 +46,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: "firstAscension", name: "Reborn", desc: "Ascend a duck for the first time", metric: (s) => s.ducks.filter((d) => (d.ascension ?? 0) > 0).length, target: 1, reward: { gold: 500 } },
   { id: "ascend5", name: "Prestige Circle", desc: "Ascend ducks 5 times total", metric: (s) => s.ducks.reduce((sum, d) => sum + (d.ascension ?? 0), 0), target: 5, reward: { packCredits: { five: 1 } } },
   { id: "expeditions10", name: "Well Traveled", desc: "Complete 10 expeditions", metric: (s) => s.lifetime.expeditionsCompleted, target: 10, reward: { gold: 800 } },
-  { id: "leaves50", name: "Leaf Peeper", desc: "Click 50 falling leaves", metric: (s) => s.lifetime.leavesClicked, target: 50, reward: { gold: 600 } },
+  { id: "leaves50", name: "Bubble Popper", desc: "Pop 50 pond bubbles", metric: (s) => s.lifetime.bubblesPopped, target: 50, reward: { gold: 600 } },
   { id: "quackeningHolder", name: "Living Legend", desc: "Reach a 150-crit streak", metric: (s) => s.streak.best, target: 150, reward: { packCredits: { pack25: 1 } } },
   { id: "allOres", name: "Prospector", desc: "Unlock all 6 ore types", metric: (s) => getStats(s).unlockedOres.length, target: 6, reward: { gold: 2000 } },
   { id: "craft10", name: "Artisan", desc: "Craft 10 pieces of gear", metric: (s) => s.lifetime.gearCrafted, target: 10, reward: { gold: 700 } },

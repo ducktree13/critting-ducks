@@ -8,7 +8,7 @@ export interface Rng {
   next(): number; // [0, 1)
 }
 
-export type LockKind = "mission" | "achievement" | "leaf" | "shop";
+export type LockKind = "mission" | "achievement" | "bubble" | "shop";
 export type TraitId =
   | "brave"
   | "cowardly"
@@ -141,7 +141,7 @@ export interface GameState {
     crits: number;
     hits: number;
     packs: number;
-    leavesClicked: number;
+    bubblesPopped: number;
     expeditionsCompleted: number;
     gearCrafted: number;
     bossesDefeated: number;
@@ -164,8 +164,8 @@ export interface GameState {
   streak: StreakState;
   arena: ArenaState;
   chapter: 1 | 2;
-  leaves: LeafDrop[];
-  nextLeafAt: number; // real-time ms epoch
+  bubbles: PondBubble[];
+  nextBubbleAt: number; // real-time ms epoch
   expeditions: ExpeditionInstance[];
   settings: {
     darkMode: boolean;
@@ -204,7 +204,7 @@ export interface SkillNode {
   effect: NodeEffect;
 }
 
-export interface LeafDrop {
+export interface PondBubble {
   id: string;
   spawnedAt: number;
   expiresAt: number;

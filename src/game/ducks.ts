@@ -26,12 +26,12 @@ const HAND_CURATED_DUCKS: readonly DuckDef[] = [
   // "Golden Goose" and already in the miner trait pool.
   { id: "goose", name: "The Golden Goose", rarity: "legendary", role: "miner", trait: "greedy", miningPower: 1.0, attackDamage: 2.5, attacksPerSecond: 1.2, hp: 50, defense: 2, critChanceBonus: 0.15, critDamageBonus: 0, passive: "goldenCrit" },
   { id: "deathbill", name: "Deathbill", rarity: "legendary", role: "fighter", trait: "energetic", miningPower: 0.1, attackDamage: 12.5, attacksPerSecond: 1.2, hp: 90, defense: 6, critChanceBonus: 0.15, critDamageBonus: 0.5, passive: "streakShield" },
-  // Leaf-exclusive (PLAN2.md §9): never drops from packs or the shard shop —
-  // only from clicking a falling leaf in Act 2, at a 0.5% chance per leaf.
+  // Bubble-exclusive (PLAN2.md §9): never drops from packs or the shard shop —
+  // only from popping a pond bubble, at a 0.5% chance per bubble.
   // Stays hybrid (so it can also fight/mine) but carries a divine economy
   // pond aura, usable if ever placed in the pond (hybrids may hold an aura;
   // see assignToRoster in state.ts for which roles may enter which roster).
-  { id: "duckTree", name: "Duck Tree", rarity: "divine", role: "hybrid", trait: "radiant", miningPower: 3.0, attackDamage: 30, attacksPerSecond: 1.3, hp: 800, defense: 30, critChanceBonus: 0.2, critDamageBonus: 0.3, pondAura: { kind: "economy", power: 0.16 }, lockedBy: { kind: "leaf", id: "duckTree" } },
+  { id: "duckTree", name: "Duck Tree", rarity: "divine", role: "hybrid", trait: "radiant", miningPower: 3.0, attackDamage: 30, attacksPerSecond: 1.3, hp: 800, defense: 30, critChanceBonus: 0.2, critDamageBonus: 0.3, pondAura: { kind: "economy", power: 0.16 }, lockedBy: { kind: "bubble", id: "duckTree" } },
 ];
 
 export const DUCK_DEFS: readonly DuckDef[] = [...HAND_CURATED_DUCKS, ...GENERATED_DUCKS];

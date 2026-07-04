@@ -178,8 +178,9 @@ function buildDuck(
 }
 
 // Hand-curated legendary+ names (PLAN2.md §4: "Legendary+ ducks are
-// hand-curated"). "Duck Tree" is reserved for the leaf-click exclusive
-// added in V2-7 and deliberately excluded here.
+// hand-curated"). "Duck Tree" is reserved for the pond-bubble exclusive
+// added in V2-7 (renamed from leaf-click in Phase R3) and deliberately
+// excluded here.
 const LEGENDARY_NAMES = [
   "Sir Reginald Quack III", "The Feathered Fury", "Empress Marigold",
   "Captain Splash", "The Iron Drake", "Lady Moonwing", "Bogthorn the Relentless",

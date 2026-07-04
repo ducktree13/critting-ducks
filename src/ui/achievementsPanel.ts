@@ -36,9 +36,9 @@ export function initAchievementsPanel(state: GameState): void {
   on("equipmentDrop", (e) => showToast(`⚔ Gear found: ${e.item.name}`));
   on("materialDrop", (e) => showToast(`🧪 Material: ${MATERIAL_NAMES[e.material]}`));
   on("chapterAdvance", () => showToast(`🌳 Act 2 begins! New trees are sprouting.`));
-  on("leafClicked", (e) => {
-    if (e.kind === "duck") showToast(`🍂✨ A leaf revealed... Duck Tree!`);
-    else showToast(`🍂 Leaf: +${fmt(e.amount)} ${e.kind}${e.isCrit ? " (crit!)" : ""}`);
+  on("bubblePopped", (e) => {
+    if (e.kind === "duck") showToast(`🫧✨ A bubble revealed... Duck Tree!`);
+    else showToast(`🫧 Bubble: +${fmt(e.amount)} ${e.kind}${e.isCrit ? " (crit!)" : ""}`);
   });
   on("expeditionReady", () => showToast(`🗺 An expedition is ready to claim!`));
   on("firstDefeat", (e) => showToast(`⚔ First defeat: ${e.name}! +${fmt(e.xp)} XP`));

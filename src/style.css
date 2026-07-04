@@ -135,7 +135,7 @@ main.world {
   display: grid;
   height: calc(100vh - 56px);
   grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.3fr) minmax(260px, 1fr);
-  grid-template-rows: 1fr minmax(140px, 0.30fr);
+  grid-template-rows: 1fr minmax(210px, 0.42fr);
   grid-template-areas:
     "mine tree arena"
     "mine pond arena";
@@ -180,6 +180,16 @@ main.world {
 .area-tree { grid-area: tree; }
 .area-pond { grid-area: pond; }
 .area-arena { grid-area: arena; }
+
+/* Phase R3: visually join the tree area's grass mound to the pond's shore —
+   drop the tree area's bottom padding and pull the pond up slightly so the
+   two ground textures meet with (near) zero gap. */
+.area-tree .panel-body {
+  padding-bottom: 0;
+}
+.area-pond {
+  margin-top: -10px;
+}
 
 .world-area .panel-body {
   flex: 1;
@@ -474,39 +484,9 @@ main.world {
 }
 
 /* ---- Pond area (Phase F chunk 2): circular pond scene + floating seats,
-   its own world-area (see components.css for the pond-scene/seat rules). ---- */
-
-#falling-leaves {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.falling-leaf {
-  position: absolute;
-  top: -10%;
-  font-size: 1.6rem;
-  border: none;
-  background: none;
-  cursor: pointer;
-  pointer-events: auto;
-  animation: leaf-fall 3s ease-in forwards, leaf-sway 2.4s ease-in-out infinite 3s;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
-}
-
-.falling-leaf.rare {
-  font-size: 2rem;
-}
-
-@keyframes leaf-fall {
-  from { top: -10%; }
-  to { top: 55%; }
-}
-
-@keyframes leaf-sway {
-  0%, 100% { transform: translateX(0) rotate(0deg); }
-  50% { transform: translateX(10px) rotate(12deg); }
-}
+   its own world-area (see components.css for the pond-scene/seat/bubble
+   rules — Phase R3 replaced the falling-leaves system that used to live
+   here with pond bubbles). ---- */
 
 .tree-ground {
   stroke: var(--card-border);

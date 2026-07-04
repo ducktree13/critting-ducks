@@ -1253,7 +1253,7 @@ body.quackening-active .area-chip {
 .pond-scene {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  max-width: 560px;
   aspect-ratio: 360 / 200;
 }
 
@@ -1263,6 +1263,20 @@ body.quackening-active .area-chip {
   width: 100%;
   height: 100%;
   overflow: visible;
+}
+
+/* Shore/bank transition along the pond's top edge (Phase R3) — same ground
+   tones as the tree area's grass mound so the two scenes flow into one
+   another where the areas touch. */
+.pond-shore {
+  fill: var(--ground);
+}
+.pond-shore-edge {
+  fill: none;
+  stroke: var(--foliage-deep);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0.7;
 }
 
 .pond-ripple {
@@ -1325,11 +1339,124 @@ body.quackening-active .area-chip {
   line-height: 1;
 }
 
+/* No boxed .well chrome here (Phase R3) — the pond sits bare in the world,
+   so the income readout is just text with a soft drop-shadow for legibility
+   over the water instead of a bordered panel. */
 .pond-income-chip {
   position: absolute;
   right: 10px;
   bottom: 10px;
   z-index: 3;
+  padding: 2px 6px;
+  color: var(--text);
+  text-shadow: 0 1px 2px var(--shadow-drop), 0 0 6px color-mix(in srgb, var(--surface) 60%, transparent);
+}
+
+/* ---- Pond bubbles (Phase R3): reward pickups floating on the water,
+   replacing the old falling-leaves system. Pool of <=3 buttons; deterministic
+   per-bubble position, gentle bob + sheen. ---- */
+
+.pond-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pond-bubble {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--surface-border) 60%, var(--pond-water));
+  background:
+    radial-gradient(circle at 32% 28%, color-mix(in srgb, white 65%, var(--pond-water)) 0%, transparent 42%),
+    color-mix(in srgb, var(--pond-water-deep) 35%, var(--surface));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--pond-water-deep) 50%, transparent);
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 0;
+  animation: pond-bubble-bob 2.6s ease-in-out infinite;
+}
+
+.pond-bubble.rare {
+  width: 40px;
+  height: 40px;
+  border-color: var(--gold);
+  background:
+    radial-gradient(circle at 32% 28%, color-mix(in srgb, white 70%, var(--gold)) 0%, transparent 46%),
+    color-mix(in srgb, var(--gold) 45%, var(--surface));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--gold) 60%, transparent);
+}
+
+@keyframes pond-bubble-bob {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-5px); }
+}
+
+/* Duck paddling out to a bubble and back — transform-only, ~600ms. */
+.pond-seat.paddle-to,
+.pond-bench-duck.paddle-to {
+  animation: pond-paddle-to 600ms ease-out;
+}
+@keyframes pond-paddle-to {
+  0% { transform: translate(-50%, -50%); }
+  55% { transform: translate(calc(-50% + var(--paddle-dx, 0%)), calc(-50% + var(--paddle-dy, 0%))); }
+  100% { transform: translate(-50%, -50%); }
+}
+
+/* Fabricated bench duck: fades in near the pond edge, paddles, fades out. */
+.pond-bench-duck {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 220ms ease;
+}
+.pond-bench-duck.fade-in {
+  opacity: 1;
+}
+.pond-bench-duck.fade-out {
+  opacity: 0;
+}
+
+/* Small fish that pops from a popped bubble and arcs toward the reward
+   number. */
+.pond-fish-wrap {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: pond-fish-arc 700ms ease-out forwards;
+}
+.pond-fish-pop path {
+  fill: color-mix(in srgb, var(--pond-water-deep) 40%, var(--surface));
+  stroke: var(--surface-border);
+  stroke-width: 0.8;
+}
+@keyframes pond-fish-arc {
+  0% { transform: translate(-50%, -50%) translateY(0) scale(0.6); opacity: 0; }
+  20% { opacity: 1; }
+  60% { transform: translate(-50%, -50%) translateY(-22px) scale(1); }
+  100% { transform: translate(-50%, -50%) translateY(-40px) scale(0.9); opacity: 0; }
+}
+
+.pond-floater {
+  transform: translate(-50%, -50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pond-bubble {
+    animation: none;
+  }
+  .pond-seat.paddle-to,
+  .pond-bench-duck.paddle-to,
+  .pond-fish-wrap {
+    animation: none !important;
+    display: none;
+  }
+  .pond-bench-duck {
+    transition: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

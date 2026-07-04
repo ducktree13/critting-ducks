@@ -1,15 +1,14 @@
-import { LEAVES } from "./balance";
 import { emit } from "./events";
 import { ACT2_TREE_IDS, isAct1Complete, nodesForTree } from "./skilltree";
 import type { GameState, TreeId } from "./types";
 
 // Checks for the Act 1 -> Act 2 transition once per tick; fires a one-time
 // event (not replayed on reload) so the UI can play the felling animation.
-// Also arms the falling-leaves timer, which only runs once Act 2 begins.
+// Pond bubbles (Phase R3) run independently of chapter from game start, so
+// there's no timer to arm here anymore.
 export function checkChapterTransition(state: GameState): void {
   if (state.chapter === 1 && isAct1Complete(state)) {
     state.chapter = 2;
-    state.nextLeafAt = Date.now() + LEAVES.minGapMs;
     emit("chapterAdvance", { chapter: 2 });
   }
 }

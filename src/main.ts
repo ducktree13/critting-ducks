@@ -7,7 +7,7 @@ import { tickArena } from "./game/arena";
 import { AUTOSAVE_INTERVAL_MS, FRAME_GAP_THRESHOLD_SEC, MAX_ACCUMULATOR_SEC, OFFLINE, TICK_SEC } from "./game/balance";
 import { checkChapterTransition } from "./game/chapters";
 import { checkExpeditions } from "./game/expeditions";
-import { tickLeaves } from "./game/leaves";
+import { tickBubbles } from "./game/bubbles";
 import { checkMissions, ensureMissions } from "./game/missions";
 import { tickMine } from "./game/mine";
 import { computeOfflineProgress, offlineIncomePerSec } from "./game/offline";
@@ -173,7 +173,7 @@ function frame(now: number): void {
     }
   }
 
-  tickLeaves(state, Date.now(), rng, getStats(state));
+  tickBubbles(state, Date.now(), rng, getStats(state));
   checkExpeditions(state, Date.now());
   render(state);
   requestAnimationFrame(frame);

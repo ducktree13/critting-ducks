@@ -215,6 +215,33 @@ describe("save/load", () => {
     expect("panelsMinimized" in loaded!.settings).toBe(false);
   });
 
+  it("migrates lifetime.leavesClicked from pre-R3 saves into bubblesPopped", () => {
+    const storage = fakeStorage();
+    storage.setItem(
+      "crittingDucks.save",
+      JSON.stringify({
+        version: 2,
+        state: {
+          version: 2,
+          gold: 10,
+          lifetime: { gold: 10, crits: 0, hits: 0, packs: 0, leavesClicked: 37, expeditionsCompleted: 0 },
+          leaves: [{ id: "leaf1", spawnedAt: 0, expiresAt: 1000, kind: "gold", amount: 5, isCrit: false }],
+          nextLeafAt: 12345,
+        },
+      }),
+    );
+
+    const loaded = load(storage);
+
+    expect(loaded).not.toBeNull();
+    expect(loaded!.lifetime.bubblesPopped).toBe(37);
+    // The old leaves array/timer are dropped entirely — bubbles start fresh.
+    expect(loaded!.bubbles).toEqual([]);
+    expect(loaded!.nextBubbleAt).toBe(0);
+    expect("leaves" in loaded!).toBe(false);
+    expect("nextLeafAt" in loaded!).toBe(false);
+  });
+
   it("falls back to null and stashes corrupt JSON instead of wiping it", () => {
     const storage = fakeStorage();
     storage.setItem("crittingDucks.save", "{not valid json");
