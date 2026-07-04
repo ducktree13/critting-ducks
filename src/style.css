@@ -575,7 +575,7 @@ main.world {
 }
 
 .leaf {
-  fill: #5aa845;
+  fill: var(--foliage-mid);
   opacity: 0.9;
 }
 

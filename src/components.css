@@ -949,7 +949,57 @@ body.quackening-active .area-chip {
   fill: var(--shadow-drop);
   opacity: 0.5;
 }
-/* keep the ground line rule from style.css; nothing to override */
+
+/* --- Lit rim: highlight strip opposite the core-shadow ribbon (upper-left
+   light). Rounds the limb. --- */
+.tree-rim {
+  fill: var(--bark-light);
+  opacity: 0.5;
+  stroke: none;
+}
+/* --- Bark texture: faint longitudinal strokes along major limbs. --- */
+.tree-bark-tex {
+  fill: none;
+  stroke: var(--surface-border);
+  stroke-width: 0.8;
+  stroke-linecap: round;
+  opacity: 0.18;
+}
+
+/* --- Crown masses: foliage silhouettes behind the limbs. --- */
+.tree-crown .crown-deep {
+  fill: var(--foliage-deep);
+}
+.tree-crown .crown-lit {
+  fill: var(--foliage-mid);
+}
+.tree-crown .crown-blob.pop {
+  transform-box: fill-box;
+  animation: tree-crown-pop 480ms var(--ease-out) backwards;
+}
+@keyframes tree-crown-pop {
+  from { transform: scale(0.2); opacity: 0; }
+  60% { transform: scale(1.08); }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* --- Grass mound + root-flare tufts under the trunk. --- */
+.tree-mound {
+  fill: var(--ground);
+}
+.tree-mound-edge {
+  fill: none;
+  stroke: var(--foliage-deep);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+.tree-tuft {
+  fill: none;
+  stroke: var(--foliage-mid);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
 
 /* --- Growth: new limb segments scale in from their parent joint --- */
 .tree-bark-a.grow,
@@ -969,10 +1019,10 @@ body.quackening-active .area-chip {
   stroke-linejoin: round;
 }
 .tree-foliage .leaf-a {
-  fill: var(--panel-head);
+  fill: var(--foliage-light);
 }
 .tree-foliage .leaf-b {
-  fill: color-mix(in srgb, var(--rarity-uncommon) 70%, var(--panel-head));
+  fill: var(--foliage-mid);
 }
 .tree-foliage .leaf.pop {
   transform-box: fill-box;
@@ -1062,6 +1112,7 @@ body.quackening-active .area-chip {
   .tree-bark-a.grow,
   .tree-bark-b.grow,
   .tree-foliage .leaf.pop,
+  .tree-crown .crown-blob.pop,
   .tree-node.affordable .ring,
   .tree-node.denied {
     animation: none !important;

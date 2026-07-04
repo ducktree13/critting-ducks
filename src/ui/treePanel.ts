@@ -211,6 +211,74 @@ function segRibbon(fit: { s: number; tx: number; ty: number }, seg: Segment): st
   return `${p1} ${p2} ${p3} ${p4}`;
 }
 
+// Lit rim: mirror of the core-shadow ribbon on the opposite (lit, upper-left)
+// side of a limb. The shadow ribbon sits on the +normal side; the rim sits on
+// the -normal side so the two together round the limb under an upper-left light.
+function segRibbonLit(fit: { s: number; tx: number; ty: number }, seg: Segment): string {
+  const a = apply(fit, seg.x1, seg.y1);
+  const b = apply(fit, seg.x2, seg.y2);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const wb = (seg.wBase * fit.s) / 2;
+  const wt = (seg.wTip * fit.s) / 2;
+  const off = 0.32; // lit side offset fraction (slightly tighter than shadow)
+  const o1 = wb * off;
+  const o2 = wt * off;
+  const r1 = wb * 0.05;
+  const r2 = wt * 0.05;
+  // negate the normal to sit on the lit side.
+  const p1 = `${(a.x - nx * o1).toFixed(1)} ${(a.y - ny * o1).toFixed(1)}`;
+  const p2 = `${(b.x - nx * o2).toFixed(1)} ${(b.y - ny * o2).toFixed(1)}`;
+  const p3 = `${(b.x - nx * r2).toFixed(1)} ${(b.y - ny * r2).toFixed(1)}`;
+  const p4 = `${(a.x - nx * r1).toFixed(1)} ${(a.y - ny * r1).toFixed(1)}`;
+  return `${p1} ${p2} ${p3} ${p4}`;
+}
+
+// A small deterministic PRNG seeded from a segment's index + coords, using the
+// same FNV-1a + xorshift trick as leafFan so a given segment always textures
+// the same way.
+function segRng(seed: number): () => number {
+  let h = 2166136261 ^ (seed >>> 0);
+  return () => {
+    h = Math.imul(h ^ (h >>> 13), 0x5bd1e995);
+    return ((h >>> 8) & 0xffff) / 0x10000;
+  };
+}
+
+// Bark texture: 2-3 short longitudinal strokes running along a segment,
+// jittered off the centerline. Deterministic per segment index.
+function barkStrokes(fit: { s: number; tx: number; ty: number }, seg: Segment, idx: number): string {
+  const a = apply(fit, seg.x1, seg.y1);
+  const b = apply(fit, seg.x2, seg.y2);
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const nx = -dy / len;
+  const ny = dx / len;
+  const wb = (seg.wBase * fit.s) / 2;
+  const rnd = segRng(idx * 2654435761 + Math.round(a.x) * 40503);
+  const count = 2 + Math.floor(rnd() * 2); // 2-3
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    // offset across the limb width (avoid the very edges)
+    const off = (rnd() - 0.5) * 1.4 * wb * 0.7;
+    // stroke spans a jittered sub-run along the limb
+    const f0 = 0.1 + rnd() * 0.25;
+    const f1 = f0 + 0.35 + rnd() * 0.3;
+    const sx = a.x + dx * f0 + nx * off;
+    const sy = a.y + dy * f0 + ny * off;
+    const ex = a.x + dx * Math.min(f1, 0.95) + nx * off * 0.7;
+    const ey = a.y + dy * Math.min(f1, 0.95) + ny * off * 0.7;
+    out.push(
+      `<path class="tree-bark-tex" d="M ${sx.toFixed(1)} ${sy.toFixed(1)} L ${ex.toFixed(1)} ${ey.toFixed(1)}"/>`,
+    );
+  }
+  return out.join("");
+}
+
 // A leaf = two quadratic curves meeting at a point + center vein.
 function leafPath(cx: number, cy: number, rot: number, size: number): string {
   const r = (a: number) => (a * Math.PI) / 180;
@@ -252,6 +320,106 @@ function leafFan(id: string, cx: number, cy: number, fresh: boolean): string {
   return out.join("");
 }
 
+// Cluster owned outer anchor points into 2-4 proximity groups (simple greedy:
+// each point joins the nearest existing group centroid within a radius, else
+// starts a new group; cap at maxGroups by merging the smallest overflow into
+// the nearest). Returns group centroids + a rough radius spanning the members.
+interface CrownGroup {
+  cx: number;
+  cy: number;
+  r: number;
+  n: number;
+}
+function clusterPoints(pts: { x: number; y: number }[], maxGroups: number): CrownGroup[] {
+  if (pts.length === 0) return [];
+  const groups: { xs: number[]; ys: number[] }[] = [];
+  const joinR = 42; // px in fitted space
+  for (const p of pts) {
+    let best = -1;
+    let bestD = Infinity;
+    for (let g = 0; g < groups.length; g++) {
+      const cx = groups[g].xs.reduce((s, v) => s + v, 0) / groups[g].xs.length;
+      const cy = groups[g].ys.reduce((s, v) => s + v, 0) / groups[g].ys.length;
+      const d = Math.hypot(p.x - cx, p.y - cy);
+      if (d < bestD) {
+        bestD = d;
+        best = g;
+      }
+    }
+    if (best >= 0 && (bestD < joinR || groups.length >= maxGroups)) {
+      groups[best].xs.push(p.x);
+      groups[best].ys.push(p.y);
+    } else {
+      groups.push({ xs: [p.x], ys: [p.y] });
+    }
+  }
+  return groups.map((g) => {
+    const cx = g.xs.reduce((s, v) => s + v, 0) / g.xs.length;
+    const cy = g.ys.reduce((s, v) => s + v, 0) / g.ys.length;
+    let r = 16;
+    for (let i = 0; i < g.xs.length; i++) {
+      r = Math.max(r, Math.hypot(g.xs[i] - cx, g.ys[i] - cy) + 16);
+    }
+    return { cx, cy, r: Math.min(r, 60), n: g.xs.length };
+  });
+}
+
+// Crown masses: behind-the-limbs foliage silhouettes. Each proximity group of
+// owned outer anchors becomes a blob of 3-5 overlapping deep-foliage ellipses
+// plus one smaller up-left mid-foliage highlight blob. Deterministic per tree
+// (seeded from the tree hash). Scaled by canvas size so small Overview cells
+// don't get swamped. `fresh` pops the whole crown on a buy/stage change.
+function buildCrown(
+  treeId: TreeId,
+  pts: { x: number; y: number }[],
+  crownScale: number,
+  fresh: boolean,
+): string {
+  if (pts.length === 0) return "";
+  const groups = clusterPoints(pts, 4);
+  let seed = 2166136261;
+  for (const ch of treeId) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619);
+  const rnd = segRng(seed);
+  const out: string[] = [];
+  const budget = 20; // max ellipses across all blobs
+  let used = 0;
+  for (let g = 0; g < groups.length; g++) {
+    const grp = groups[g];
+    const r = grp.r * crownScale;
+    const popDelay = g * 60;
+    const style =
+      `transform-origin:${grp.cx.toFixed(1)}px ${grp.cy.toFixed(1)}px;` +
+      (fresh ? `animation-delay:${popDelay}ms` : "");
+    const blobEllipses: string[] = [];
+    const lobes = 3 + Math.floor(rnd() * 3); // 3-5 deep
+    for (let i = 0; i < lobes && used < budget; i++, used++) {
+      const ang = (i / lobes) * Math.PI * 2 + rnd() * 0.6;
+      const rad = r * (0.28 + rnd() * 0.35);
+      const ex = grp.cx + Math.cos(ang) * rad;
+      const ey = grp.cy + Math.sin(ang) * rad;
+      const rx = r * (0.5 + rnd() * 0.35);
+      const ry = rx * (0.72 + rnd() * 0.25);
+      blobEllipses.push(
+        `<ellipse class="crown-deep" cx="${ex.toFixed(1)}" cy="${ey.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}"/>`,
+      );
+    }
+    // one up-left mid-foliage highlight blob, smaller + offset toward the light
+    if (used < budget) {
+      used++;
+      const hx = grp.cx - r * 0.28;
+      const hy = grp.cy - r * 0.3;
+      const hr = r * (0.4 + rnd() * 0.2);
+      blobEllipses.push(
+        `<ellipse class="crown-lit" cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" rx="${hr.toFixed(1)}" ry="${(hr * 0.85).toFixed(1)}"/>`,
+      );
+    }
+    out.push(
+      `<g class="crown-blob${fresh ? " pop" : ""}" style="${style}">${blobEllipses.join("")}</g>`,
+    );
+  }
+  return out.join("");
+}
+
 // Builds one tree's SVG inner markup via the procedural generator (§6):
 // merged ink silhouette, bark fills, core-shadow ribbons, seated typed nodes,
 // leaf fans on outermost owned anchors. Renders only the recursion depth the
@@ -288,10 +456,44 @@ function buildTreeSvg(state: GameState, treeId: TreeId): string {
     .filter((s) => s.major)
     .map((s) => `<polygon class="tree-core" points="${segRibbon(fit, s)}"/>`)
     .join("");
+  // Lit rims on the opposite (upper-left) side of major limbs (depth ≤ 1) —
+  // rounds the limb under a single upper-left light source.
+  const rims = visibleSegs
+    .filter((s) => s.depth <= 1)
+    .map((s) => `<polygon class="tree-rim" points="${segRibbonLit(fit, s)}"/>`)
+    .join("");
+  // Bark texture: short longitudinal strokes on depth ≤ 1 segments, capped
+  // ~60 paths per tree (each seg emits 2-3; stop once we near the cap).
+  const barkTexParts: string[] = [];
+  let barkTexCount = 0;
+  visibleSegs.forEach((s, i) => {
+    if (s.depth > 1 || barkTexCount >= 60) return;
+    const t = barkStrokes(fit, s, i);
+    barkTexCount += (t.match(/tree-bark-tex/g) ?? []).length;
+    barkTexParts.push(t);
+  });
+  const barkTex = barkTexParts.join("");
+  // Joint caps: a bark-tone circle at each parent-tip fork (depth 1-2, the
+  // first sub-segment of each child limb) to hide polygon gaps at forks.
+  const jointSeen = new Set<string>();
+  const jointCaps = visibleSegs
+    .filter((s) => s.depth >= 1 && s.depth <= 2)
+    .map((s) => {
+      const key = `${s.parentTipX.toFixed(2)},${s.parentTipY.toFixed(2)}`;
+      if (jointSeen.has(key)) return "";
+      jointSeen.add(key);
+      const p = apply(fit, s.parentTipX, s.parentTipY);
+      const r = ((s.wBase * fit.s) / 2) * 0.95;
+      if (r < 1.2) return "";
+      const tone = s.depth % 2 === 0 ? "tree-bark-a" : "tree-bark-b";
+      return `<circle class="${tone}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r.toFixed(1)}"/>`;
+    })
+    .join("");
 
   // Nodes + leaf fans.
   const nodeEls: string[] = [];
   const leaves: string[] = [];
+  const crownPts: { x: number; y: number }[] = [];
   const ownedNodes = nodes.filter((n) => isOwned(state, n.id));
   const ownedIds = new Set(ownedNodes.map((n) => n.id));
   // Outermost owned = owned nodes whose seated dist is in the top band.
@@ -322,26 +524,82 @@ function buildTreeSvg(state: GameState, treeId: TreeId): string {
       </g>`);
     if (own && outerSet.has(node.id)) {
       leaves.push(leafFan(node.id, a.x, a.y, node.id === freshNodeId));
+      crownPts.push({ x: a.x, y: a.y });
     }
   }
+
+  // Crown masses behind the limbs. S0 / barren has no owned outer anchors, so
+  // crownPts is empty and no crown renders. Scale crown down for small canvases
+  // (Overview cells) so blobs don't swamp the cell. `fresh` on a buy/stage
+  // change pops the blobs in.
+  const crownScale = treeId === "act1" ? 1 : 0.82; // act-2 saplings a touch tighter
+  const crownFresh = freshNodeId !== null && ownedIds.has(freshNodeId);
+  const crown = buildCrown(treeId, crownPts, crownScale, crownFresh);
 
   // ground shadow ellipse under the crown
   const cxRoot = 200;
   const groundEllipse = `<ellipse class="tree-ground-shadow" cx="${cxRoot}" cy="${GROUND_Y + 3}" rx="${(FIT_W * 0.42).toFixed(0)}" ry="9"/>`;
 
+  // Grass mound: a low rounded hump under the trunk with a deep-foliage shadow
+  // edge, plus a couple of root-flare tufts. Replaces the bare ground line.
+  const gMound = buildGrassMound();
+
   lastStage[treeId] = stage;
 
   return `
     ${groundEllipse}
-    <line class="tree-ground" x1="40" y1="${GROUND_Y}" x2="360" y2="${GROUND_Y}"/>
+    ${gMound}
+    <g class="tree-crown" pointer-events="none">${crown}</g>
     <g class="tree-limbs">
       ${silhouette}
       ${bark}
+      ${barkTex}
+      ${jointCaps}
       ${ribbons}
+      ${rims}
     </g>
     <g class="tree-foliage">${leaves.join("")}</g>
     <g class="tree-nodes">${nodeEls.join("")}</g>
   `;
+}
+
+// Grass mound + root-flare tufts replacing the bare ground line. A low hump
+// centered under the trunk: a filled --ground path with a thin --foliage-deep
+// shadow edge along its top, and a few small grass tufts sprouting up from it.
+function buildGrassMound(): string {
+  const y = GROUND_Y;
+  const half = FIT_W * 0.5; // 160
+  const left = 200 - half;
+  const right = 200 + half;
+  const rise = 14; // mound height above the ground line
+  // filled mound (dips below viewport bottom so no seam shows)
+  const moundPath =
+    `M ${left} ${y + 2} ` +
+    `C ${left + 40} ${y - rise} ${200 - 60} ${y - rise} 200 ${y - rise} ` +
+    `C ${200 + 60} ${y - rise} ${right - 40} ${y - rise} ${right} ${y + 2} ` +
+    `L ${right} ${y + 40} L ${left} ${y + 40} Z`;
+  // top shadow edge (same curve, stroked)
+  const edgePath =
+    `M ${left} ${y + 2} ` +
+    `C ${left + 40} ${y - rise} ${200 - 60} ${y - rise} 200 ${y - rise} ` +
+    `C ${200 + 60} ${y - rise} ${right - 40} ${y - rise} ${right} ${y + 2}`;
+  // root-flare tufts: small triangular grass blades along the mound crest
+  const tufts: string[] = [];
+  const tuftXs = [200 - 46, 200 - 20, 200 + 24, 200 + 50];
+  for (let i = 0; i < tuftXs.length; i++) {
+    const tx = tuftXs[i];
+    const ty = y - rise + 4 + (i % 2) * 2;
+    tufts.push(
+      `<path class="tree-tuft" d="M ${tx - 4} ${ty} Q ${tx - 5} ${ty - 9} ${tx - 1} ${ty - 12} ` +
+        `M ${tx} ${ty} Q ${tx} ${ty - 12} ${tx} ${ty - 14} ` +
+        `M ${tx + 4} ${ty} Q ${tx + 5} ${ty - 9} ${tx + 1} ${ty - 12}"/>`,
+    );
+  }
+  return (
+    `<path class="tree-mound" d="${moundPath}"/>` +
+    `<path class="tree-mound-edge" d="${edgePath}"/>` +
+    tufts.join("")
+  );
 }
 
 // spark + (nothing else) uses fill; icons that are stroke-based skip fill.
