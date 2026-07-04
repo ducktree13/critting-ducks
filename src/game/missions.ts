@@ -73,7 +73,7 @@ export const MISSION_TEMPLATES: readonly MissionTemplate[] = [
 
 const TEMPLATES_BY_ID = new Map(MISSION_TEMPLATES.map((t) => [t.id, t]));
 const SECTIONS: MissionSection[] = ["mine", "tree", "arena"];
-const ACTIVE_PER_SECTION = 2;
+const ACTIVE_PER_SECTION = 3;
 
 let nextInstanceId = 1;
 
@@ -113,6 +113,22 @@ export function missionProgress(state: GameState, instance: MissionInstance): { 
   const template = missionTemplate(instance);
   const current = Math.min(template.metric(state) - instance.startValue, instance.target - instance.startValue);
   return { current, target: instance.target - instance.startValue };
+}
+
+// Short plain-text summary of a mission's reward, for picker/preview UI.
+export function missionRewardPreview(instance: MissionInstance): string {
+  const template = missionTemplate(instance);
+  const reward = template.reward(instance.target - instance.startValue);
+  const parts: string[] = [];
+  if (reward.gold) parts.push(`${Math.round(reward.gold)} gold`);
+  if (reward.shardPoints) parts.push(`${Math.round(reward.shardPoints)} shards`);
+  if (reward.packCredits) {
+    for (const [packId, count] of Object.entries(reward.packCredits)) {
+      if (count) parts.push(`${count} ${packId} pack${count === 1 ? "" : "s"}`);
+    }
+  }
+  if (reward.unlockDuck) parts.push("duck unlock");
+  return parts.join(", ");
 }
 
 // Checks every active mission for completion, grants rewards, and replaces

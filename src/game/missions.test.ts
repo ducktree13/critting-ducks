@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { checkMissions, ensureMissions, missionProgress, missionTemplate, pinMission } from "./missions";
+import { checkMissions, ensureMissions, missionProgress, missionRewardPreview, missionTemplate, pinMission } from "./missions";
 import { createInitialState } from "./state";
 import type { GameState, Rng } from "./types";
 
@@ -12,11 +12,11 @@ beforeEach(() => {
 });
 
 describe("ensureMissions", () => {
-  it("fills each section up to two active missions", () => {
+  it("fills each section up to three active missions", () => {
     ensureMissions(state, rng);
-    expect(state.missions.mine).toHaveLength(2);
-    expect(state.missions.tree).toHaveLength(2);
-    expect(state.missions.arena).toHaveLength(2);
+    expect(state.missions.mine).toHaveLength(3);
+    expect(state.missions.tree).toHaveLength(3);
+    expect(state.missions.arena).toHaveLength(3);
   });
 
   it("does not add more once a section is full", () => {
@@ -26,10 +26,13 @@ describe("ensureMissions", () => {
     expect(state.missions.mine.map((m) => m.id)).toEqual(before);
   });
 
-  it("avoids duplicate templates within a section when possible", () => {
+  it("avoids duplicate templates within a section while distinct templates remain", () => {
     ensureMissions(state, rng);
+    // "mine" only has 2 distinct templates (mineOre, mineGold) but holds 3
+    // active missions, so once both are in play a repeat is unavoidable —
+    // the first 2 rolled should still be distinct from each other.
     const templateIds = state.missions.mine.map((m) => m.templateId);
-    expect(new Set(templateIds).size).toBe(templateIds.length);
+    expect(new Set(templateIds.slice(0, 2)).size).toBe(2);
   });
 });
 
@@ -53,7 +56,7 @@ describe("missionProgress and checkMissions", () => {
     checkMissions(state, rng);
 
     expect(state.missions.tree.some((m) => m.id === instance.id)).toBe(false);
-    expect(state.missions.tree).toHaveLength(2); // replacement rolled in
+    expect(state.missions.tree).toHaveLength(3); // replacement rolled in
     // treeNodes reward is a pack credit, treeLevel reward is gold — either
     // could have completed depending on which template rolled first.
     expect(state.gold).toBeGreaterThanOrEqual(goldBefore);
@@ -66,6 +69,15 @@ describe("missionProgress and checkMissions", () => {
     state.skillNodes.push("crit1", "speed1", "ore1");
     checkMissions(state, rng);
     expect(state.pinnedMission.tree).toBeNull();
+  });
+});
+
+describe("missionRewardPreview", () => {
+  it("summarizes the gold reward for a mission", () => {
+    ensureMissions(state, rng);
+    const instance = state.missions.mine[0];
+    const preview = missionRewardPreview(instance);
+    expect(preview).toMatch(/gold/);
   });
 });
 

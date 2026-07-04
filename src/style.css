@@ -1761,6 +1761,7 @@ main.world {
 }
 
 .mission-tracker {
+  position: relative;
   background: color-mix(in srgb, var(--card) 92%, transparent);
   border: 1px solid var(--card-border);
   border-radius: 8px;
@@ -1800,6 +1801,57 @@ main.world {
   height: 100%;
   background: var(--accent);
   transition: width 0.2s ease;
+}
+
+.mission-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 220px;
+  max-width: 280px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mission-menu-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--fg);
+  font-size: 0.74rem;
+}
+
+.mission-menu-row:hover {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.mission-menu-row.pinned {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.mission-menu-name {
+  font-weight: 600;
+}
+
+.mission-menu-progress,
+.mission-menu-reward {
+  color: var(--muted);
+  font-size: 0.7rem;
 }
 
 /* ---- Achievements & toasts ---- */
