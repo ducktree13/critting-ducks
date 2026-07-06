@@ -153,8 +153,6 @@ main.world {
 
 .world-scene-svg .scene-stars { display: none; opacity: 0.95; }
 [data-mode="night"] .world-scene-svg .scene-stars { display: block; }
-.world-scene-svg .scene-star-sparkle { opacity: 0.85; }
-.world-scene-svg .scene-moon-glow { filter: blur(6px); }
 .world-scene-svg .scene-clouds { display: block; }
 [data-mode="night"] .world-scene-svg .scene-clouds { display: none; }
 
