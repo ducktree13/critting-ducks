@@ -888,7 +888,8 @@ body.quackening-active main.world.streak-shake {
 }
 
 [data-mode="night"] .arena-scene .arena-sand {
-  fill: color-mix(in srgb, var(--gold) 30%, var(--ground));
+  /* Sand stays SAND at night too (gold + surface, never the green ground). */
+  fill: color-mix(in srgb, var(--gold) 42%, var(--surface));
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -44,32 +44,48 @@ const ENEMY_COLORS: Record<string, string> = {
 // common vanishing point above, so each ring reads as the same oval seen in
 // perspective. Outer→inner radii shrink and the vertical centre drops.
 function colosseumSceneSvg(): string {
-  // Shared arch-window shape along the top tier (the colosseum motif). Arches
-  // follow the tier's curve: y rises toward the sides. cx spans ~70..330.
-  const archCount = 9;
+  // Arcade of arch windows along the top tier — THE colosseum motif. Each
+  // arch is a taller ink-outlined opening; the stone piers between them are
+  // implied by the gaps. Arches follow the tier's sag curve.
+  const archCount = 8;
   const arches = Array.from({ length: archCount }, (_, i) => {
     const t = i / (archCount - 1); // 0..1 across the curve
-    const cx = 78 + t * 244;
+    const cx = 76 + t * 248;
     const dip = Math.sin(t * Math.PI); // 0 at ends, 1 at centre — arcade sags down
-    const cy = 96 + dip * 30;
-    return `<path d="M${cx - 12} ${cy + 20} L${cx - 12} ${cy} Q${cx} ${cy - 16} ${cx + 12} ${cy} L${cx + 12} ${cy + 20} Z" fill="color-mix(in srgb, var(--surface-border) 88%, #000)"/>`;
+    const cy = 92 + dip * 30;
+    return (
+      `<path d="M${cx - 13} ${cy + 30} L${cx - 13} ${cy} Q${cx} ${cy - 20} ${cx + 13} ${cy} L${cx + 13} ${cy + 30} Z"` +
+      ` fill="color-mix(in srgb, var(--surface-border) 88%, #000)"` +
+      ` stroke="var(--surface-border)" stroke-width="2.5"/>`
+    );
   }).join("");
 
-  // Crowd dots seated along a curve: y follows the same sag as its tier.
-  const crowdRow = (baseY: number, sag: number, r: number, n: number, x0: number, dx: number) =>
+  // Crowd dots seated along a curve — MULTICOLORED so it reads as a crowd,
+  // not amber noise. Cycles a small palette of token colors.
+  const CROWD_FILLS = [
+    "var(--accent)",
+    "var(--xp)",
+    "var(--hp)",
+    "var(--rarity-rare)",
+    "var(--rarity-epic)",
+    "var(--scene-detail)",
+  ];
+  const crowdRow = (baseY: number, sag: number, r: number, n: number, x0: number, dx: number, phase: number) =>
     Array.from({ length: n }, (_, i) => {
       const t = i / (n - 1);
       const dip = Math.sin(t * Math.PI);
       const cx = x0 + i * dx;
       const cy = baseY + dip * sag - (i % 3) * 5;
-      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--accent)" opacity="0.5"/>`;
+      const fill = CROWD_FILLS[(i + phase) % CROWD_FILLS.length];
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" opacity="0.8" stroke="var(--surface-border)" stroke-width="1"/>`;
     }).join("");
 
   return `<svg viewBox="0 0 400 780" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <!-- ============ FAR ARCADE: stacked curved stone tiers ============ -->
     <!-- Outermost / highest tier (darkest, furthest back) -->
     <path class="arena-tier arena-tier-3" d="M-30 150 Q200 20 430 150 L430 176 Q200 52 -30 176 Z"
-      fill="color-mix(in srgb, var(--surface-border) 62%, var(--surface))"/>
+      fill="color-mix(in srgb, var(--surface-border) 55%, var(--surface))"
+      stroke="var(--surface-border)" stroke-width="3"/>
     <!-- Crenellated rim on the top tier edge -->
     <g class="arena-rim">
       ${Array.from({ length: 13 }, (_, i) => {
@@ -77,17 +93,19 @@ function colosseumSceneSvg(): string {
         const dip = Math.sin(t * Math.PI);
         const x = -2 + i * 34;
         const y = 40 + dip * 40;
-        return `<rect x="${x}" y="${y}" width="16" height="16" rx="2" fill="color-mix(in srgb, var(--surface-border) 62%, var(--surface))"/>`;
+        return `<rect x="${x}" y="${y}" width="16" height="16" rx="2" fill="color-mix(in srgb, var(--surface-border) 55%, var(--surface))" stroke="var(--surface-border)" stroke-width="2"/>`;
       }).join("")}
     </g>
 
     <!-- Middle tier -->
     <path class="arena-tier arena-tier-2" d="M-30 176 Q200 52 430 176 L430 210 Q200 82 -30 210 Z"
-      fill="color-mix(in srgb, var(--surface-border) 50%, var(--surface))"/>
+      fill="color-mix(in srgb, var(--surface-border) 42%, var(--surface))"
+      stroke="var(--surface-border)" stroke-width="3"/>
 
     <!-- Top (nearest, brightest) tier — the arcade band the arches punch into -->
     <path class="arena-tier arena-tier-1" d="M-30 210 Q200 82 430 210 L430 250 Q200 118 -30 250 Z"
-      fill="color-mix(in srgb, var(--surface-border) 40%, var(--surface))"/>
+      fill="color-mix(in srgb, var(--surface-border) 30%, var(--surface))"
+      stroke="var(--surface-border)" stroke-width="3"/>
     <!-- Repeating ARCH openings along the top tier — the colosseum signature -->
     <g class="arena-arches">${arches}</g>
 
@@ -105,9 +123,9 @@ function colosseumSceneSvg(): string {
 
     <!-- ============ CROWD dots seated along the tier curves ============ -->
     <g class="crowd">
-      ${crowdRow(140, 30, 4.5, 15, 40, 22)}
-      ${crowdRow(172, 32, 5, 15, 34, 24)}
-      ${crowdRow(206, 34, 5.5, 15, 30, 25)}
+      ${crowdRow(140, 30, 4.5, 15, 40, 22, 0)}
+      ${crowdRow(172, 32, 5, 15, 34, 24, 2)}
+      ${crowdRow(206, 34, 5.5, 15, 30, 25, 4)}
     </g>
 
     <!-- ============ BARRIER WALL: ink-dark inner rim of the bowl ============ -->
@@ -121,7 +139,8 @@ function colosseumSceneSvg(): string {
     <!-- ENTRANCE GATE: dark arched opening on the RIGHT (new-wave enemies enter) -->
     <g class="arena-gate">
       <path d="M300 300 L300 250 Q322 232 344 250 L344 300 Z"
-        fill="color-mix(in srgb, var(--surface-border) 96%, #000)"/>
+        fill="color-mix(in srgb, var(--surface-border) 96%, #000)"
+        stroke="var(--surface-border)" stroke-width="2.5"/>
       <!-- Portcullis hint -->
       ${Array.from({ length: 4 }, (_, i) => `<line x1="${306 + i * 11}" y1="252" x2="${306 + i * 11}" y2="298" stroke="color-mix(in srgb, var(--surface-border) 55%, var(--surface))" stroke-width="1.5" opacity="0.6"/>`).join("")}
       <line x1="300" y1="270" x2="344" y2="270" stroke="color-mix(in srgb, var(--surface-border) 55%, var(--surface))" stroke-width="1.5" opacity="0.6"/>
@@ -130,20 +149,22 @@ function colosseumSceneSvg(): string {
     <!-- ============ SAND FLOOR: the enclosed battlefield oval ============ -->
     <!-- Wide enough that the whole .arena-field ground band sits ON the sand,
          inside the barrier ring (rx spans past the safe column on purpose). -->
+    <!-- SAND, not grass: warm tan mixed from gold + cream surface. The old
+         gold+GROUND mix was 80% green — the "green circle" complaint. -->
     <ellipse class="arena-sand" cx="200" cy="575" rx="272" ry="240"
-      fill="color-mix(in srgb, var(--gold) 20%, var(--ground))"/>
+      fill="color-mix(in srgb, var(--gold) 32%, var(--surface))"/>
     <!-- Ink edge where the sand meets the barrier wall -->
     <ellipse cx="200" cy="575" rx="272" ry="240" fill="none"
-      stroke="color-mix(in srgb, var(--surface-border) 92%, #000)" stroke-width="4" opacity="0.85"/>
-    <!-- Inner shading ring for bowl depth -->
-    <ellipse cx="200" cy="576" rx="196" ry="182" fill="color-mix(in srgb, var(--gold) 12%, var(--ground))" opacity="0.5"/>
+      stroke="var(--surface-border)" stroke-width="4" opacity="0.9"/>
+    <!-- Inner shading ring for bowl depth (slightly deeper tan) -->
+    <ellipse cx="200" cy="576" rx="196" ry="182" fill="color-mix(in srgb, var(--gold) 40%, var(--surface))" opacity="0.45"/>
     <!-- Centre emblem + faint rake lines for sand texture -->
     <ellipse cx="200" cy="600" rx="48" ry="26" fill="none"
-      stroke="color-mix(in srgb, var(--surface-border) 45%, var(--ground))" stroke-width="2" opacity="0.4"/>
-    <g class="arena-rake" opacity="0.22">
+      stroke="color-mix(in srgb, var(--surface-border) 55%, var(--gold))" stroke-width="2" opacity="0.5"/>
+    <g class="arena-rake" opacity="0.3">
       ${Array.from({ length: 5 }, (_, i) => {
         const ry = 120 + i * 30;
-        return `<ellipse cx="200" cy="600" rx="${ry + 40}" ry="${ry}" fill="none" stroke="color-mix(in srgb, var(--surface-border) 40%, var(--ground))" stroke-width="1.5"/>`;
+        return `<ellipse cx="200" cy="600" rx="${ry + 40}" ry="${ry}" fill="none" stroke="color-mix(in srgb, var(--surface-border) 45%, var(--gold))" stroke-width="1.5"/>`;
       }).join("")}
     </g>
 
@@ -162,9 +183,11 @@ function colosseumSceneSvg(): string {
     <!-- ============ NEAR SIDE: bowl continues behind the camera ============ -->
     <!-- Low dark wall arcs cutting across the bottom corners (foreground frame) -->
     <path class="arena-near-wall" d="M-40 780 L-40 700 Q90 792 140 800 L-40 800 Z"
-      fill="color-mix(in srgb, var(--surface-border) 90%, #000)"/>
+      fill="color-mix(in srgb, var(--surface-border) 90%, #000)"
+      stroke="var(--surface-border)" stroke-width="3"/>
     <path class="arena-near-wall" d="M440 780 L440 700 Q310 792 260 800 L440 800 Z"
-      fill="color-mix(in srgb, var(--surface-border) 90%, #000)"/>
+      fill="color-mix(in srgb, var(--surface-border) 90%, #000)"
+      stroke="var(--surface-border)" stroke-width="3"/>
   </svg>`;
 }
 
