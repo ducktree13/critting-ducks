@@ -301,33 +301,35 @@ main.world {
   height: 100%;
 }
 
-/* Invisible probe at the deep LEFT-WALL ore vein — JS measures its rect to aim
-   the walk-into-cave animation (duck steps to the vein, mines, returns) and
-   launch the ore pip. Matches the left vein cluster in caveSceneSvg (~x=52,
-   y=408 of the 400x780 viewBox). */
+/* Invisible probe at the ORE ROCK at the BACK of the tunnel — JS measures its
+   rect to aim the walk-to-the-rock animation (duck walks up the rail, strikes,
+   returns) and launch the ore pip from the rock. Matches the rock zone at the
+   tunnel's converged deep end (back wall y≈150-190, x=150..250 center of the
+   400x780 viewBox). */
 .mine-cave-anchor {
   position: absolute;
-  left: 13%;
-  top: 52%;
+  left: 50%;
+  top: 23%;
   width: 1px;
   height: 1px;
   pointer-events: none;
 }
 
-/* Big ore boulder sitting on the cave floor near the ducks. Centering lives on
-   the wrapper; the SVG inside is scaled down and carries the shake so the shake
-   transform doesn't fight the positioning translate. */
+/* The ore rock embedded at the BACK of the tunnel (deep end, top ~quarter),
+   rendered smaller for depth. Centering lives on the wrapper; the SVG inside
+   carries the shake so the shake transform doesn't fight the positioning
+   translate. */
 .mine-rock {
   position: absolute;
-  left: 66%;
-  top: 72%;
+  left: 50%;
+  top: 23%;
   transform: translate(-50%, -50%);
   cursor: pointer;
   z-index: 1;
 }
 
 .mine-rock svg {
-  width: 116px;
+  width: 84px;
   height: auto;
   display: block;
 }
@@ -342,8 +344,8 @@ main.world {
   75% { transform: translate(3px, -1px) rotate(1deg); }
 }
 
-/* V3: ducks stand on the cave FLOOR inside, in the pool of the exit light
-   shaft (bottom third of the tall interior scene). */
+/* W1: ducks stand on the NEAR floor at the tunnel entrance (wide bottom of
+   the receding-tunnel scene, entrance light implied behind the camera). */
 .mine-body .duck-row {
   position: absolute;
   left: 0;

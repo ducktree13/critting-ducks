@@ -49,140 +49,147 @@ let goldTargetEl: HTMLElement | null = null;
 let lastRosterKey = "";
 let lastOreCountersKey = "";
 
-// Mine CAVE INTERIOR (Phase V3, PLAN2.md world redesign): a static SVG scene
-// sitting behind the rock/vein/duck-row content via a negative z-index. The
-// camera is now INSIDE the cave looking OUT — dark rock walls wrap the top and
-// both sides as a thick irregular vignette frame, the bottom third is the cave
-// FLOOR, and a bright arched EXIT opening in the upper-middle shows the outside
-// (sky + distant hill) with a soft light shaft spilling onto the floor. A
-// mine-cart rail runs from the foreground floor up and out through the exit
-// (perspective-narrowing). Interior detail: ore veins glinting in the side
-// walls, two static hanging lanterns (warm glow, brightens at night — NO
-// motion), wooden support beams, scattered pebbles.
+// Mine TUNNEL (Phase W1, playtest re-author): a static SVG scene sitting behind
+// the rock/vein/duck-row content via a negative z-index. The camera now looks
+// DOWN a tunnel that recedes INTO the screen — WIDE at the bottom (near the
+// viewer) and NARROWING toward the top (the deep end). Dark rock walls converge
+// trapezoidally as they rise; the ceiling closes in at the top; darkness deepens
+// toward the top (deepest = darkest). The ORE ROCK lives at the BACK of the
+// tunnel (top ~25%, positioned via CSS on .mine-rock), lit by a hanging lantern
+// with warm STATIC glow and surrounded by vein glints. Cart rails run straight
+// up the middle from the near edge to the rock, converging with perspective.
+// The near floor (bottom) is wider and slightly brighter — a soft light wash
+// implies the entrance BEHIND the camera. Ducks stand on the near floor.
 //
 // The container (.mine-scene) is tall (~373x744 in the world layout), so the
-// viewBox is authored TALL (400x780). All KEY content (exit, rail, veins,
-// lanterns) sits within a safe central column (~x=60..340) so the width
-// `slice` crop (at 1100-1600px) only ever trims the outer wall margins.
+// viewBox is authored TALL (400x780). All KEY content (back wall / rock zone,
+// rails, veins, lantern) sits within a safe central column (~x=60..340) so the
+// width `slice` crop (at 1100-1600px) only ever trims the outer wall margins.
+//
+// Perspective vanishing geometry (referenced by walls, rails, ceiling):
+//   near floor edge  y=780, tunnel spans x=0..400
+//   back wall        y≈150, tunnel spans x≈150..250 (converged)
 function caveSceneSvg(): string {
   return `<svg viewBox="0 0 400 780" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
-      <linearGradient id="cave-exit-sky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="var(--sky-top)"/>
-        <stop offset="70%" stop-color="var(--sky-bottom)"/>
-        <stop offset="100%" stop-color="color-mix(in srgb, var(--ground) 70%, var(--sky-bottom))"/>
+      <linearGradient id="mine-depth" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="color-mix(in srgb, var(--surface-border) 96%, black)"/>
+        <stop offset="30%" stop-color="color-mix(in srgb, var(--surface-border) 88%, var(--ground))"/>
+        <stop offset="100%" stop-color="color-mix(in srgb, var(--surface-border) 62%, var(--ground))"/>
       </linearGradient>
+      <radialGradient id="mine-lantern-pool" cx="50%" cy="42%" r="60%">
+        <stop offset="0%" stop-color="var(--scene-detail)" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="var(--scene-detail)" stop-opacity="0"/>
+      </radialGradient>
     </defs>
 
-    <!-- Outside seen through the exit: sky gradient + a hint of distant hill.
-         Drawn first so the wall frame overlaps its irregular edges. Sits behind
-         the exit opening (~150-180 wide, arched). -->
-    <g class="mine-exit">
-      <path d="M118 292 Q118 120 200 108 Q282 120 282 292 Z" fill="url(#cave-exit-sky)"/>
-      <path d="M118 292 Q160 260 200 262 Q240 260 282 292 L282 292 Z"
-        fill="color-mix(in srgb, var(--ground) 78%, var(--sky-bottom))" opacity="0.85"/>
-      <path d="M132 288 Q168 268 200 270 Q232 268 268 288 Z"
-        fill="color-mix(in srgb, var(--surface-border) 30%, var(--ground))" opacity="0.55"/>
+    <!-- Tunnel void: the receding shaft. A dark gradient, darkest at the deep
+         (top) end, that the converging walls frame. -->
+    <path class="mine-tunnel" fill="url(#mine-depth)"
+      d="M150 150 L250 150 L400 780 L0 780 Z"/>
+
+    <!-- LEFT wall: dark rock angling inward as it rises to the deep end. Outer
+         edge is the viewport border; inner edge follows the tunnel taper. -->
+    <path class="mine-wall" fill="color-mix(in srgb, var(--surface-border) 84%, var(--ground))"
+      d="M0 0 L0 780 L0 780 L150 150 L150 0 Z
+         M0 780 L150 150 L172 150 L64 780 Z"/>
+    <path class="mine-wall mine-wall-left" fill="color-mix(in srgb, var(--surface-border) 84%, var(--ground))"
+      d="M0 0 L172 0 L172 150 L64 780 L0 780 Z"/>
+    <!-- RIGHT wall (mirror) -->
+    <path class="mine-wall mine-wall-right" fill="color-mix(in srgb, var(--surface-border) 84%, var(--ground))"
+      d="M400 0 L228 0 L228 150 L336 780 L400 780 Z"/>
+    <!-- CEILING: closes in across the top, darkest of all. -->
+    <path class="mine-ceiling" fill="color-mix(in srgb, var(--surface-border) 92%, black)"
+      d="M0 0 L400 0 L400 780 L336 780 L228 150 L172 150 L64 780 L0 780 Z" opacity="0"/>
+    <path class="mine-ceiling-cap" fill="color-mix(in srgb, var(--surface-border) 92%, black)"
+      d="M0 0 L400 0 L228 150 L172 150 Z"/>
+
+    <!-- Lit inner-wall facets: a softer, warmer rim where the lantern glow
+         catches the converging rock near the deep end, so the walls don't read
+         as a flat cutout. -->
+    <path class="mine-wall-rim" fill="color-mix(in srgb, var(--surface-border) 60%, var(--ground))" opacity="0.55"
+      d="M172 150 L200 150 L146 420 L110 420 Z"/>
+    <path class="mine-wall-rim" fill="color-mix(in srgb, var(--surface-border) 60%, var(--ground))" opacity="0.55"
+      d="M228 150 L200 150 L254 420 L290 420 Z"/>
+
+    <!-- Strata cracks embedded in the converging side walls (angled with the
+         perspective, thinning toward the deep end). -->
+    <g class="mine-strata" stroke="color-mix(in srgb, var(--surface-border) 94%, var(--ground))" stroke-width="2.5" fill="none" opacity="0.5" stroke-linecap="round">
+      <path d="M30 300 Q70 320 44 420"/>
+      <path d="M24 560 Q80 600 40 700"/>
+      <path d="M370 300 Q330 320 356 420"/>
+      <path d="M376 560 Q320 600 360 700"/>
+    </g>
+    <g class="mine-stones" fill="color-mix(in srgb, var(--surface-border) 94%, var(--ground))" opacity="0.6">
+      <ellipse cx="30" cy="480" rx="16" ry="11"/>
+      <ellipse cx="372" cy="500" rx="15" ry="10"/>
+      <ellipse cx="24" cy="660" rx="18" ry="12"/>
     </g>
 
-    <!-- Light shaft: translucent light spilling from the exit down onto the
-         cave floor, widening as it descends into the standing area. -->
-    <polygon class="mine-lightshaft" points="140,300 260,300 320,660 80,660"
-      fill="var(--scene-detail)" opacity="0.1"/>
+    <!-- BACK WALL of the tunnel: the deep end where the ore rock is embedded
+         (the .mine-rock element sits over this via CSS). Slightly lit by the
+         lantern so it reads as solid rock, not void. -->
+    <path class="mine-backwall" fill="color-mix(in srgb, var(--surface-border) 78%, var(--ground))"
+      d="M150 150 L250 150 L262 236 L138 236 Z"/>
+    <circle class="mine-lantern-pool" cx="200" cy="196" r="90" fill="url(#mine-lantern-pool)"/>
 
-    <!-- Cave-wall frame: heavy-ink dark rock wrapping the TOP and BOTH SIDES as
-         a thick irregular vignette. Jagged inner edges hug the exit opening. -->
-    <path class="mine-wall" fill="color-mix(in srgb, var(--surface-border) 80%, var(--ground))"
-      d="M0 0 L400 0 L400 780 L332 780
-         L332 300 Q332 250 300 210 Q300 300 282 292
-         Q282 120 200 108 Q118 120 118 292
-         Q100 300 100 210 Q68 250 68 300 L68 780 L0 780 Z"/>
-    <!-- Softer inner rim so the wall edge doesn't read as a flat cutout -->
-    <path class="mine-wall-rim" fill="color-mix(in srgb, var(--surface-border) 62%, var(--ground))" opacity="0.7"
-      d="M100 300 Q100 132 200 120 Q300 132 300 300 L300 360
-         Q300 316 200 306 Q100 316 100 360 Z"/>
+    <!-- NEAR FLOOR: wide, slightly brighter foreground rock. Ducks stand here.
+         A soft light wash at the bottom edge implies the entrance behind the
+         camera. -->
+    <path class="mine-floor" d="M0 640 L64 640 Q200 620 336 640 L400 640 L400 780 L0 780 Z"
+      fill="color-mix(in srgb, var(--surface-border) 55%, var(--ground))"/>
+    <path class="mine-floor-lit" d="M0 720 L400 720 L400 780 L0 780 Z"
+      fill="var(--scene-detail)" opacity="0.09"/>
 
-    <!-- Strata cracks + embedded stones in the side walls -->
-    <g class="mine-strata" stroke="color-mix(in srgb, var(--surface-border) 92%, var(--ground))" stroke-width="2.5" fill="none" opacity="0.55" stroke-linecap="round">
-      <path d="M18 120 Q40 150 30 200"/>
-      <path d="M40 320 Q22 380 44 440"/>
-      <path d="M366 140 Q346 200 372 260"/>
-      <path d="M356 400 Q378 470 352 540"/>
-    </g>
-    <g class="mine-stones" fill="color-mix(in srgb, var(--surface-border) 92%, var(--ground))" opacity="0.6">
-      <ellipse cx="26" cy="500" rx="16" ry="11"/>
-      <ellipse cx="372" cy="330" rx="14" ry="10"/>
-      <ellipse cx="20" cy="640" rx="18" ry="12"/>
-    </g>
-
-    <!-- Cave FLOOR: bottom third, lighter rock than the walls so ducks read as
-         standing on it. -->
-    <path class="mine-floor" d="M0 620 Q200 592 400 620 L400 780 L0 780 Z"
-      fill="color-mix(in srgb, var(--surface-border) 60%, var(--ground))"/>
-    <path class="mine-floor-lit" d="M96 640 Q200 622 304 640 L332 780 L64 780 Z"
-      fill="color-mix(in srgb, var(--scene-detail) 14%, color-mix(in srgb, var(--surface-border) 55%, var(--ground)))" opacity="0.7"/>
-
-    <!-- Mine-cart rail: runs from the foreground floor up and OUT through the
-         exit, perspective-narrowing toward the opening. Two rails + sleepers. -->
+    <!-- Cart rails: run straight up the middle from the near edge to the rock at
+         the back, converging with the perspective (the "trail" linking ducks to
+         the rock they mine). Two rails + sleepers narrowing toward the top. -->
     <g class="mine-rail">
-      <path d="M150 760 C168 560 182 400 188 300" fill="none" stroke="var(--surface-border)" stroke-width="4.5" stroke-linecap="round"/>
-      <path d="M262 760 C244 560 226 400 212 300" fill="none" stroke="var(--surface-border)" stroke-width="4.5" stroke-linecap="round"/>
-      <line x1="146" y1="740" x2="266" y2="740" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
-      <line x1="152" y1="660" x2="260" y2="660" stroke="var(--surface-border)" stroke-width="5.5" stroke-linecap="round" opacity="0.82"/>
-      <line x1="160" y1="560" x2="252" y2="560" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
-      <line x1="168" y1="460" x2="244" y2="460" stroke="var(--surface-border)" stroke-width="4.5" stroke-linecap="round" opacity="0.78"/>
-      <line x1="176" y1="380" x2="236" y2="380" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
-      <line x1="184" y1="322" x2="228" y2="322" stroke="var(--surface-border)" stroke-width="3.5" stroke-linecap="round" opacity="0.72"/>
+      <path d="M126 780 L190 176" fill="none" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round"/>
+      <path d="M274 780 L210 176" fill="none" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round"/>
+      <line x1="118" y1="760" x2="282" y2="760" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+      <line x1="140" y1="640" x2="260" y2="640" stroke="var(--surface-border)" stroke-width="5.5" stroke-linecap="round" opacity="0.82"/>
+      <line x1="156" y1="520" x2="244" y2="520" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+      <line x1="168" y1="420" x2="232" y2="420" stroke="var(--surface-border)" stroke-width="4.5" stroke-linecap="round" opacity="0.78"/>
+      <line x1="178" y1="330" x2="222" y2="330" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
+      <line x1="186" y1="250" x2="214" y2="250" stroke="var(--surface-border)" stroke-width="3.5" stroke-linecap="round" opacity="0.72"/>
     </g>
 
-    <!-- Wooden support beams (posts + lintel) bracing the passage to the exit -->
+    <!-- Wooden support beams framing the lower (near) walls, receding with
+         perspective. -->
     <g class="mine-timber">
-      <rect x="96" y="300" width="16" height="320" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
-      <rect x="288" y="300" width="16" height="320" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
-      <rect x="90" y="300" width="220" height="18" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
+      <path d="M70 760 L120 400 L136 400 L82 760 Z" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2"/>
+      <path d="M330 760 L280 400 L264 400 L318 760 Z" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2"/>
+      <path d="M66 720 L334 720 L318 700 L82 700 Z" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2"/>
     </g>
 
-    <!-- Ore veins glinting in the side walls: clusters of small crystals. The
-         left cluster is the deep vein the ducks walk TO on hits (see
-         .mine-cave-anchor). -->
+    <!-- Ore-vein glints clustered around the rock at the deep end (gold +
+         ore-tinted crystals, a couple twinkling). -->
     <g class="mine-veins">
-      <!-- Left wall vein (walk target) -->
-      <path class="twinkle" style="animation-delay:0.3s" d="M46 396 l4.5 -9 l4.5 9 l-4.5 9 z" fill="var(--gold)"/>
-      <path d="M60 384 l3.6 -7 l3.6 7 l-3.6 7 z" fill="var(--gold)"/>
-      <path class="twinkle" style="animation-delay:1.4s" d="M52 420 l4 -8 l4 8 l-4 8 z" fill="#7ad0e0"/>
-      <path d="M38 430 l3.2 -6 l3.2 6 l-3.2 6 z" fill="var(--gold)"/>
-      <path d="M66 412 l3 -6 l3 6 l-3 6 z" fill="#c77b4a"/>
-      <!-- Right wall vein -->
-      <path class="twinkle" style="animation-delay:2.1s" d="M350 300 l4.5 -9 l4.5 9 l-4.5 9 z" fill="var(--gold)"/>
-      <path d="M338 320 l3.6 -7 l3.6 7 l-3.6 7 z" fill="#8a7ae0"/>
-      <path d="M360 330 l3.2 -6 l3.2 6 l-3.2 6 z" fill="var(--gold)"/>
-      <!-- Back-wall glint near the exit rim -->
-      <path d="M150 306 l3 -6 l3 6 l-3 6 z" fill="var(--gold)"/>
-      <path d="M244 306 l3 -6 l3 6 l-3 6 z" fill="var(--gold)"/>
+      <path class="twinkle" style="animation-delay:0.3s" d="M158 190 l4 -8 l4 8 l-4 8 z" fill="var(--gold)"/>
+      <path d="M170 176 l3.2 -6 l3.2 6 l-3.2 6 z" fill="var(--gold)"/>
+      <path class="twinkle" style="animation-delay:1.4s" d="M236 186 l4 -8 l4 8 l-4 8 z" fill="#7ad0e0"/>
+      <path d="M248 174 l3.2 -6 l3.2 6 l-3.2 6 z" fill="#c77b4a"/>
+      <path d="M150 214 l3 -6 l3 6 l-3 6 z" fill="var(--gold)"/>
+      <path d="M252 214 l3 -6 l3 6 l-3 6 z" fill="#8a7ae0"/>
     </g>
 
-    <!-- Two static hanging lanterns INSIDE the cave (warm glow, brightens at
-         night, NO motion). -->
+    <!-- One static hanging lantern lighting the deep end (warm glow, brightens
+         at night, NO motion). -->
     <g class="mine-lantern">
-      <circle class="mine-lantern-glow" cx="128" cy="238" r="24" fill="var(--scene-detail)" opacity="0.18"/>
-      <line x1="128" y1="184" x2="128" y2="216" stroke="var(--surface-border)" stroke-width="2.5"/>
-      <rect x="118" y="216" width="20" height="26" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="1.8"/>
-      <circle class="mine-lantern-light" cx="128" cy="229" r="5.5" fill="var(--scene-detail)"/>
-    </g>
-    <g class="mine-lantern">
-      <circle class="mine-lantern-glow" cx="288" cy="250" r="22" fill="var(--scene-detail)" opacity="0.18"/>
-      <line x1="288" y1="200" x2="288" y2="230" stroke="var(--surface-border)" stroke-width="2.5"/>
-      <rect x="279" y="230" width="18" height="24" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="1.8"/>
-      <circle class="mine-lantern-light" cx="288" cy="242" r="5" fill="var(--scene-detail)"/>
+      <line x1="200" y1="150" x2="200" y2="164" stroke="var(--surface-border)" stroke-width="2"/>
+      <rect x="192" y="164" width="16" height="20" rx="3" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="1.6"/>
+      <circle class="mine-lantern-glow" cx="200" cy="174" r="20" fill="var(--scene-detail)" opacity="0.22"/>
+      <circle class="mine-lantern-light" cx="200" cy="174" r="4.5" fill="var(--scene-detail)"/>
     </g>
 
-    <!-- Scatter pebbles on the floor for texture -->
-    <g class="mine-pebbles" fill="color-mix(in srgb, var(--surface-border) 70%, var(--ground))" opacity="0.7">
-      <ellipse cx="96" cy="690" rx="14" ry="8"/>
-      <ellipse cx="316" cy="700" rx="16" ry="9"/>
-      <ellipse cx="140" cy="730" rx="10" ry="6"/>
-      <ellipse cx="290" cy="742" rx="12" ry="7"/>
-      <circle cx="208" cy="716" r="6"/>
+    <!-- Scatter pebbles on the near floor for texture -->
+    <g class="mine-pebbles" fill="color-mix(in srgb, var(--surface-border) 68%, var(--ground))" opacity="0.7">
+      <ellipse cx="80" cy="700" rx="14" ry="8"/>
+      <ellipse cx="330" cy="710" rx="16" ry="9"/>
+      <ellipse cx="150" cy="748" rx="10" ry="6"/>
+      <ellipse cx="286" cy="752" rx="12" ry="7"/>
+      <circle cx="208" cy="726" r="6"/>
     </g>
   </svg>`;
 }
@@ -236,6 +243,7 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
     if (e.panel !== "mine") return;
     const duckEl = duckRowEl.querySelector<HTMLElement>(`[data-duck="${e.duckId}"]`);
     if (duckEl) walkIntoCave(duckEl, e.duckId);
+    else shakeRockAndDeposit();
   });
 
   // Equipping/unequipping gear doesn't change rosterKey, so force a roster
@@ -265,13 +273,24 @@ const walkVectors = new Map<string, { dx: number; dy: number }>();
 const walking = new Set<string>();
 const WALK_MS = 1100;
 
-// PLAN2.md §12 / Phase R4a: on a mining hit the hitting duck steps toward the
-// cave mouth, shrinking + darkening as it "enters", pauses, then returns to
-// its slot. A CSS transition drives translate/scale/brightness via custom
-// properties. Respects prefers-reduced-motion (skips the walk, keeps the pip).
+// Strike feedback shared by the walk (on arrival) and the reduced-motion /
+// no-duck fallback: the ROCK shakes and an ore pip launches from the rock to
+// the HUD gold counter. Vein SELECTION must NOT call this — selecting a vein
+// only swaps colors (no shake).
+function shakeRockAndDeposit(): void {
+  retrigger(rockEl, "shake");
+  spawnOrePip();
+}
+
+// PLAN2.md §12 / Phase W1: on a mining hit the hitting duck walks UP the rail
+// toward the ore rock at the deep end (top-center), shrinking + darkening as it
+// recedes. On ARRIVAL (~55% of the trip) the ROCK shakes and the ore pip
+// launches from the rock back to the HUD; the duck then returns to its slot. A
+// CSS transition drives translate/scale/brightness via custom properties.
+// Respects prefers-reduced-motion (skips the walk, still shakes + flies a pip).
 function walkIntoCave(duckEl: HTMLElement, duckId: string): void {
   if (prefersReducedMotion) {
-    spawnOrePip();
+    shakeRockAndDeposit();
     return;
   }
   if (walking.has(duckId)) return;
@@ -279,30 +298,30 @@ function walkIntoCave(duckEl: HTMLElement, duckId: string): void {
   let vec = walkVectors.get(duckId);
   if (!vec) {
     const from = duckEl.getBoundingClientRect();
-    const cave = caveMouthPoint();
+    const rock = caveMouthPoint();
     vec = {
-      dx: cave.x - (from.left + from.width / 2),
-      dy: cave.y - (from.top + from.height / 2),
+      dx: rock.x - (from.left + from.width / 2),
+      dy: rock.y - (from.top + from.height / 2),
     };
     walkVectors.set(duckId, vec);
   }
 
   walking.add(duckId);
   duckEl.classList.add("mine-walking");
-  // Enter leg: travel ~55% of the vector into the mouth, shrink + darken.
-  duckEl.style.setProperty("--walk-x", `${vec.dx * 0.55}px`);
-  duckEl.style.setProperty("--walk-y", `${vec.dy * 0.55}px`);
-  duckEl.style.setProperty("--walk-scale", "0.7");
-  duckEl.style.setProperty("--walk-bright", "0.6");
+  // Enter leg: travel ~80% of the vector up to the rock, shrink (depth) + darken.
+  duckEl.style.setProperty("--walk-x", `${vec.dx * 0.8}px`);
+  duckEl.style.setProperty("--walk-y", `${vec.dy * 0.8}px`);
+  duckEl.style.setProperty("--walk-scale", "0.55");
+  duckEl.style.setProperty("--walk-bright", "0.55");
 
-  // Return leg starts partway through; ore pip flies from the cave mouth on
-  // the way back out.
+  // On arrival (~55% through), the duck strikes: the rock shakes and the ore
+  // pip launches from the rock. The duck then heads back to its slot.
   const returnTimer = window.setTimeout(() => {
     duckEl.style.setProperty("--walk-x", "0px");
     duckEl.style.setProperty("--walk-y", "0px");
     duckEl.style.setProperty("--walk-scale", "1");
     duckEl.style.setProperty("--walk-bright", "1");
-    spawnOrePip();
+    shakeRockAndDeposit();
   }, WALK_MS * 0.55);
 
   window.setTimeout(() => {
@@ -381,8 +400,9 @@ function renderVeins(state: GameState): void {
     btn.addEventListener("click", () => {
       state.selectedOre = btn.dataset.ore as OreId;
       renderVeins(state);
+      // Vein select just swaps the rock's ore colors — the shake is reserved
+      // for actual mining strikes (shakeRockAndDeposit on hit arrival).
       rockEl.innerHTML = rockSvg(state.selectedOre);
-      retrigger(rockEl, "shake");
     });
   });
   veinsEl.querySelectorAll<HTMLButtonElement>(".vein[data-ore]").forEach((btn) => {
