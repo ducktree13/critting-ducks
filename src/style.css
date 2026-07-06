@@ -134,7 +134,9 @@ main.world {
   position: relative;
   display: grid;
   height: calc(100vh - 56px);
-  grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.3fr) minmax(260px, 1fr);
+  /* W4: the grove (tree + pond) is the focal point of the whole game — it
+     gets a decisively wider center column than the mine/arena flanks. */
+  grid-template-columns: minmax(260px, 1fr) minmax(430px, 1.7fr) minmax(260px, 1fr);
   grid-template-rows: 1fr;
   grid-template-areas:
     "mine grove arena";

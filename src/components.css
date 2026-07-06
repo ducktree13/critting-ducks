@@ -1339,24 +1339,60 @@ body.quackening-active .area-chip {
   cursor: pointer;
 }
 
+/* W4 swimming: the seat DRIFTS slowly left-right across its patch of water,
+   turning (scaleX flip) to face its heading — duck art faces LEFT at rest, so
+   leftward travel is scaleX(1) and rightward is scaleX(-1). The inner
+   .pond-swimmer bobs on its own timer (set inline per seat). */
 .pond-seat.occupied {
-  animation: pond-swim-sway 3.6s ease-in-out infinite;
+  animation: pond-drift 16s ease-in-out infinite;
 }
 
-@keyframes pond-swim-sway {
-  0%, 100% { transform: translate(-50%, -50%) translateY(0) rotate(-2.5deg); }
-  50% { transform: translate(-50%, -50%) translateY(-4px) rotate(2.5deg); }
+@keyframes pond-drift {
+  0%   { transform: translate(-50%, -50%) translateX(16px) scaleX(1); }
+  48%  { transform: translate(-50%, -50%) translateX(-16px) scaleX(1); }
+  52%  { transform: translate(-50%, -50%) translateX(-16px) scaleX(-1); }
+  98%  { transform: translate(-50%, -50%) translateX(16px) scaleX(-1); }
+  100% { transform: translate(-50%, -50%) translateX(16px) scaleX(1); }
 }
 
-.pond-seat-ripple {
+/* The duck sits IN the water: its lower body is clipped at the waterline. */
+.pond-swimmer {
+  display: block;
+  line-height: 0;
+  clip-path: inset(0 0 16% 0);
+  animation: pond-bob 3.4s ease-in-out infinite;
+}
+
+@keyframes pond-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-2.5px) rotate(2deg); }
+}
+
+/* Wake at the waterline (replaces the old under-duck ripple puddle). */
+.pond-wake {
   position: absolute;
-  bottom: -4px;
+  bottom: 5px;
   left: 50%;
-  width: 34px;
-  height: 10px;
+  width: 42px;
+  height: 9px;
   transform: translateX(-50%);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--scene-detail) 30%, transparent);
+  background: color-mix(in srgb, var(--scene-detail) 34%, transparent);
+  border-bottom: 1.5px solid color-mix(in srgb, var(--scene-detail) 55%, transparent);
+}
+
+/* Slow expanding ripple rings on the open water (pondSvg). transform-box makes
+   scale() grow each ellipse about its own centre. */
+.pond-ring-anim {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pond-ring-expand 6.5s ease-out infinite;
+}
+
+@keyframes pond-ring-expand {
+  0% { transform: scale(0.35); opacity: 0.55; }
+  70% { opacity: 0.18; }
+  100% { transform: scale(1.25); opacity: 0; }
 }
 
 .pond-seat.empty {
@@ -1493,10 +1529,17 @@ body.quackening-active .area-chip {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pond-seat.occupied {
-    animation: none;
-  }
+  .pond-seat.occupied,
+  .pond-swimmer,
+  .pond-ring-anim,
+  .pond-svg .twinkle,
   .pond-ripple {
     animation: none;
   }
+}
+
+/* Water glints reuse the shared cd-twinkle keyframe (scoped per scene like
+   .mine-veins .twinkle). */
+.pond-svg .twinkle {
+  animation: cd-twinkle 3.4s ease-in-out infinite;
 }

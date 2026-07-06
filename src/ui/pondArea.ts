@@ -92,16 +92,39 @@ function pondSvg(showStump: boolean): string {
     : "";
   return `
     <svg class="pond-svg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+      <defs>
+        <!-- Water shades from a lighter sunlit rim into deeper center water
+             (W4: "the water needs to look better" — a flat fill read as paint). -->
+        <radialGradient id="pond-water-grad" cx="50%" cy="42%" r="72%">
+          <stop offset="0%" stop-color="var(--pond-water-deep)"/>
+          <stop offset="55%" stop-color="var(--pond-water)"/>
+          <stop offset="100%" stop-color="color-mix(in srgb, var(--sky-bottom) 28%, var(--pond-water))"/>
+        </radialGradient>
+      </defs>
+
       <!-- Wide shallow water ellipse hugging the bottom of the scene. -->
       <ellipse class="pond-ring" cx="200" cy="130" rx="196" ry="66" fill="var(--surface-border)"/>
       <ellipse class="pond-bank" cx="200" cy="128" rx="184" ry="59"
         fill="color-mix(in srgb, var(--surface-border) 30%, var(--ground))"/>
-      <ellipse class="pond-water" cx="200" cy="126" rx="170" ry="52" fill="var(--pond-water)"/>
-      <ellipse class="pond-water-deep" cx="212" cy="134" rx="120" ry="30" fill="var(--pond-water-deep)"/>
+      <ellipse class="pond-water" cx="200" cy="126" rx="170" ry="52" fill="url(#pond-water-grad)"/>
+
+      <!-- Soft canopy reflection cast by the island's tree onto the water. -->
+      <ellipse class="pond-reflection" cx="200" cy="152" rx="86" ry="16"
+        fill="var(--foliage-deep)" opacity="0.18"/>
+
+      <!-- Slow expanding ripple rings (transform-only; see components.css). -->
+      <ellipse class="pond-ring-anim" cx="120" cy="140" rx="26" ry="8" fill="none"
+        stroke="var(--scene-detail)" stroke-width="1.6"/>
+      <ellipse class="pond-ring-anim" cx="286" cy="132" rx="22" ry="7" fill="none"
+        stroke="var(--scene-detail)" stroke-width="1.6" style="animation-delay:-2.4s"/>
+      <ellipse class="pond-ring-anim" cx="196" cy="164" rx="24" ry="7" fill="none"
+        stroke="var(--scene-detail)" stroke-width="1.6" style="animation-delay:-4.6s"/>
 
       <path class="pond-ripple" d="M 54 118 Q 96 110 138 118" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.35"/>
       <path class="pond-ripple" d="M 262 120 Q 310 112 356 120" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.35"/>
-      <path class="pond-ripple" d="M 120 150 Q 175 140 230 150" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.3"/>
+      <!-- Sun glints on the water -->
+      <path class="pond-glint twinkle" d="M 92 138 l 14 0 M 300 146 l 11 0" stroke="var(--scene-detail)" stroke-width="2.2" stroke-linecap="round" opacity="0.5"/>
+      <path class="pond-glint twinkle" style="animation-delay:1.6s" d="M 158 156 l 12 0 M 252 158 l 9 0" stroke="var(--scene-detail)" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
 
       <g class="pond-lilies">
         <path class="lily" d="M 70 128 a 15 9 0 1 0 0.1 0 M 70 128 L 84 122" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
@@ -141,10 +164,16 @@ function slotHtml(state: GameState, i: number): string {
   const style = `left:${seat.left};top:${seat.top};`;
   if (defId) {
     const ascension = state.ducks.find((d) => d.defId === defId)?.ascension ?? 0;
+    // Swimming presentation (W4): the duck's lower body is clipped at a
+    // waterline so it sits IN the water rather than floating above it, with a
+    // wake ellipse at the waterline. The seat drifts horizontally (pond-drift,
+    // flipping to face its heading); the inner swimmer bobs independently.
     return `
       <div class="pond-seat occupied" data-slot="${i}" data-duck="${defId}" style="${style}">
-        <span class="pond-seat-ripple"></span>
-        ${duckSvg(defId, 44, { ascension, ringed: false, equipment: equippedItemsFor(state, defId) })}
+        <span class="pond-wake"></span>
+        <span class="pond-swimmer">
+          ${duckSvg(defId, 44, { ascension, ringed: false, equipment: equippedItemsFor(state, defId) })}
+        </span>
       </div>`;
   }
   return `
@@ -366,9 +395,15 @@ function rebuildRoster(state: GameState): void {
   slotsEl.innerHTML = html.join("");
 
   slotsEl.querySelectorAll<HTMLElement>(".pond-seat").forEach((slot, idx) => {
-    // Stagger the swim-sway animation per seat so ducks don't move in lockstep.
-    slot.style.animationDuration = `${3.2 + (idx % 3) * 0.6}s`;
-    slot.style.animationDelay = `${(idx % 4) * -0.4}s`;
+    // Stagger per seat so ducks don't move in lockstep: the seat's slow
+    // drift-and-turn swim (long, varied) and the inner bob (short, varied).
+    slot.style.animationDuration = `${14 + (idx % 5) * 2.4}s`;
+    slot.style.animationDelay = `${(idx % 5) * -3.7}s`;
+    const swimmer = slot.querySelector<HTMLElement>(".pond-swimmer");
+    if (swimmer) {
+      swimmer.style.animationDuration = `${3 + (idx % 3) * 0.7}s`;
+      swimmer.style.animationDelay = `${(idx % 4) * -0.9}s`;
+    }
     slot.addEventListener("click", () => openRosterPicker(state, "pond", Number(slot.dataset.slot)));
     const defId = slot.dataset.duck;
     if (defId) {
