@@ -834,9 +834,11 @@ body.quackening-active main.world.streak-shake {
   filter: saturate(1.06);
 }
 
-/* ---- Mine hillside scene (Phase H): timber cave mouth + rail + lantern +
-   ore sparkles on the near face of the backdrop's left hillside. Sky is
-   left unpainted in the SVG so this sits seamlessly on #world-backdrop. ---- */
+/* ---- Mine CAVE INTERIOR (Phase V3): dark rock-wall vignette framing a bright
+   exit opening, cave floor, rail out, wall ore veins, and static interior
+   lanterns. The lanterns' warm glow brightens at night to keep the interior
+   legible; the exit's sky uses the (dark-at-night) sky tokens automatically.
+   No lantern flicker/bob motion (banned per user feedback). ---- */
 
 .mine-lantern-glow {
   transition: opacity 300ms var(--ease-out), r 300ms var(--ease-out);
@@ -844,14 +846,19 @@ body.quackening-active main.world.streak-shake {
 
 [data-mode="night"] .mine-scene .mine-lantern-glow {
   opacity: 0.55;
-  r: 28;
+  r: 30;
 }
 
 [data-mode="night"] .mine-scene .mine-lantern-light {
   fill: var(--gold);
 }
 
-.mine-sparkles .twinkle {
+/* At night the exit light shaft is weaker (dim outside), so fade it. */
+[data-mode="night"] .mine-scene .mine-lightshaft {
+  opacity: 0.05;
+}
+
+.mine-veins .twinkle {
   animation: cd-twinkle 3.4s ease-in-out infinite;
 }
 

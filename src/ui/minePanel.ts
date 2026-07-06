@@ -49,91 +49,140 @@ let goldTargetEl: HTMLElement | null = null;
 let lastRosterKey = "";
 let lastOreCountersKey = "";
 
-// Mine hillside backdrop (Phase H + R4a, PLAN2.md world redesign): a static
-// SVG scene sitting behind the rock/vein/duck-row content via a negative
-// z-index. The container (.mine-scene) is tall (~373x744 in the world
-// layout), so the viewBox is authored TALL (400x780) to match; earlier the
-// 400x260 wide viewBox scaled up under `slice` and cropped the whole
-// composition off-frame. Reads as the near face of the backdrop's left
-// hillside — no sky paint of its own (transparent above the hill shapes) so
-// it sits seamlessly over #world-backdrop. All KEY content (cave mouth,
-// timber, rail, lantern) sits within a safe central column (~x=60..340) so
-// the width `slice` crops (at 1100-1600px) only ever trim empty margins.
-// Top→bottom: hill crest + strata, a large timber-framed cave mouth in the
-// upper-middle, an S-curved mine-cart rail down to a ground ledge, a lantern
-// beside the mouth (brightens at night), gold ore sparkles, scatter pebbles.
+// Mine CAVE INTERIOR (Phase V3, PLAN2.md world redesign): a static SVG scene
+// sitting behind the rock/vein/duck-row content via a negative z-index. The
+// camera is now INSIDE the cave looking OUT — dark rock walls wrap the top and
+// both sides as a thick irregular vignette frame, the bottom third is the cave
+// FLOOR, and a bright arched EXIT opening in the upper-middle shows the outside
+// (sky + distant hill) with a soft light shaft spilling onto the floor. A
+// mine-cart rail runs from the foreground floor up and out through the exit
+// (perspective-narrowing). Interior detail: ore veins glinting in the side
+// walls, two static hanging lanterns (warm glow, brightens at night — NO
+// motion), wooden support beams, scattered pebbles.
+//
+// The container (.mine-scene) is tall (~373x744 in the world layout), so the
+// viewBox is authored TALL (400x780). All KEY content (exit, rail, veins,
+// lanterns) sits within a safe central column (~x=60..340) so the width
+// `slice` crop (at 1100-1600px) only ever trims the outer wall margins.
 function caveSceneSvg(): string {
   return `<svg viewBox="0 0 400 780" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <defs>
-      <radialGradient id="cave-mouth" cx="50%" cy="30%" r="80%">
-        <stop offset="0%" stop-color="#000" stop-opacity="0.7"/>
-        <stop offset="100%" stop-color="#000" stop-opacity="0"/>
-      </radialGradient>
+      <linearGradient id="cave-exit-sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--sky-top)"/>
+        <stop offset="70%" stop-color="var(--sky-bottom)"/>
+        <stop offset="100%" stop-color="color-mix(in srgb, var(--ground) 70%, var(--sky-bottom))"/>
+      </linearGradient>
     </defs>
 
-    <!-- Hill mass across the top third: near face of the backdrop's left
-         hillside, with a couple of strata bands. -->
-    <path class="mine-hill" d="M0 780 L0 150 Q120 40 200 34 Q280 40 400 150 L400 780 Z"
-      fill="color-mix(in srgb, var(--surface-border) 40%, var(--ground))"/>
-    <path class="mine-strata" d="M0 190 Q100 150 200 160 Q300 150 400 190 L400 208 Q300 168 200 178 Q100 168 0 208 Z"
-      fill="color-mix(in srgb, var(--surface-border) 30%, var(--ground))" opacity="0.6"/>
-    <path class="mine-strata" d="M0 250 Q100 214 200 222 Q300 214 400 250 L400 266 Q300 230 200 238 Q100 230 0 266 Z"
-      fill="color-mix(in srgb, var(--surface-border) 24%, var(--ground))" opacity="0.55"/>
+    <!-- Outside seen through the exit: sky gradient + a hint of distant hill.
+         Drawn first so the wall frame overlaps its irregular edges. Sits behind
+         the exit opening (~150-180 wide, arched). -->
+    <g class="mine-exit">
+      <path d="M118 292 Q118 120 200 108 Q282 120 282 292 Z" fill="url(#cave-exit-sky)"/>
+      <path d="M118 292 Q160 260 200 262 Q240 260 282 292 L282 292 Z"
+        fill="color-mix(in srgb, var(--ground) 78%, var(--sky-bottom))" opacity="0.85"/>
+      <path d="M132 288 Q168 268 200 270 Q232 268 268 288 Z"
+        fill="color-mix(in srgb, var(--surface-border) 30%, var(--ground))" opacity="0.55"/>
+    </g>
 
-    <!-- Mine-cart rail: gentle S-curve from the cave mouth down to the ground
-         ledge in the bottom third. Two rails + sleepers. -->
+    <!-- Light shaft: translucent light spilling from the exit down onto the
+         cave floor, widening as it descends into the standing area. -->
+    <polygon class="mine-lightshaft" points="140,300 260,300 320,660 80,660"
+      fill="var(--scene-detail)" opacity="0.1"/>
+
+    <!-- Cave-wall frame: heavy-ink dark rock wrapping the TOP and BOTH SIDES as
+         a thick irregular vignette. Jagged inner edges hug the exit opening. -->
+    <path class="mine-wall" fill="color-mix(in srgb, var(--surface-border) 80%, var(--ground))"
+      d="M0 0 L400 0 L400 780 L332 780
+         L332 300 Q332 250 300 210 Q300 300 282 292
+         Q282 120 200 108 Q118 120 118 292
+         Q100 300 100 210 Q68 250 68 300 L68 780 L0 780 Z"/>
+    <!-- Softer inner rim so the wall edge doesn't read as a flat cutout -->
+    <path class="mine-wall-rim" fill="color-mix(in srgb, var(--surface-border) 62%, var(--ground))" opacity="0.7"
+      d="M100 300 Q100 132 200 120 Q300 132 300 300 L300 360
+         Q300 316 200 306 Q100 316 100 360 Z"/>
+
+    <!-- Strata cracks + embedded stones in the side walls -->
+    <g class="mine-strata" stroke="color-mix(in srgb, var(--surface-border) 92%, var(--ground))" stroke-width="2.5" fill="none" opacity="0.55" stroke-linecap="round">
+      <path d="M18 120 Q40 150 30 200"/>
+      <path d="M40 320 Q22 380 44 440"/>
+      <path d="M366 140 Q346 200 372 260"/>
+      <path d="M356 400 Q378 470 352 540"/>
+    </g>
+    <g class="mine-stones" fill="color-mix(in srgb, var(--surface-border) 92%, var(--ground))" opacity="0.6">
+      <ellipse cx="26" cy="500" rx="16" ry="11"/>
+      <ellipse cx="372" cy="330" rx="14" ry="10"/>
+      <ellipse cx="20" cy="640" rx="18" ry="12"/>
+    </g>
+
+    <!-- Cave FLOOR: bottom third, lighter rock than the walls so ducks read as
+         standing on it. -->
+    <path class="mine-floor" d="M0 620 Q200 592 400 620 L400 780 L0 780 Z"
+      fill="color-mix(in srgb, var(--surface-border) 60%, var(--ground))"/>
+    <path class="mine-floor-lit" d="M96 640 Q200 622 304 640 L332 780 L64 780 Z"
+      fill="color-mix(in srgb, var(--scene-detail) 14%, color-mix(in srgb, var(--surface-border) 55%, var(--ground)))" opacity="0.7"/>
+
+    <!-- Mine-cart rail: runs from the foreground floor up and OUT through the
+         exit, perspective-narrowing toward the opening. Two rails + sleepers. -->
     <g class="mine-rail">
-      <path d="M175 300 C150 420 250 500 220 640" fill="none" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round"/>
-      <path d="M225 300 C200 420 300 500 270 640" fill="none" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round"/>
-      <line x1="168" y1="330" x2="222" y2="330" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
-      <line x1="156" y1="380" x2="212" y2="380" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
-      <line x1="158" y1="440" x2="222" y2="440" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
-      <line x1="180" y1="500" x2="252" y2="500" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
-      <line x1="208" y1="560" x2="278" y2="560" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
-      <line x1="222" y1="620" x2="288" y2="620" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+      <path d="M150 760 C168 560 182 400 188 300" fill="none" stroke="var(--surface-border)" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M262 760 C244 560 226 400 212 300" fill="none" stroke="var(--surface-border)" stroke-width="4.5" stroke-linecap="round"/>
+      <line x1="146" y1="740" x2="266" y2="740" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+      <line x1="152" y1="660" x2="260" y2="660" stroke="var(--surface-border)" stroke-width="5.5" stroke-linecap="round" opacity="0.82"/>
+      <line x1="160" y1="560" x2="252" y2="560" stroke="var(--surface-border)" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+      <line x1="168" y1="460" x2="244" y2="460" stroke="var(--surface-border)" stroke-width="4.5" stroke-linecap="round" opacity="0.78"/>
+      <line x1="176" y1="380" x2="236" y2="380" stroke="var(--surface-border)" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
+      <line x1="184" y1="322" x2="228" y2="322" stroke="var(--surface-border)" stroke-width="3.5" stroke-linecap="round" opacity="0.72"/>
     </g>
 
-    <!-- Ground ledge in the bottom third the ducks stand on -->
-    <path class="mine-ledge" d="M0 640 Q200 616 400 640 L400 780 L0 780 Z"
-      fill="color-mix(in srgb, var(--surface-border) 50%, var(--ground))" opacity="0.55"/>
-
-    <!-- Timber posts + lintel framing a LARGE cave mouth in the upper-middle -->
+    <!-- Wooden support beams (posts + lintel) bracing the passage to the exit -->
     <g class="mine-timber">
-      <rect x="98" y="150" width="18" height="150" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
-      <rect x="284" y="150" width="18" height="150" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
-      <rect x="88" y="134" width="224" height="22" rx="5" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
+      <rect x="96" y="300" width="16" height="320" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
+      <rect x="288" y="300" width="16" height="320" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
+      <rect x="90" y="300" width="220" height="18" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="2.5"/>
     </g>
 
-    <!-- Cave mouth: dark arched opening (~200 wide) with depth gradient -->
-    <path class="mine-cave-mouth" d="M108 300 Q108 168 200 158 Q292 168 292 300 Z"
-      fill="color-mix(in srgb, var(--surface-border) 78%, var(--ground))"/>
-    <ellipse cx="200" cy="238" rx="92" ry="78" fill="url(#cave-mouth)"/>
+    <!-- Ore veins glinting in the side walls: clusters of small crystals. The
+         left cluster is the deep vein the ducks walk TO on hits (see
+         .mine-cave-anchor). -->
+    <g class="mine-veins">
+      <!-- Left wall vein (walk target) -->
+      <path class="twinkle" style="animation-delay:0.3s" d="M46 396 l4.5 -9 l4.5 9 l-4.5 9 z" fill="var(--gold)"/>
+      <path d="M60 384 l3.6 -7 l3.6 7 l-3.6 7 z" fill="var(--gold)"/>
+      <path class="twinkle" style="animation-delay:1.4s" d="M52 420 l4 -8 l4 8 l-4 8 z" fill="#7ad0e0"/>
+      <path d="M38 430 l3.2 -6 l3.2 6 l-3.2 6 z" fill="var(--gold)"/>
+      <path d="M66 412 l3 -6 l3 6 l-3 6 z" fill="#c77b4a"/>
+      <!-- Right wall vein -->
+      <path class="twinkle" style="animation-delay:2.1s" d="M350 300 l4.5 -9 l4.5 9 l-4.5 9 z" fill="var(--gold)"/>
+      <path d="M338 320 l3.6 -7 l3.6 7 l-3.6 7 z" fill="#8a7ae0"/>
+      <path d="M360 330 l3.2 -6 l3.2 6 l-3.2 6 z" fill="var(--gold)"/>
+      <!-- Back-wall glint near the exit rim -->
+      <path d="M150 306 l3 -6 l3 6 l-3 6 z" fill="var(--gold)"/>
+      <path d="M244 306 l3 -6 l3 6 l-3 6 z" fill="var(--gold)"/>
+    </g>
 
-    <!-- Hanging lantern beside the mouth -->
+    <!-- Two static hanging lanterns INSIDE the cave (warm glow, brightens at
+         night, NO motion). -->
     <g class="mine-lantern">
-      <circle class="mine-lantern-glow" cx="316" cy="212" r="24" fill="var(--scene-detail)" opacity="0.18"/>
-      <line x1="316" y1="150" x2="316" y2="188" stroke="var(--surface-border)" stroke-width="2.5"/>
-      <rect x="306" y="188" width="20" height="26" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="1.8"/>
-      <circle class="mine-lantern-light" cx="316" cy="201" r="5.5" fill="var(--scene-detail)"/>
+      <circle class="mine-lantern-glow" cx="128" cy="238" r="24" fill="var(--scene-detail)" opacity="0.18"/>
+      <line x1="128" y1="184" x2="128" y2="216" stroke="var(--surface-border)" stroke-width="2.5"/>
+      <rect x="118" y="216" width="20" height="26" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="1.8"/>
+      <circle class="mine-lantern-light" cx="128" cy="229" r="5.5" fill="var(--scene-detail)"/>
+    </g>
+    <g class="mine-lantern">
+      <circle class="mine-lantern-glow" cx="288" cy="250" r="22" fill="var(--scene-detail)" opacity="0.18"/>
+      <line x1="288" y1="200" x2="288" y2="230" stroke="var(--surface-border)" stroke-width="2.5"/>
+      <rect x="279" y="230" width="18" height="24" rx="4" fill="var(--bark-light)" stroke="var(--surface-border)" stroke-width="1.8"/>
+      <circle class="mine-lantern-light" cx="288" cy="242" r="5" fill="var(--scene-detail)"/>
     </g>
 
-    <!-- Gold ore sparkles scattered on the hill face -->
-    <g class="mine-sparkles">
-      <path class="twinkle" style="animation-delay:0.4s" d="M70 210 l4.5 -9 l4.5 9 l-4.5 9 z" fill="var(--gold)"/>
-      <path d="M92 268 l3.6 -7 l3.6 7 l-3.6 7 z" fill="var(--gold)"/>
-      <path class="twinkle" style="animation-delay:1.5s" d="M330 206 l4.5 -9 l4.5 9 l-4.5 9 z" fill="var(--gold)"/>
-      <path d="M338 272 l3.2 -6 l3.2 6 l-3.2 6 z" fill="var(--gold)"/>
-      <path class="twinkle" style="animation-delay:2.3s" d="M74 340 l3.6 -7 l3.6 7 l-3.6 7 z" fill="var(--gold)"/>
-      <path d="M320 344 l3.6 -7 l3.6 7 l-3.6 7 z" fill="var(--gold)"/>
-    </g>
-
-    <!-- Scatter pebbles for texture -->
-    <g class="mine-pebbles" fill="color-mix(in srgb, var(--surface-border) 55%, var(--ground))" opacity="0.7">
-      <ellipse cx="86" cy="668" rx="14" ry="8"/>
-      <ellipse cx="330" cy="676" rx="16" ry="9"/>
-      <ellipse cx="120" cy="712" rx="10" ry="6"/>
-      <ellipse cx="300" cy="720" rx="12" ry="7"/>
-      <circle cx="200" cy="700" r="6"/>
+    <!-- Scatter pebbles on the floor for texture -->
+    <g class="mine-pebbles" fill="color-mix(in srgb, var(--surface-border) 70%, var(--ground))" opacity="0.7">
+      <ellipse cx="96" cy="690" rx="14" ry="8"/>
+      <ellipse cx="316" cy="700" rx="16" ry="9"/>
+      <ellipse cx="140" cy="730" rx="10" ry="6"/>
+      <ellipse cx="290" cy="742" rx="12" ry="7"/>
+      <circle cx="208" cy="716" r="6"/>
     </g>
   </svg>`;
 }
@@ -199,7 +248,7 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
 const MAX_PIPS = 16;
 const livePips: HTMLElement[] = [];
 
-// Screen-space center of the cave mouth (top of the .mine-cave-anchor's rect,
+// Screen-space center of the deep ore vein (the .mine-cave-anchor's rect,
 // which the JS-driven walk aims for and the ore pip launches from).
 function caveMouthPoint(): { x: number; y: number } {
   const r = caveAnchorEl.getBoundingClientRect();

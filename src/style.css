@@ -278,11 +278,11 @@ main.world {
 
 /* ---- Mine panel ---- */
 
-/* R4a: the mine area reads as "ducks at a cave mouth on a hillside". The
+/* V3: the mine area reads as "ducks mining INSIDE a cave, looking out". The
    scene fills the whole body; interactive content is positioned ON the scene
    rather than stacked as opaque wells over an invisible backdrop. Percentages
-   track the tall (viewBox 0 0 400 780) composition: cave mouth ~30% down,
-   ground ledge ~84% down. */
+   track the tall (viewBox 0 0 400 780) interior composition: bright exit
+   opening ~14-37% down, cave floor from ~80% down, left-wall ore vein ~52%. */
 .mine-body {
   color: var(--fg);
   position: relative;
@@ -301,24 +301,26 @@ main.world {
   height: 100%;
 }
 
-/* Invisible probe at the cave-mouth center — JS measures its rect to aim the
-   walk-into-cave animation and launch the ore pip. */
+/* Invisible probe at the deep LEFT-WALL ore vein — JS measures its rect to aim
+   the walk-into-cave animation (duck steps to the vein, mines, returns) and
+   launch the ore pip. Matches the left vein cluster in caveSceneSvg (~x=52,
+   y=408 of the 400x780 viewBox). */
 .mine-cave-anchor {
   position: absolute;
-  left: 50%;
-  top: 30%;
+  left: 13%;
+  top: 52%;
   width: 1px;
   height: 1px;
   pointer-events: none;
 }
 
-/* Big ore rock embedded near the hill base beside the cave mouth. Centering
-   lives on the wrapper; the SVG inside is scaled down and carries the shake so
-   the shake transform doesn't fight the positioning translate. */
+/* Big ore boulder sitting on the cave floor near the ducks. Centering lives on
+   the wrapper; the SVG inside is scaled down and carries the shake so the shake
+   transform doesn't fight the positioning translate. */
 .mine-rock {
   position: absolute;
-  left: 62%;
-  top: 46%;
+  left: 66%;
+  top: 72%;
   transform: translate(-50%, -50%);
   cursor: pointer;
   z-index: 1;
@@ -340,12 +342,13 @@ main.world {
   75% { transform: translate(3px, -1px) rotate(1deg); }
 }
 
-/* R4a: ducks stand on the ground ledge (bottom third of the tall scene). */
+/* V3: ducks stand on the cave FLOOR inside, in the pool of the exit light
+   shaft (bottom third of the tall interior scene). */
 .mine-body .duck-row {
   position: absolute;
   left: 0;
   right: 0;
-  top: 74%;
+  top: 78%;
   justify-content: center;
   z-index: 2;
 }
