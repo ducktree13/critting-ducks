@@ -64,8 +64,10 @@ app.innerHTML = `
   <main class="world">
     <div class="world-backdrop" id="world-backdrop" aria-hidden="true"></div>
     <section class="world-area area-mine"  id="mine-panel"></section>
-    <section class="world-area area-tree"  id="tree-panel"></section>
-    <section class="world-area area-pond"  id="pond-area"></section>
+    <section class="world-area area-grove" id="grove-area">
+      <div id="tree-panel"></div>
+      <div id="pond-area"></div>
+    </section>
     <section class="world-area area-arena" id="arena-panel"></section>
   </main>
 `;

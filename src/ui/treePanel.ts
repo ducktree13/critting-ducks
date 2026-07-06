@@ -640,8 +640,9 @@ function wireTreeSvg(svg: SVGSVGElement): void {
   });
 }
 
-// ---- Wheel zoom + drag pan on focused tree SVGs (act1 + act2 focus, NOT the
-// 2x2 overview). The base viewBox is 0 0 VB_W VB_H; zoom shrinks it (min 1x =
+// ---- Wheel zoom + drag pan on the FRONT tree SVG only (act1, or the selected
+// act2 tree). The background forest trees are non-interactive and never wired
+// for zoom. The base viewBox is 0 0 VB_W VB_H; zoom shrinks it (min 1x =
 // full, max ZOOM_MAX). Pan clamps so the content can't leave the viewport.
 // State is module-local per treeId and re-applied after event-driven rebuilds
 // (innerHTML is replaced, so the <svg> element is fresh each time). Node clicks
@@ -775,22 +776,31 @@ function wireTreeZoom(svg: SVGSVGElement, treeId: TreeId): void {
 
 function resetTreeZoom(treeId: TreeId): void {
   zoomState[treeId] = defaultViewBox();
-  const svg = bodyEl.querySelector<SVGSVGElement>(".tree-svg");
+  // Target the FRONT (interactive) tree only — in chapter 2 the background
+  // forest trees render first in the DOM, so a bare ".tree-svg" query would hit
+  // a non-interactive back tree instead of the zoomable front one.
+  const svg = bodyEl.querySelector<SVGSVGElement>(".tree-front");
   if (svg) applyViewBox(svg, zoomState[treeId]!);
 }
 
-// Overview (all four act-2 trees in a 2x2 grid) vs. focus (one tree, with
-// prev/next switcher). Toggled by the Overview/Focus button in the switcher
-// row; only meaningful in chapter 2. Replaces the old panels-minimized coupling.
-let overviewOn = false;
-
-function isOverviewMode(state: GameState): boolean {
-  return state.chapter === 2 && overviewOn;
-}
+// Phase V2: the grove is a forest on an island. Chapter 1 shows a single Act-1
+// tree; chapter 2 shows all four Act-2 trees — the selected one full-size and
+// interactive in front, the other three at reduced fit behind/beside it,
+// non-interactive and desaturated, so the focused tree reads clearly. The
+// ◀▶ switcher rotates which tree is in front (via state.settings.act2Tree).
 
 function layoutKey(state: GameState): string {
-  return `${state.chapter}|${overviewOn}|${state.settings.act2Tree}`;
+  return `${state.chapter}|${state.settings.act2Tree}`;
 }
+
+// Where each BACKGROUND (non-front) tree sits: horizontal offset in canvas %,
+// vertical lift (depth), and render scale. Two flank the front tree; one sits
+// behind and slightly higher. Assigned in rotation order after the front tree.
+const FOREST_SLOTS: { x: number; y: number; scale: number }[] = [
+  { x: -34, y: 4, scale: 0.55 }, // left flank
+  { x: 34, y: 4, scale: 0.55 }, // right flank
+  { x: 0, y: -14, scale: 0.5 }, // behind, higher (depth)
+];
 
 function rebuildLayout(): void {
   const state = gameState;
@@ -806,7 +816,9 @@ function rebuildLayout(): void {
         <b>${TREE_NAMES.act1}</b>
         <button class="tree-nav" id="tree-reset" aria-label="Reset zoom" title="Reset zoom">⌂</button>
       </div>
-      <svg class="tree-svg" id="tree-svg-act1" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, "act1")}</svg>`;
+      <div class="tree-forest">
+        <svg class="tree-svg tree-front" id="tree-svg-act1" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, "act1")}</svg>
+      </div>`;
     const svg = bodyEl.querySelector<SVGSVGElement>("#tree-svg-act1")!;
     wireTreeSvg(svg);
     wireTreeZoom(svg, "act1");
@@ -814,50 +826,39 @@ function rebuildLayout(): void {
     return;
   }
 
-  if (isOverviewMode(state)) {
-    bodyEl.innerHTML = `
-      <div class="tree-switcher well">
-        <b>All Trees</b>
-        <button class="tree-nav" id="tree-overview-toggle">Focus</button>
-      </div>
-      <div class="tree-overview">
-        ${ACT2_TREE_IDS.map(
-          (id) => `
-          <div class="tree-overview-cell">
-            <small>${TREE_NAMES[id]}</small>
-            <svg class="tree-svg" data-tree="${id}" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, id)}</svg>
-          </div>`,
-        ).join("")}
-      </div>
-    `;
-    bodyEl.querySelectorAll<SVGSVGElement>("svg[data-tree]").forEach(wireTreeSvg);
-    bodyEl.querySelector("#tree-overview-toggle")!.addEventListener("click", () => toggleOverview());
-    return;
-  }
+  // Chapter 2: forest. Front tree = the selected act2Tree; the others render
+  // behind at reduced fit, non-interactive + desaturated.
+  const front = state.settings.act2Tree;
+  const others = ACT2_TREE_IDS.filter((id) => id !== front);
+  const backLayers = others
+    .map((id, i) => {
+      const slot = FOREST_SLOTS[i % FOREST_SLOTS.length];
+      const style =
+        `transform:translate(${slot.x}%, ${slot.y}%) scale(${slot.scale});` +
+        `z-index:${slot.y < 0 ? 0 : 1};`;
+      return `<svg class="tree-svg tree-back" data-tree="${id}" viewBox="0 0 400 600"
+        preserveAspectRatio="xMidYMax meet" style="${style}">${buildTreeSvg(state, id)}</svg>`;
+    })
+    .join("");
 
-  const current = state.settings.act2Tree;
   bodyEl.innerHTML = `
     <div class="tree-switcher well">
       <button class="tree-nav" id="tree-prev" aria-label="Previous tree">◀</button>
-      <b>${TREE_NAMES[current]}</b>
+      <b>${TREE_NAMES[front]}</b>
       <button class="tree-nav" id="tree-next" aria-label="Next tree">▶</button>
       <button class="tree-nav" id="tree-reset" aria-label="Reset zoom" title="Reset zoom">⌂</button>
-      <button class="tree-nav" id="tree-overview-toggle">Overview</button>
     </div>
-    <svg class="tree-svg" id="tree-svg-current" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, current)}</svg>
+    <div class="tree-forest">
+      ${backLayers}
+      <svg class="tree-svg tree-front" id="tree-svg-current" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, front)}</svg>
+    </div>
   `;
   const svg = bodyEl.querySelector<SVGSVGElement>("#tree-svg-current")!;
   wireTreeSvg(svg);
-  wireTreeZoom(svg, current);
+  wireTreeZoom(svg, front);
   bodyEl.querySelector("#tree-prev")!.addEventListener("click", () => cycleTree(-1));
   bodyEl.querySelector("#tree-next")!.addEventListener("click", () => cycleTree(1));
-  bodyEl.querySelector("#tree-reset")!.addEventListener("click", () => resetTreeZoom(current));
-  bodyEl.querySelector("#tree-overview-toggle")!.addEventListener("click", () => toggleOverview());
-}
-
-function toggleOverview(): void {
-  overviewOn = !overviewOn;
-  rebuildLayout();
+  bodyEl.querySelector("#tree-reset")!.addEventListener("click", () => resetTreeZoom(front));
 }
 
 function cycleTree(dir: 1 | -1): void {
@@ -867,9 +868,12 @@ function cycleTree(dir: 1 | -1): void {
   rebuildLayout();
 }
 
+// The felling wobble now targets the tree canvas (the grove's tree layer) since
+// #tree-panel is no longer a top-level .world-area. buildTreeSvg's forest lives
+// inside bodyEl, so the whole Act-1 tree tips as the chapter turns over.
 function playFellingAnimation(): void {
-  panel.classList.add("felling");
-  setTimeout(() => panel.classList.remove("felling"), 1200);
+  bodyEl.classList.add("felling");
+  setTimeout(() => bodyEl.classList.remove("felling"), 1200);
 }
 
 export function initTreePanel(root: HTMLElement, state: GameState): void {

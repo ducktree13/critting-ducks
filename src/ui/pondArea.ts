@@ -26,6 +26,7 @@ import { openRosterPicker } from "./rosterPicker";
 import { attachTooltip } from "./tooltip";
 
 let panel: HTMLElement;
+let sceneEl: HTMLElement;
 let slotsEl: HTMLElement;
 let bubblesEl: HTMLElement;
 let tickerEl: HTMLElement;
@@ -54,51 +55,81 @@ const FISH_SHAPES = [
 ];
 let fishCycle = 0;
 
-// Up to 5 seats arranged around the pond ellipse (percent-based, over the
-// SVG). Ellipse center ~ (50%, 58%); seats ring its edge.
+// Up to 5 seats arranged around the pond's water ring, OUTSIDE the central
+// island silhouette (percent-based over the pond scene). The pond scene is a
+// wide shallow ellipse filling its box; the island hump sits in the middle
+// (~35%..65% width, upper-water). Seats ring the open water: two front-low,
+// two mid-flanking, one back-center behind the island edge.
 const SEAT_POS: { left: string; top: string }[] = [
-  { left: "20%", top: "58%" },
-  { left: "38%", top: "78%" },
-  { left: "62%", top: "78%" },
-  { left: "80%", top: "58%" },
-  { left: "50%", top: "38%" },
+  { left: "18%", top: "62%" },
+  { left: "36%", top: "82%" },
+  { left: "64%", top: "82%" },
+  { left: "82%", top: "62%" },
+  { left: "50%", top: "40%" },
 ];
 
 function pondRosterKey(state: GameState): string {
   return state.rosters.pond.join(",") + "|" + getStats(state).pondSlots;
 }
 
-// Perspective-ellipse pond SVG: ink ring, mud bank, water fill, an offset
-// deep-water ellipse, a few ripple arcs, lily pads + reed clumps, and a
-// shore/bank transition along the top edge (Phase R3) that echoes the tree
-// area's grass-mound tones (--ground/--foliage-deep) so the two scenes read
-// as one continuous ground plane.
-function pondSvg(): string {
+// Wide shallow pond SVG (Phase V2): the tree grove sits on an island in the
+// middle of the pond. A broad ellipse hugs the bottom of the scene (ink ring,
+// bank, water, offset deep-water), ripples + reeds + lily pads ring the edges,
+// and a grassy island MOUND rises in the centre — the tree canvas is placed so
+// its own grass mound fuses with this island top. viewBox 0 0 400 200: water
+// centre ~ (200,120), island crest ~ y=78 spanning x≈120..280.
+//
+// `showStump` draws a small felled-tree stump on the island (chapter 2), a cheap
+// nod to the Act-1 tree that was felled to open the forest.
+function pondSvg(showStump: boolean): string {
+  const stump = showStump
+    ? `<g class="pond-stump">
+         <ellipse cx="150" cy="86" rx="13" ry="5" fill="var(--foliage-deep)" opacity="0.5"/>
+         <path d="M 140 84 L 141 74 Q 150 71 159 74 L 160 84 Z" fill="color-mix(in srgb, var(--surface-border) 40%, var(--ground))" stroke="var(--surface-border)" stroke-width="1.2"/>
+         <ellipse cx="150" cy="74" rx="9.5" ry="3.4" fill="color-mix(in srgb, var(--surface-border) 25%, var(--ground))" stroke="var(--surface-border)" stroke-width="1"/>
+         <ellipse cx="150" cy="74" rx="4.5" ry="1.6" fill="none" stroke="var(--surface-border)" stroke-width="0.8" opacity="0.7"/>
+       </g>`
+    : "";
   return `
-    <svg class="pond-svg" viewBox="0 0 360 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <path class="pond-shore" d="M 0 0 L 360 0 L 360 40 C 300 62 260 30 200 46 C 140 62 90 26 40 44 C 22 51 8 46 0 40 Z"/>
-      <path class="pond-shore-edge" d="M 0 40 C 40 44 90 26 140 42 C 190 58 230 34 280 42 C 310 47 340 40 360 32"/>
-      <ellipse class="pond-ring" cx="180" cy="104" rx="164" ry="86" fill="var(--surface-border)"/>
-      <ellipse class="pond-bank" cx="180" cy="102" rx="150" ry="78"
+    <svg class="pond-svg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+      <!-- Wide shallow water ellipse hugging the bottom of the scene. -->
+      <ellipse class="pond-ring" cx="200" cy="130" rx="196" ry="66" fill="var(--surface-border)"/>
+      <ellipse class="pond-bank" cx="200" cy="128" rx="184" ry="59"
         fill="color-mix(in srgb, var(--surface-border) 30%, var(--ground))"/>
-      <ellipse class="pond-water" cx="180" cy="100" rx="132" ry="66" fill="var(--pond-water)"/>
-      <ellipse class="pond-water-deep" cx="200" cy="108" rx="76" ry="38" fill="var(--pond-water-deep)"/>
+      <ellipse class="pond-water" cx="200" cy="126" rx="170" ry="52" fill="var(--pond-water)"/>
+      <ellipse class="pond-water-deep" cx="212" cy="134" rx="120" ry="30" fill="var(--pond-water-deep)"/>
 
-      <path class="pond-ripple" d="M 90 84 Q 130 74 170 84" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.35"/>
-      <path class="pond-ripple" d="M 130 120 Q 175 108 220 120" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.35"/>
-      <path class="pond-ripple" d="M 190 68 Q 225 60 258 70" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.3"/>
-
-      <g class="pond-reeds">
-        <path d="M 44 96 Q 40 70 46 46 M 50 98 Q 48 74 56 52 M 58 100 Q 58 78 66 58"
-          fill="none" stroke="var(--foliage-deep)" stroke-width="3" stroke-linecap="round"/>
-        <path d="M 292 110 Q 298 84 292 60 M 300 112 Q 308 88 302 64"
-          fill="none" stroke="var(--foliage-deep)" stroke-width="3" stroke-linecap="round"/>
-      </g>
+      <path class="pond-ripple" d="M 54 118 Q 96 110 138 118" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.35"/>
+      <path class="pond-ripple" d="M 262 120 Q 310 112 356 120" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.35"/>
+      <path class="pond-ripple" d="M 120 150 Q 175 140 230 150" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.3"/>
 
       <g class="pond-lilies">
-        <path class="lily" d="M 118 138 a 16 10 0 1 0 0.1 0 M 118 138 L 134 132" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
-        <path class="lily" d="M 232 74 a 13 8 0 1 0 0.1 0 M 232 74 L 244 70" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
-        <path class="lily" d="M 150 60 a 11 7 0 1 0 0.1 0" fill="var(--foliage-deep)" stroke="var(--surface-border)" stroke-width="1.5"/>
+        <path class="lily" d="M 70 128 a 15 9 0 1 0 0.1 0 M 70 128 L 84 122" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
+        <path class="lily" d="M 330 122 a 12 7 0 1 0 0.1 0 M 330 122 L 342 118" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
+        <path class="lily" d="M 300 148 a 10 6 0 1 0 0.1 0" fill="var(--foliage-deep)" stroke="var(--surface-border)" stroke-width="1.5"/>
+      </g>
+
+      <!-- Central grassy ISLAND mound. Its crest (~y 78) is where the tree's
+           own grass mound lands, so the two fuse into one ground plane. -->
+      <g class="pond-island">
+        <ellipse class="pond-island-shadow" cx="200" cy="150" rx="118" ry="20" fill="var(--pond-water-deep)" opacity="0.45"/>
+        <path class="pond-island-fill" d="M 92 152
+          C 96 118 128 82 200 80
+          C 272 82 304 118 308 152 Z"
+          fill="var(--ground)"/>
+        <path class="pond-island-edge" d="M 92 152 C 96 118 128 82 200 80 C 272 82 304 118 308 152"
+          fill="none" stroke="var(--foliage-deep)" stroke-width="2.5" opacity="0.6"/>
+        <!-- grass tufts along the island crest -->
+        <path class="pond-island-tuft" d="M 168 86 q -1 -8 2 -12 M 176 84 q 0 -9 3 -12 M 224 84 q 1 -9 4 -11 M 232 87 q 1 -8 3 -11"
+          fill="none" stroke="var(--foliage-deep)" stroke-width="2.4" stroke-linecap="round"/>
+      </g>
+      ${stump}
+
+      <g class="pond-reeds">
+        <path d="M 40 128 Q 36 104 42 82 M 46 130 Q 44 108 52 88 M 54 132 Q 54 112 62 94"
+          fill="none" stroke="var(--foliage-deep)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M 350 130 Q 356 106 350 84 M 358 132 Q 366 108 360 88"
+          fill="none" stroke="var(--foliage-deep)" stroke-width="3" stroke-linecap="round"/>
       </g>
     </svg>
   `;
@@ -130,14 +161,23 @@ function hashId(id: string): number {
   return (h >>> 0) % 10000;
 }
 
-// Places a bubble somewhere on the open water, inside the pond ellipse and
-// clear of the seat ring (percent-based, matching SEAT_POS's coordinate
-// space). Deterministic per bubble id.
+// Places a bubble on open water — clear of the central island (which occupies
+// ~35%..65% width in the upper water) and near the front/flanks where the water
+// is visible. Deterministic per bubble id: a bubble either lands on a flank
+// (left/right open water) or in the low front band below the island.
 function bubblePosition(id: string): { left: string; top: string } {
   const h = hashId(id);
-  const left = 32 + (h % 37); // 32%..68%
-  const top = 42 + ((h >> 4) % 28); // 42%..69%
-  return { left: `${left}%`, top: `${top}%` };
+  const lane = h % 3;
+  if (lane === 0) {
+    // left flank
+    return { left: `${10 + (h % 16)}%`, top: `${58 + ((h >> 4) % 22)}%` };
+  }
+  if (lane === 1) {
+    // right flank
+    return { left: `${74 + (h % 16)}%`, top: `${58 + ((h >> 4) % 22)}%` };
+  }
+  // low front band (below the island)
+  return { left: `${34 + (h % 34)}%`, top: `${76 + ((h >> 4) % 16)}%` };
 }
 
 function bubbleClass(bubble: PondBubble): string {
@@ -346,10 +386,9 @@ export function initPondArea(el: HTMLElement, state: GameState): void {
   panel = el;
   gameState = state;
   panel.innerHTML = `
-    <div class="area-chip">Pond</div>
     <div class="panel-body pond-body">
       <div class="pond-scene">
-        ${pondSvg()}
+        ${pondSvg(state.chapter === 2)}
         <div class="pond-ducks" id="pond-ducks"></div>
         <div class="pond-bubbles" id="pond-bubbles"></div>
       </div>
@@ -358,9 +397,16 @@ export function initPondArea(el: HTMLElement, state: GameState): void {
       </div>
     </div>
   `;
+  sceneEl = panel.querySelector<HTMLElement>(".pond-scene")!;
   slotsEl = panel.querySelector<HTMLElement>("#pond-ducks")!;
   bubblesEl = panel.querySelector<HTMLElement>("#pond-bubbles")!;
   tickerEl = panel.querySelector<HTMLElement>("#pond-ticker")!;
+
+  // Chapter 2 adds the felled-Act-1-tree stump on the island.
+  on("chapterAdvance", () => {
+    const svg = sceneEl.querySelector(".pond-svg");
+    if (svg) svg.outerHTML = pondSvg(gameState.chapter === 2);
+  });
 
   on("roster", () => rebuildRoster(gameState));
   // Gear swaps don't change pondRosterKey; rebuild seats when a duck shown in

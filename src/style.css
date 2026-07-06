@@ -135,10 +135,9 @@ main.world {
   display: grid;
   height: calc(100vh - 56px);
   grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.3fr) minmax(260px, 1fr);
-  grid-template-rows: 1fr minmax(210px, 0.42fr);
+  grid-template-rows: 1fr;
   grid-template-areas:
-    "mine tree arena"
-    "mine pond arena";
+    "mine grove arena";
 }
 
 .world-backdrop {
@@ -177,18 +176,37 @@ main.world {
 }
 
 .area-mine { grid-area: mine; }
-.area-tree { grid-area: tree; }
-.area-pond { grid-area: pond; }
+.area-grove { grid-area: grove; }
 .area-arena { grid-area: arena; }
 
-/* Phase R3: visually join the tree area's grass mound to the pond's shore —
-   drop the tree area's bottom padding and pull the pond up slightly so the
-   two ground textures meet with (near) zero gap. */
-.area-tree .panel-body {
-  padding-bottom: 0;
+/* Phase V2: the grove is a single area holding the pond scene and the tree
+   forest as stacked layers. The tree panel fills the whole grove; the pond
+   scene is pinned to the bottom band as an absolutely-positioned layer under
+   the tree. Interactive pond layers (seats/bubbles/income) live inside the
+   pond scene and stay un-zoomed while the tree SVG zooms independently. */
+.area-grove {
+  position: relative;
 }
-.area-pond {
-  margin-top: -10px;
+
+/* #tree-panel + #pond-area are layered containers filling the grove. */
+.area-grove > #tree-panel,
+.area-grove > #pond-area {
+  position: absolute;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tree forest sits above the pond water; pond seats/bubbles are children of
+   the pond scene which itself is pinned to the bottom band (see .pond-body). */
+.area-grove > #tree-panel {
+  z-index: 2;
+  pointer-events: none; /* only the tree SVG + switcher opt back in */
+}
+.area-grove > #pond-area {
+  z-index: 1;
 }
 
 .world-area .panel-body {
@@ -242,14 +260,19 @@ main.world {
   body { overflow: hidden; }
 }
 
-/* Below 1100px: vertical stack, tree first (focal area first paint). */
+/* Below 1100px: vertical stack, grove first (focal area first paint). */
 @media (max-width: 1100px) {
   body { overflow: auto; }
   main.world {
     grid-template-columns: 1fr;
     grid-template-rows: none;
-    grid-template-areas: "tree" "pond" "mine" "arena";
+    grid-template-areas: "grove" "mine" "arena";
     height: auto;
+  }
+  /* Give the stacked grove a definite height so its absolutely-positioned
+     tree/pond layers have a box to fill. */
+  .area-grove {
+    min-height: 560px;
   }
 }
 
@@ -479,14 +502,23 @@ main.world {
 
 /* ---- Skill tree ---- */
 
-.tree-body {
+/* Phase V2: the tree body fills the whole grove; the switcher pins to the top,
+   and the forest fills the rest, with each tree SVG bottom-aligned so its grass
+   mound lands on the pond island below. */
+/* (High specificity to beat .world-area .panel-body's padding.) */
+.area-grove .tree-body {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: center;
-  padding: 8px;
+  justify-content: flex-start;
+  padding: 44px 8px 0; /* top clears the area chip */
+  /* Bottom inset reserves the front-water band of the pond below the island;
+     the forest bottom-aligns to this padded box so the trees' grass mounds
+     land on the island crest (which sits just above the open front water). */
+  padding-bottom: 25%;
   gap: 6px;
+  pointer-events: none; /* only the switcher + front tree opt back in */
 }
 
 #tree-canvas {
@@ -495,24 +527,55 @@ main.world {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 0;
+}
+
+/* The forest layer: a positioning context the tree SVGs stack inside. The front
+   tree fills it; background trees are transformed into flanking/behind slots.
+   Trees bottom-align (their island mound lands on the pond island). */
+.tree-forest {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
 }
 
 .tree-svg {
-  width: 100%;
-  height: 100%;
   min-height: 0;
-  flex: 1;
 }
 
-/* Focused (zoomable) trees: grab cursor + suppress browser touch gestures so
-   wheel-zoom and drag-pan aren't hijacked by page scroll / pinch. The 2x2
-   overview cells are not zoomable and keep default behavior. */
+/* Front (interactive) tree fills the forest box. */
+.tree-front {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+}
+
+/* Background forest trees: absolutely stacked, non-interactive, desaturated +
+   darkened so the front tree reads as focused. Transform (offset + scale) is
+   set inline per slot; bottom-aligned so mounds share the island plane. */
+.tree-back {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  filter: saturate(0.55) brightness(0.82);
+  opacity: 0.9;
+}
+
+/* Front (zoomable) tree: grab cursor + suppress browser touch gestures so
+   wheel-zoom and drag-pan aren't hijacked by page scroll / pinch. Background
+   forest trees are not zoomable and keep default behavior. */
 #tree-svg-act1,
 #tree-svg-current {
   cursor: grab;
   touch-action: none;
+  pointer-events: auto;
 }
 #tree-svg-act1.panning,
 #tree-svg-current.panning {
@@ -526,6 +589,8 @@ main.world {
   gap: 12px;
   padding: 4px 0 8px;
   flex: 0 0 auto;
+  pointer-events: auto; /* .tree-body disables pointer events; the row opts back in */
+  z-index: 3;
 }
 
 .tree-nav {
@@ -539,35 +604,8 @@ main.world {
   font: inherit;
 }
 
-.tree-overview {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 6px;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-}
-
-.tree-overview-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.tree-overview-cell small {
-  color: var(--muted);
-  flex: 0 0 auto;
-}
-
-.tree-overview-cell .tree-svg {
-  flex: 1;
-  min-height: 0;
-}
-
-.world-area.felling {
+#tree-canvas.felling {
+  transform-origin: 50% 92%; /* pivot at the trunk base on the island */
   animation: tree-felling 1.2s ease-in-out;
 }
 
