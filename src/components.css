@@ -881,6 +881,16 @@ body.quackening-active main.world.streak-shake {
   opacity: 0.3;
 }
 
+/* At night the enclosed bowl interior warms slightly under the torchlight so
+   the sand floor stays legible against the dark sky (cheap, scene-layer only). */
+.arena-sand {
+  transition: fill 300ms var(--ease-out);
+}
+
+[data-mode="night"] .arena-scene .arena-sand {
+  fill: color-mix(in srgb, var(--gold) 30%, var(--ground));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mine-sparkles .twinkle {
     animation: none !important;

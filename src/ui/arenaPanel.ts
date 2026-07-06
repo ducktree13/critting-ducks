@@ -20,67 +20,151 @@ const ENEMY_COLORS: Record<string, string> = {
   pondlord: "#8a5ad9",
 };
 
-// Arena colosseum backdrop (Phase H + R4b, PLAN2.md world redesign): a static
-// SVG scene sitting behind the battlefield content via a negative z-index.
-// Reads as a colosseum — no sky paint of its own (transparent above the stand
-// shapes) so it sits seamlessly over #world-backdrop. The container
-// (.arena-scene) is TALL (~373x744 in the world layout), so the viewBox is
-// authored TALL (400x780) to match; earlier the 400x260 wide viewBox scaled
-// up under `slice` and cropped the whole composition off-frame. All KEY
-// content (stands, pennants, torches, floor) sits within a safe central
-// column (~x=60..340) so the width `slice` crops only ever trim empty margins.
-// Top→bottom: two tiered crenellated stone stands with banner pennants across
-// the top third, always-cheering crowd dots; a big sandy floor ellipse filling
-// the bottom half (this IS the battlefield ground the ducks/enemies stand on);
-// torches flank the floor (night-only flame/glow).
+// Arena COLOSSEUM backdrop (Phase V4, PLAN2.md world redesign): a static SVG
+// scene the player looks INTO — an enclosed elliptical amphitheater bowl in a
+// gentle top-down-tilted perspective, not bleachers behind a backdrop. Built
+// as concentric ellipse bands from the far arcade inward:
+//   1. FAR ARCADE (upper third): stacked curved stone tiers following elliptical
+//      arcs across the top, the top tier punched with repeating arch openings
+//      (the signature colosseum silhouette) + crenellated rim + accent pennants.
+//   2. CROWD dots seated along the tier curves (crowd-cheer animation kept).
+//   3. BARRIER WALL: an ink-dark elliptical band — the inner rim of the bowl —
+//      separating stands from sand, with a dark arched ENTRANCE GATE on the RIGHT
+//      (where new-wave enemies walk in) and wall-mounted torches (night glow).
+//   4. SAND FLOOR: the enclosed oval filling the middle/bottom (the battlefield
+//      ground the ducks/enemies stand on), with rake lines + a centre emblem.
+//   5. NEAR SIDE: low dark wall arcs cutting across the bottom corners — the
+//      bowl continuing behind the camera — so the fight sits INSIDE the ring.
+// No sky paint of its own (transparent above the bowl) so it sits over
+// #world-backdrop. Container (.arena-scene) is TALL, so viewBox is TALL
+// (400x780); all KEY content sits within x≈60..340 so the width `slice` only
+// trims empty margins. Fills are all token-mixes for day/night legibility.
+//
+// The bowl is a stack of concentric ellipses sharing centre (cx=200) with a
+// common vanishing point above, so each ring reads as the same oval seen in
+// perspective. Outer→inner radii shrink and the vertical centre drops.
 function colosseumSceneSvg(): string {
+  // Shared arch-window shape along the top tier (the colosseum motif). Arches
+  // follow the tier's curve: y rises toward the sides. cx spans ~70..330.
+  const archCount = 9;
+  const arches = Array.from({ length: archCount }, (_, i) => {
+    const t = i / (archCount - 1); // 0..1 across the curve
+    const cx = 78 + t * 244;
+    const dip = Math.sin(t * Math.PI); // 0 at ends, 1 at centre — arcade sags down
+    const cy = 96 + dip * 30;
+    return `<path d="M${cx - 12} ${cy + 20} L${cx - 12} ${cy} Q${cx} ${cy - 16} ${cx + 12} ${cy} L${cx + 12} ${cy + 20} Z" fill="color-mix(in srgb, var(--surface-border) 88%, #000)"/>`;
+  }).join("");
+
+  // Crowd dots seated along a curve: y follows the same sag as its tier.
+  const crowdRow = (baseY: number, sag: number, r: number, n: number, x0: number, dx: number) =>
+    Array.from({ length: n }, (_, i) => {
+      const t = i / (n - 1);
+      const dip = Math.sin(t * Math.PI);
+      const cx = x0 + i * dx;
+      const cy = baseY + dip * sag - (i % 3) * 5;
+      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--accent)" opacity="0.5"/>`;
+    }).join("");
+
   return `<svg viewBox="0 0 400 780" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-    <!-- Tiered stone stands across the top third, far tier behind near tier -->
-    <path class="arena-stand-far" d="M-20 120 Q200 40 420 120 L420 190 Q200 118 -20 190 Z"
-      fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))" opacity="0.85"/>
-    <g class="arena-crenellation-far">
-      ${Array.from({ length: 12 }, (_, i) => `<rect x="${-4 + i * 36}" y="60" width="18" height="20" fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))" opacity="0.85"/>`).join("")}
+    <!-- ============ FAR ARCADE: stacked curved stone tiers ============ -->
+    <!-- Outermost / highest tier (darkest, furthest back) -->
+    <path class="arena-tier arena-tier-3" d="M-30 150 Q200 20 430 150 L430 176 Q200 52 -30 176 Z"
+      fill="color-mix(in srgb, var(--surface-border) 62%, var(--surface))"/>
+    <!-- Crenellated rim on the top tier edge -->
+    <g class="arena-rim">
+      ${Array.from({ length: 13 }, (_, i) => {
+        const t = i / 12;
+        const dip = Math.sin(t * Math.PI);
+        const x = -2 + i * 34;
+        const y = 40 + dip * 40;
+        return `<rect x="${x}" y="${y}" width="16" height="16" rx="2" fill="color-mix(in srgb, var(--surface-border) 62%, var(--surface))"/>`;
+      }).join("")}
     </g>
 
-    <path class="arena-stand-near" d="M-20 190 Q200 118 420 190 L420 262 Q200 176 -20 262 Z"
-      fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))"/>
-    <g class="arena-crenellation-near">
-      ${Array.from({ length: 12 }, (_, i) => `<rect x="${-4 + i * 36}" y="128" width="20" height="24" fill="color-mix(in srgb, var(--surface-border) 45%, var(--surface))"/>`).join("")}
-    </g>
+    <!-- Middle tier -->
+    <path class="arena-tier arena-tier-2" d="M-30 176 Q200 52 430 176 L430 210 Q200 82 -30 210 Z"
+      fill="color-mix(in srgb, var(--surface-border) 50%, var(--surface))"/>
 
-    <!-- Banner pennants atop the stands -->
+    <!-- Top (nearest, brightest) tier — the arcade band the arches punch into -->
+    <path class="arena-tier arena-tier-1" d="M-30 210 Q200 82 430 210 L430 250 Q200 118 -30 250 Z"
+      fill="color-mix(in srgb, var(--surface-border) 40%, var(--surface))"/>
+    <!-- Repeating ARCH openings along the top tier — the colosseum signature -->
+    <g class="arena-arches">${arches}</g>
+
+    <!-- Accent pennants on poles along the rim -->
     <g class="arena-banners">
-      <line x1="76" y1="60" x2="76" y2="118" stroke="var(--surface-border)" stroke-width="3"/>
-      <polygon points="76,64 104,74 76,84" fill="var(--accent)"/>
-      <line x1="200" y1="46" x2="200" y2="108" stroke="var(--surface-border)" stroke-width="3"/>
-      <polygon points="200,50 228,60 200,70" fill="var(--accent)"/>
-      <line x1="324" y1="60" x2="324" y2="118" stroke="var(--surface-border)" stroke-width="3"/>
-      <polygon points="324,64 296,74 324,84" fill="var(--accent)"/>
+      <line x1="60" y1="70" x2="60" y2="112" stroke="var(--surface-border)" stroke-width="3"/>
+      <polygon points="60,74 86,82 60,90" fill="var(--accent)"/>
+      <line x1="140" y1="46" x2="140" y2="92" stroke="var(--surface-border)" stroke-width="3"/>
+      <polygon points="140,50 166,58 140,66" fill="var(--accent)"/>
+      <line x1="260" y1="46" x2="260" y2="92" stroke="var(--surface-border)" stroke-width="3"/>
+      <polygon points="260,50 234,58 260,66" fill="var(--accent)"/>
+      <line x1="340" y1="70" x2="340" y2="112" stroke="var(--surface-border)" stroke-width="3"/>
+      <polygon points="340,74 314,82 340,90" fill="var(--accent)"/>
     </g>
 
-    <!-- Crowd dots, always cheering, seated on the two tiers -->
+    <!-- ============ CROWD dots seated along the tier curves ============ -->
     <g class="crowd">
-      ${Array.from({ length: 14 }, (_, i) => `<circle cx="${34 + i * 24}" cy="${150 - (i % 3) * 6}" r="5" fill="var(--accent)" opacity="0.5"/>`).join("")}
-      ${Array.from({ length: 14 }, (_, i) => `<circle cx="${46 + i * 24}" cy="${224 - (i % 3) * 6}" r="5.5" fill="var(--accent)" opacity="0.5"/>`).join("")}
+      ${crowdRow(140, 30, 4.5, 15, 40, 22)}
+      ${crowdRow(172, 32, 5, 15, 34, 24)}
+      ${crowdRow(206, 34, 5.5, 15, 30, 25)}
     </g>
 
-    <!-- Sandy floor: a big ellipse filling the bottom half — the battlefield -->
-    <ellipse cx="200" cy="600" rx="250" ry="200" fill="color-mix(in srgb, var(--gold) 18%, var(--ground))"
-      stroke="var(--surface-border)" stroke-width="2.5"/>
-    <!-- Inner sand shading ring for depth -->
-    <ellipse cx="200" cy="600" rx="200" ry="158" fill="color-mix(in srgb, var(--gold) 10%, var(--ground))" opacity="0.6"/>
+    <!-- ============ BARRIER WALL: ink-dark inner rim of the bowl ============ -->
+    <!-- Outer edge of the wall band (top of the podium) -->
+    <path class="arena-barrier" d="M-10 250 Q200 118 410 250 L410 300 Q200 176 -10 300 Z"
+      fill="color-mix(in srgb, var(--surface-border) 92%, #000)"/>
+    <!-- Highlight lip along the barrier top so it reads as a raised wall -->
+    <path d="M-10 250 Q200 118 410 250" fill="none"
+      stroke="color-mix(in srgb, var(--surface-border) 40%, var(--surface))" stroke-width="3"/>
 
-    <!-- Torches flanking the floor: flame/glow only at night -->
+    <!-- ENTRANCE GATE: dark arched opening on the RIGHT (new-wave enemies enter) -->
+    <g class="arena-gate">
+      <path d="M300 300 L300 250 Q322 232 344 250 L344 300 Z"
+        fill="color-mix(in srgb, var(--surface-border) 96%, #000)"/>
+      <!-- Portcullis hint -->
+      ${Array.from({ length: 4 }, (_, i) => `<line x1="${306 + i * 11}" y1="252" x2="${306 + i * 11}" y2="298" stroke="color-mix(in srgb, var(--surface-border) 55%, var(--surface))" stroke-width="1.5" opacity="0.6"/>`).join("")}
+      <line x1="300" y1="270" x2="344" y2="270" stroke="color-mix(in srgb, var(--surface-border) 55%, var(--surface))" stroke-width="1.5" opacity="0.6"/>
+    </g>
+
+    <!-- ============ SAND FLOOR: the enclosed battlefield oval ============ -->
+    <!-- Wide enough that the whole .arena-field ground band sits ON the sand,
+         inside the barrier ring (rx spans past the safe column on purpose). -->
+    <ellipse class="arena-sand" cx="200" cy="575" rx="272" ry="240"
+      fill="color-mix(in srgb, var(--gold) 20%, var(--ground))"/>
+    <!-- Ink edge where the sand meets the barrier wall -->
+    <ellipse cx="200" cy="575" rx="272" ry="240" fill="none"
+      stroke="color-mix(in srgb, var(--surface-border) 92%, #000)" stroke-width="4" opacity="0.85"/>
+    <!-- Inner shading ring for bowl depth -->
+    <ellipse cx="200" cy="576" rx="196" ry="182" fill="color-mix(in srgb, var(--gold) 12%, var(--ground))" opacity="0.5"/>
+    <!-- Centre emblem + faint rake lines for sand texture -->
+    <ellipse cx="200" cy="600" rx="48" ry="26" fill="none"
+      stroke="color-mix(in srgb, var(--surface-border) 45%, var(--ground))" stroke-width="2" opacity="0.4"/>
+    <g class="arena-rake" opacity="0.22">
+      ${Array.from({ length: 5 }, (_, i) => {
+        const ry = 120 + i * 30;
+        return `<ellipse cx="200" cy="600" rx="${ry + 40}" ry="${ry}" fill="none" stroke="color-mix(in srgb, var(--surface-border) 40%, var(--ground))" stroke-width="1.5"/>`;
+      }).join("")}
+    </g>
+
+    <!-- Wall-mounted TORCHES on the barrier (night-only flame/glow) -->
     <g class="arena-torch">
-      <line x1="60" y1="470" x2="60" y2="560" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round"/>
-      <circle class="arena-flame-glow" cx="60" cy="454" r="26" fill="var(--scene-detail)" opacity="0.25"/>
-      <path class="arena-flame" d="M60 470 q-11 -14 0 -30 q11 16 0 30 z" fill="var(--scene-detail)"/>
+      <line x1="66" y1="286" x2="66" y2="330" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round"/>
+      <circle class="arena-flame-glow" cx="66" cy="270" r="26" fill="var(--scene-detail)" opacity="0.25"/>
+      <path class="arena-flame" d="M66 286 q-11 -14 0 -30 q11 16 0 30 z" fill="var(--scene-detail)"/>
     </g>
     <g class="arena-torch">
-      <line x1="340" y1="470" x2="340" y2="560" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round"/>
-      <circle class="arena-flame-glow" cx="340" cy="454" r="26" fill="var(--scene-detail)" opacity="0.25"/>
-      <path class="arena-flame" d="M340 470 q-11 -14 0 -30 q11 16 0 30 z" fill="var(--scene-detail)"/>
+      <line x1="334" y1="286" x2="334" y2="330" stroke="var(--surface-border)" stroke-width="6" stroke-linecap="round"/>
+      <circle class="arena-flame-glow" cx="334" cy="270" r="26" fill="var(--scene-detail)" opacity="0.25"/>
+      <path class="arena-flame" d="M334 286 q-11 -14 0 -30 q11 16 0 30 z" fill="var(--scene-detail)"/>
     </g>
+
+    <!-- ============ NEAR SIDE: bowl continues behind the camera ============ -->
+    <!-- Low dark wall arcs cutting across the bottom corners (foreground frame) -->
+    <path class="arena-near-wall" d="M-40 780 L-40 700 Q90 792 140 800 L-40 800 Z"
+      fill="color-mix(in srgb, var(--surface-border) 90%, #000)"/>
+    <path class="arena-near-wall" d="M440 780 L440 700 Q310 792 260 800 L440 800 Z"
+      fill="color-mix(in srgb, var(--surface-border) 90%, #000)"/>
   </svg>`;
 }
 
