@@ -868,23 +868,14 @@ body.quackening-active main.world.streak-shake {
 
 [data-mode="night"] .arena-scene .arena-flame {
   opacity: 1;
-  animation: arena-flame-flicker 1.2s ease-in-out infinite;
 }
 
 [data-mode="night"] .arena-scene .arena-flame-glow {
   opacity: 0.3;
-  animation: arena-flame-flicker 1.2s ease-in-out infinite reverse;
-}
-
-@keyframes arena-flame-flicker {
-  0%, 100% { transform: scaleY(1) translateY(0); }
-  50% { transform: scaleY(1.12) translateY(-2px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mine-sparkles .twinkle,
-  [data-mode="night"] .arena-scene .arena-flame,
-  [data-mode="night"] .arena-scene .arena-flame-glow {
+  .mine-sparkles .twinkle {
     animation: none !important;
   }
   /* JS already skips the walk-into-cave transform under reduced motion; this
@@ -1019,15 +1010,15 @@ body.quackening-active .area-chip {
   stroke: none;
 }
 .tree-bark-a {
-  fill: color-mix(in srgb, var(--surface-border) 22%, var(--surface));
+  fill: color-mix(in srgb, var(--surface-border) 78%, var(--surface));
   stroke: none;
 }
 .tree-bark-b {
-  fill: color-mix(in srgb, var(--surface-border) 34%, var(--surface));
+  fill: color-mix(in srgb, var(--surface-border) 68%, var(--surface));
   stroke: none;
 }
 .tree-core {
-  fill: color-mix(in srgb, var(--surface-border) 55%, var(--surface));
+  fill: var(--surface-border);
   opacity: 0.6;
   stroke: none;
 }
@@ -1039,17 +1030,17 @@ body.quackening-active .area-chip {
 /* --- Lit rim: highlight strip opposite the core-shadow ribbon (upper-left
    light). Rounds the limb. --- */
 .tree-rim {
-  fill: var(--bark-light);
+  fill: color-mix(in srgb, var(--surface-border) 55%, var(--surface));
   opacity: 0.5;
   stroke: none;
 }
 /* --- Bark texture: faint longitudinal strokes along major limbs. --- */
 .tree-bark-tex {
   fill: none;
-  stroke: var(--surface-border);
+  stroke: var(--bark-light);
   stroke-width: 0.8;
   stroke-linecap: round;
-  opacity: 0.18;
+  opacity: 0.15;
 }
 
 /* --- Crown masses: foliage silhouettes behind the limbs. --- */

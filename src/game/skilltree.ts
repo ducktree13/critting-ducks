@@ -13,14 +13,14 @@ const ACT1_NODES: readonly SkillNode[] = [
   { id: "ore1", name: "Bigger Pickaxes", desc: "+0.1 ore per hit", cost: 50, requires: "speed1", minLevel: 1, branch: "left", treeId: "act1", x: 140, y: 450, effect: { kind: "stat", stat: "orePerHit", add: 0.1 } },
   { id: "ore2", name: "Ore Magnet", desc: "+0.2 ore per hit", cost: 200, requires: "ore1", minLevel: 2, branch: "left", treeId: "act1", x: 90, y: 420, effect: { kind: "stat", stat: "orePerHit", add: 0.2 } },
   { id: "mineslot2", name: "Bunk Beds", desc: "+1 mine roster slot", cost: 350, requires: "ore1", minLevel: 3, branch: "left", treeId: "act1", x: 125, y: 385, effect: { kind: "slot", panel: "mine" } },
-  { id: "oresilver", name: "Silver Vein", desc: "Unlock Silver ore (3g/ore)", cost: 550, requires: "ore2", minLevel: 3, branch: "left", treeId: "act1", x: 50, y: 380, effect: { kind: "oreUnlock", ore: "silver" } },
+  { id: "oresilver", name: "Silver Vein", desc: "Unlock Silver ore (3g/ore)", cost: 550, requires: "ore2", minLevel: 5, branch: "left", treeId: "act1", x: 50, y: 380, effect: { kind: "oreUnlock", ore: "silver" } },
   { id: "minespeed", name: "Frenzied Mining", desc: "+25% mine attack speed", cost: 2000, requires: "ore2", minLevel: 5, branch: "left", treeId: "act1", x: 90, y: 348, effect: { kind: "stat", stat: "mineSpeedMult", mult: 1.25 } },
   { id: "ore3", name: "Deep Drilling", desc: "+50% ore per hit", cost: 1000, requires: "oresilver", minLevel: 5, branch: "left", treeId: "act1", x: 40, y: 330, effect: { kind: "stat", stat: "oreMult", mult: 1.5 } },
   { id: "offline1", name: "Night Shift", desc: "Offline rate 50% → 65%", cost: 1600, requires: "mineslot2", minLevel: 5, branch: "left", treeId: "act1", x: 115, y: 312, effect: { kind: "offline", rate: 0.65 } },
-  { id: "orecrystal", name: "Crystal Cavern", desc: "Unlock Crystal ore (8g/ore)", cost: 2600, requires: "ore3", minLevel: 7, branch: "left", treeId: "act1", x: 42, y: 268, effect: { kind: "oreUnlock", ore: "crystal" } },
+  { id: "orecrystal", name: "Crystal Cavern", desc: "Unlock Crystal ore (8g/ore)", cost: 2600, requires: "ore3", minLevel: 12, branch: "left", treeId: "act1", x: 42, y: 268, effect: { kind: "oreUnlock", ore: "crystal" } },
   { id: "mineslot3", name: "Duck Dormitory", desc: "+1 mine roster slot (3 total)", cost: 3800, requires: "offline1", minLevel: 8, branch: "left", treeId: "act1", x: 135, y: 268, effect: { kind: "slot", panel: "mine" } },
   { id: "offline2", name: "Automated Carts", desc: "Offline rate 65% → 80%", cost: 6000, requires: "offline1", minLevel: 10, branch: "left", treeId: "act1", x: 88, y: 265, effect: { kind: "offline", rate: 0.8 } },
-  { id: "orestar", name: "Starmetal Seam", desc: "Unlock Starmetal ore (20g/ore)", cost: 9000, requires: "orecrystal", minLevel: 12, branch: "left", treeId: "act1", x: 40, y: 218, effect: { kind: "oreUnlock", ore: "starmetal" } },
+  { id: "orestar", name: "Starmetal Seam", desc: "Unlock Starmetal ore (20g/ore)", cost: 9000, requires: "orecrystal", minLevel: 20, branch: "left", treeId: "act1", x: 40, y: 218, effect: { kind: "oreUnlock", ore: "starmetal" } },
   // Right branch — combat
   { id: "atk1", name: "Sharp Beak", desc: "+1 attack damage", cost: 50, requires: "speed1", minLevel: 1, branch: "right", treeId: "act1", x: 260, y: 450, effect: { kind: "stat", stat: "flatAttack", add: 1 } },
   { id: "def1", name: "Feather Armor", desc: "+1 defense", cost: 100, requires: "atk1", minLevel: 2, branch: "right", treeId: "act1", x: 310, y: 420, effect: { kind: "stat", stat: "flatDefense", add: 1 } },
@@ -59,29 +59,36 @@ const PACK_CRIT_BRANCH = [
 // chain is centered on the same x — a single column growing upward.
 function act2Chain(
   treeId: Act2TreeId,
-  steps: readonly Omit<SkillNode, "cost" | "minLevel" | "requires" | "branch" | "treeId" | "x" | "y">[],
+  steps: readonly (Omit<SkillNode, "cost" | "minLevel" | "requires" | "branch" | "treeId" | "x" | "y"> & {
+    // Per-node override: some oreUnlock nodes must meet ORE_LEVEL_GATES
+    // exactly, which can exceed the chain's normal doubling-cost pacing.
+    minLevelOverride?: number;
+  })[],
 ): SkillNode[] {
-  return steps.map((step, i) => ({
-    ...step,
-    cost: ACT2_COSTS[i],
-    minLevel: ACT2_LEVELS[i],
-    requires: i === 0 ? undefined : steps[i - 1].id,
-    branch: "trunk",
-    treeId,
-    x: 200,
-    y: 560 - i * 38,
-  }));
+  return steps.map((step, i) => {
+    const { minLevelOverride, ...rest } = step;
+    return {
+      ...rest,
+      cost: ACT2_COSTS[i],
+      minLevel: minLevelOverride ?? ACT2_LEVELS[i],
+      requires: i === 0 ? undefined : steps[i - 1].id,
+      branch: "trunk",
+      treeId,
+      x: 200,
+      y: 560 - i * 38,
+    };
+  });
 }
 
 const MINING2_NODES = act2Chain("mining2", [
   { id: "m2_oreboost1", name: "Refined Picks", desc: "+0.3 ore per hit", effect: { kind: "stat", stat: "orePerHit", add: 0.3 } },
   { id: "m2_speedboost1", name: "Turbo Drills", desc: "+25% mine speed", effect: { kind: "stat", stat: "mineSpeedMult", mult: 1.25 } },
   { id: "m2_slot4", name: "Mine Wing", desc: "+1 mine roster slot (4 total)", effect: { kind: "slot", panel: "mine" } },
-  { id: "m2_orevoid", name: "Void Fissure", desc: "Unlock Voidstone ore (60g/ore)", effect: { kind: "oreUnlock", ore: "voidstone" } },
+  { id: "m2_orevoid", name: "Void Fissure", desc: "Unlock Voidstone ore (60g/ore)", minLevelOverride: 30, effect: { kind: "oreUnlock", ore: "voidstone" } },
   { id: "m2_oreboost2", name: "Master Excavation", desc: "+50% ore per hit", effect: { kind: "stat", stat: "oreMult", mult: 1.5 } },
   { id: "m2_offline3", name: "Automated Fleet", desc: "Offline rate 80% → 90%", effect: { kind: "offline", rate: 0.9 } },
   { id: "m2_slot5", name: "Mine Wing II", desc: "+1 mine roster slot (5 total)", effect: { kind: "slot", panel: "mine" } },
-  { id: "m2_oreaurorium", name: "Aurorium Heart", desc: "Unlock Aurorium ore (150g/ore)", effect: { kind: "oreUnlock", ore: "aurorium" } },
+  { id: "m2_oreaurorium", name: "Aurorium Heart", desc: "Unlock Aurorium ore (150g/ore)", minLevelOverride: 40, effect: { kind: "oreUnlock", ore: "aurorium" } },
   { id: "m2_speedboost2", name: "Hyperdrills", desc: "+25% mine speed", effect: { kind: "stat", stat: "mineSpeedMult", mult: 1.25 } },
   { id: "m2_oreboost3", name: "Deep Core Mining", desc: "+1 ore per hit", effect: { kind: "stat", stat: "orePerHit", add: 1 } },
   { id: "m2_offline4", name: "Full Automation", desc: "Offline rate 90% → 95%", effect: { kind: "offline", rate: 0.95 } },

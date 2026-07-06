@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { buy, canBuy, isVisible, nodesForTree, SKILL_NODES } from "./skilltree";
 import { createInitialState, refreshStats } from "./state";
+import { ORE_LEVEL_GATES } from "./balance";
 import type { GameState } from "./types";
 
 let state: GameState;
@@ -153,5 +154,37 @@ describe("node table sanity", () => {
   it("node ids are unique", () => {
     const ids = SKILL_NODES.map((n) => n.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("every oreUnlock node's minLevel matches ORE_LEVEL_GATES for its ore", () => {
+    const oreUnlockNodes = SKILL_NODES.filter((n) => n.effect.kind === "oreUnlock");
+    expect(oreUnlockNodes.length).toBeGreaterThan(0);
+    for (const node of oreUnlockNodes) {
+      if (node.effect.kind !== "oreUnlock") continue; // narrow for TS
+      expect(node.minLevel).toBe(ORE_LEVEL_GATES[node.effect.ore]);
+    }
+  });
+});
+
+describe("ore-node level gates enforce canBuy", () => {
+  it("level 4 cannot buy oresilver even with gold and requires met", () => {
+    state.gold = 100_000;
+    state.level = 5; // high enough to buy every prerequisite node first
+    buy(state, "crit1");
+    buy(state, "speed1");
+    buy(state, "ore1");
+    buy(state, "ore2");
+    state.level = 4; // drop below oresilver's gate (5) after requires are owned
+    expect(canBuy(state, "oresilver")).toBe(false);
+  });
+
+  it("level 5 can buy oresilver once requires and gold are met", () => {
+    state.gold = 100_000;
+    state.level = 5;
+    buy(state, "crit1");
+    buy(state, "speed1");
+    buy(state, "ore1");
+    buy(state, "ore2");
+    expect(canBuy(state, "oresilver")).toBe(true);
   });
 });
