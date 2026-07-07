@@ -170,6 +170,7 @@ export interface GameState {
   settings: {
     darkMode: boolean;
     act2Tree: Act2TreeId;
+    missionsHidden: boolean;
   };
   lastSaved: number;
   createdAt: number;

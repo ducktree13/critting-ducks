@@ -1078,23 +1078,8 @@ body.quackening-active .area-chip {
   to { transform: scale(1); opacity: 1; }
 }
 
-/* --- Grass mound + root-flare tufts under the trunk. --- */
-.tree-mound {
-  fill: var(--ground);
-}
-.tree-mound-edge {
-  fill: none;
-  stroke: var(--foliage-deep);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  opacity: 0.7;
-}
-.tree-tuft {
-  fill: none;
-  stroke: var(--foliage-mid);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-}
+/* (W5: the tree's own grass mound/ground shapes were removed — the grove's
+   lake island is the single ground plane. See pondArea.ts.) */
 
 /* --- Foliage: individual ink-outlined leaves in two greens --- */
 .tree-foliage .leaf {
@@ -1339,20 +1324,18 @@ body.quackening-active .area-chip {
   cursor: pointer;
 }
 
-/* W4 swimming: the seat DRIFTS slowly left-right across its patch of water,
-   turning (scaleX flip) to face its heading — duck art faces LEFT at rest, so
-   leftward travel is scaleX(1) and rightward is scaleX(-1). The inner
+/* W5 swimming: occupied seats are free-roaming swimmers — JS assigns
+   waypoints across the whole lake and the seat GLIDES there via a slow
+   left/top transition (duration set inline per trip). The duck turns to face
+   its heading via .facing-right (rig art faces LEFT at rest). The inner
    .pond-swimmer bobs on its own timer (set inline per seat). */
 .pond-seat.occupied {
-  animation: pond-drift 16s ease-in-out infinite;
+  transition-property: left, top;
+  transition-timing-function: ease-in-out, ease-in-out;
 }
 
-@keyframes pond-drift {
-  0%   { transform: translate(-50%, -50%) translateX(16px) scaleX(1); }
-  48%  { transform: translate(-50%, -50%) translateX(-16px) scaleX(1); }
-  52%  { transform: translate(-50%, -50%) translateX(-16px) scaleX(-1); }
-  98%  { transform: translate(-50%, -50%) translateX(16px) scaleX(-1); }
-  100% { transform: translate(-50%, -50%) translateX(16px) scaleX(1); }
+.pond-seat.facing-right .pond-swimmer svg {
+  transform: scaleX(-1);
 }
 
 /* The duck sits IN the water: its lower body is clipped at the waterline. */
@@ -1535,6 +1518,7 @@ body.quackening-active .area-chip {
   .pond-svg .twinkle,
   .pond-ripple {
     animation: none;
+    transition: none;
   }
 }
 

@@ -82,6 +82,7 @@ export function createInitialState(): GameState {
     settings: {
       darkMode: false,
       act2Tree: "mining2",
+      missionsHidden: false,
     },
     lastSaved: now,
     createdAt: now,

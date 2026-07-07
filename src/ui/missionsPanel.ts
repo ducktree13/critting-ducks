@@ -47,6 +47,21 @@ export function renderMissionTracker(
     return;
   }
 
+  // Hidden mode (user setting, persisted): collapse the tracker to a tiny
+  // target chip; clicking it unhides missions everywhere.
+  if (state.settings.missionsHidden) {
+    if (lastKeyByEl.get(containerEl) !== "hidden") {
+      containerEl.innerHTML = `<button class="mission-show-chip" title="Show missions">🎯</button>`;
+      lastKeyByEl.set(containerEl, "hidden");
+      fillElByEl.delete(containerEl);
+      if (openMenuSection === section) closeMenu();
+      containerEl.querySelector(".mission-show-chip")?.addEventListener("click", () => {
+        state.settings.missionsHidden = false;
+      });
+    }
+    return;
+  }
+
   const pinnedId = state.pinnedMission[section] ?? active[0].id;
   const instance = active.find((m) => m.id === pinnedId) ?? active[0];
   const template = missionTemplate(instance);
@@ -63,6 +78,7 @@ export function renderMissionTracker(
         <div class="mission-head">
           <b>${template.name}</b>
           ${active.length > 1 ? `<button class="mission-cycle" id="mission-choose-${section}" title="Pick which mission to track">Choose…</button>` : ""}
+          <button class="mission-hide" id="mission-hide-${section}" title="Hide missions">–</button>
         </div>
         <div class="mission-desc">${template.desc(instance.target - instance.startValue)}</div>
         <div class="mission-bar"><span class="mission-fill" style="width:${pct}%"></span></div>
@@ -80,6 +96,11 @@ export function renderMissionTracker(
         return;
       }
       openMissionMenu(section, containerEl, state, pinnedId);
+    });
+
+    containerEl.querySelector(`#mission-hide-${section}`)?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      state.settings.missionsHidden = true; // all trackers collapse next frame
     });
   } else {
     const fillEl = fillElByEl.get(containerEl);

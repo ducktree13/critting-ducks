@@ -1827,6 +1827,38 @@ main.world {
   font-size: 0.85rem;
 }
 
+/* Hide/show missions (user setting, persisted). The hide "–" sits in the
+   tracker head; when hidden every tracker collapses to a tiny 🎯 chip. */
+.mission-hide {
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.mission-cycle + .mission-hide {
+  margin-left: 4px;
+}
+
+.mission-hide:only-of-type {
+  margin-left: auto;
+}
+
+.mission-show-chip {
+  border: var(--border-w) solid var(--surface-border);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  box-shadow: 0 2px 0 var(--shadow-drop);
+}
+
 .mission-desc {
   color: var(--muted);
   margin: 2px 0 4px;

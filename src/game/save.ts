@@ -136,6 +136,7 @@ function mergeWithDefaults(partial: Partial<GameState>): GameState {
     settings: {
       darkMode: partial.settings?.darkMode ?? base.settings.darkMode,
       act2Tree: partial.settings?.act2Tree ?? base.settings.act2Tree,
+      missionsHidden: partial.settings?.missionsHidden ?? base.settings.missionsHidden,
     },
   };
   // Drop stray old-schema keys the spreads above may have carried over

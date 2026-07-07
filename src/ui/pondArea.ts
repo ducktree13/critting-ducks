@@ -55,119 +55,179 @@ const FISH_SHAPES = [
 ];
 let fishCycle = 0;
 
-// Up to 5 seats arranged around the pond's water ring, OUTSIDE the central
-// island silhouette (percent-based over the pond scene). The pond scene is a
-// wide shallow ellipse filling its box; the island hump sits in the middle
-// (~35%..65% width, upper-water). Seats ring the open water: two front-low,
-// two mid-flanking, one back-center behind the island edge.
-const SEAT_POS: { left: string; top: string }[] = [
-  { left: "18%", top: "62%" },
-  { left: "36%", top: "82%" },
-  { left: "64%", top: "82%" },
-  { left: "82%", top: "62%" },
-  { left: "50%", top: "40%" },
+// Empty "+" slots dock along the near shore (bottom-left) — an assignment
+// affordance, not a swim position. OCCUPIED ducks are free-roaming swimmers
+// that wander waypoints across the whole lake (see the waypoint system below).
+const EMPTY_DOCK_POS: { left: string; top: string }[] = [
+  { left: "10%", top: "88%" },
+  { left: "19%", top: "92%" },
+  { left: "28%", top: "88%" },
+  { left: "37%", top: "92%" },
+  { left: "46%", top: "88%" },
 ];
+
+// The island's exclusion zone in percent-space of the pond scene (the lake
+// SVG stretches to fill the box with preserveAspectRatio="none", so viewBox
+// coords map linearly to percents). Swimmers and bubbles avoid this region.
+const ISLAND_ZONE = { x0: 27, x1: 73, y0: 30, y1: 78 };
+// Open-water sampling bounds (percent) — inside the lake, below the far shore.
+const WATER_BOUNDS = { x0: 5, x1: 95, y0: 34, y1: 90 };
+
+function inIsland(x: number, y: number): boolean {
+  return x > ISLAND_ZONE.x0 && x < ISLAND_ZONE.x1 && y > ISLAND_ZONE.y0 && y < ISLAND_ZONE.y1;
+}
+
+// Random open-water point (rejection sample around the island; falls back to
+// the front band which is always open water).
+function randomWaterPoint(rand: () => number): { x: number; y: number } {
+  for (let i = 0; i < 10; i++) {
+    const x = WATER_BOUNDS.x0 + rand() * (WATER_BOUNDS.x1 - WATER_BOUNDS.x0);
+    const y = WATER_BOUNDS.y0 + rand() * (WATER_BOUNDS.y1 - WATER_BOUNDS.y0);
+    if (!inIsland(x, y)) return { x, y };
+  }
+  return { x: 20 + rand() * 60, y: 82 + rand() * 8 };
+}
 
 function pondRosterKey(state: GameState): string {
   return state.rosters.pond.join(",") + "|" + getStats(state).pondSlots;
 }
 
-// Wide shallow pond SVG (Phase V2): the tree grove sits on an island in the
-// middle of the pond. A broad ellipse hugs the bottom of the scene (ink ring,
-// bank, water, offset deep-water), ripples + reeds + lily pads ring the edges,
-// and a grassy island MOUND rises in the centre — the tree canvas is placed so
-// its own grass mound fuses with this island top. viewBox 0 0 400 200: water
-// centre ~ (200,120), island crest ~ y=78 spanning x≈120..280.
+// The LAKE (W5, playtest: "treat it as a lake rather than a pond — large,
+// ducks float across the entire area, the island made no sense"). One
+// coherent scene, edge to edge:
+// - preserveAspectRatio="none" so the water genuinely fills the whole band
+//   (the old "meet" letterboxed it into a small centered pond).
+// - A far-shore grass strip runs along the very top with a wavy waterline —
+//   the lake reads as continuing past the left/right/bottom edges of view.
+// - ONE organic island: a single irregular landmass built as waterline ink →
+//   sandy shore ring → grass top with tufts and a rock, plus a soft
+//   reflection beneath. It replaces the old stack of disjoint ellipse/dome
+//   shapes (the tree's own grass mound is gone too — the island is the only
+//   ground plane, and the tree roots directly into it).
+// viewBox 0 0 400 200; island crest ~y=74 (37%), footprint x≈118..282.
 //
-// `showStump` draws a small felled-tree stump on the island (chapter 2), a cheap
-// nod to the Act-1 tree that was felled to open the forest.
+// `showStump` adds the felled Act-1 stump on the island in chapter 2.
 function pondSvg(showStump: boolean): string {
   const stump = showStump
     ? `<g class="pond-stump">
-         <ellipse cx="150" cy="86" rx="13" ry="5" fill="var(--foliage-deep)" opacity="0.5"/>
-         <path d="M 140 84 L 141 74 Q 150 71 159 74 L 160 84 Z" fill="color-mix(in srgb, var(--surface-border) 40%, var(--ground))" stroke="var(--surface-border)" stroke-width="1.2"/>
-         <ellipse cx="150" cy="74" rx="9.5" ry="3.4" fill="color-mix(in srgb, var(--surface-border) 25%, var(--ground))" stroke="var(--surface-border)" stroke-width="1"/>
-         <ellipse cx="150" cy="74" rx="4.5" ry="1.6" fill="none" stroke="var(--surface-border)" stroke-width="0.8" opacity="0.7"/>
+         <ellipse cx="146" cy="92" rx="13" ry="5" fill="var(--foliage-deep)" opacity="0.5"/>
+         <path d="M 136 90 L 137 80 Q 146 77 155 80 L 156 90 Z" fill="color-mix(in srgb, var(--surface-border) 40%, var(--ground))" stroke="var(--surface-border)" stroke-width="1.2"/>
+         <ellipse cx="146" cy="80" rx="9.5" ry="3.4" fill="color-mix(in srgb, var(--surface-border) 25%, var(--ground))" stroke="var(--surface-border)" stroke-width="1"/>
+         <ellipse cx="146" cy="80" rx="4.5" ry="1.6" fill="none" stroke="var(--surface-border)" stroke-width="0.8" opacity="0.7"/>
        </g>`
     : "";
   return `
-    <svg class="pond-svg" viewBox="0 0 400 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+    <svg class="pond-svg" viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true">
       <defs>
-        <!-- Water shades from a lighter sunlit rim into deeper center water
-             (W4: "the water needs to look better" — a flat fill read as paint). -->
-        <radialGradient id="pond-water-grad" cx="50%" cy="42%" r="72%">
+        <radialGradient id="pond-water-grad" cx="50%" cy="45%" r="78%">
           <stop offset="0%" stop-color="var(--pond-water-deep)"/>
           <stop offset="55%" stop-color="var(--pond-water)"/>
-          <stop offset="100%" stop-color="color-mix(in srgb, var(--sky-bottom) 28%, var(--pond-water))"/>
+          <stop offset="100%" stop-color="color-mix(in srgb, var(--sky-bottom) 24%, var(--pond-water))"/>
         </radialGradient>
       </defs>
 
-      <!-- Wide shallow water ellipse hugging the bottom of the scene. -->
-      <ellipse class="pond-ring" cx="200" cy="130" rx="196" ry="66" fill="var(--surface-border)"/>
-      <ellipse class="pond-bank" cx="200" cy="128" rx="184" ry="59"
-        fill="color-mix(in srgb, var(--surface-border) 30%, var(--ground))"/>
-      <ellipse class="pond-water" cx="200" cy="126" rx="170" ry="52" fill="url(#pond-water-grad)"/>
+      <!-- Water fills the whole band, edge to edge and off the bottom. -->
+      <rect class="pond-water" x="0" y="14" width="400" height="186" fill="url(#pond-water-grad)"/>
 
-      <!-- Soft canopy reflection cast by the island's tree onto the water. -->
-      <ellipse class="pond-reflection" cx="200" cy="152" rx="86" ry="16"
-        fill="var(--foliage-deep)" opacity="0.18"/>
+      <!-- Far shore: a grass strip along the top with a wavy waterline. -->
+      <path class="pond-far-shore"
+        d="M 0 0 L 400 0 L 400 18 C 352 26 320 14 268 20 C 236 24 210 14 168 18 C 120 23 78 13 34 20 L 0 16 Z"
+        fill="var(--ground)"/>
+      <path class="pond-far-shoreline"
+        d="M 400 18 C 352 26 320 14 268 20 C 236 24 210 14 168 18 C 120 23 78 13 34 20 L 0 16"
+        fill="none" stroke="var(--foliage-deep)" stroke-width="2.5" opacity="0.7"/>
+
+      <!-- Soft canopy reflection on the water south of the island. -->
+      <ellipse class="pond-reflection" cx="200" cy="160" rx="90" ry="15"
+        fill="var(--foliage-deep)" opacity="0.16"/>
 
       <!-- Slow expanding ripple rings (transform-only; see components.css). -->
-      <ellipse class="pond-ring-anim" cx="120" cy="140" rx="26" ry="8" fill="none"
+      <ellipse class="pond-ring-anim" cx="82" cy="120" rx="26" ry="8" fill="none"
         stroke="var(--scene-detail)" stroke-width="1.6"/>
-      <ellipse class="pond-ring-anim" cx="286" cy="132" rx="22" ry="7" fill="none"
+      <ellipse class="pond-ring-anim" cx="330" cy="102" rx="22" ry="7" fill="none"
         stroke="var(--scene-detail)" stroke-width="1.6" style="animation-delay:-2.4s"/>
-      <ellipse class="pond-ring-anim" cx="196" cy="164" rx="24" ry="7" fill="none"
+      <ellipse class="pond-ring-anim" cx="196" cy="176" rx="24" ry="7" fill="none"
         stroke="var(--scene-detail)" stroke-width="1.6" style="animation-delay:-4.6s"/>
 
-      <path class="pond-ripple" d="M 54 118 Q 96 110 138 118" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.35"/>
-      <path class="pond-ripple" d="M 262 120 Q 310 112 356 120" fill="none" stroke="var(--scene-detail)" stroke-width="2" opacity="0.35"/>
-      <!-- Sun glints on the water -->
-      <path class="pond-glint twinkle" d="M 92 138 l 14 0 M 300 146 l 11 0" stroke="var(--scene-detail)" stroke-width="2.2" stroke-linecap="round" opacity="0.5"/>
-      <path class="pond-glint twinkle" style="animation-delay:1.6s" d="M 158 156 l 12 0 M 252 158 l 9 0" stroke="var(--scene-detail)" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+      <!-- Sun glints on the open water -->
+      <path class="pond-glint twinkle" d="M 60 84 l 14 0 M 322 140 l 11 0" stroke="var(--scene-detail)" stroke-width="2.2" stroke-linecap="round" opacity="0.5"/>
+      <path class="pond-glint twinkle" style="animation-delay:1.6s" d="M 128 158 l 12 0 M 296 66 l 9 0" stroke="var(--scene-detail)" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
 
       <g class="pond-lilies">
-        <path class="lily" d="M 70 128 a 15 9 0 1 0 0.1 0 M 70 128 L 84 122" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
-        <path class="lily" d="M 330 122 a 12 7 0 1 0 0.1 0 M 330 122 L 342 118" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
-        <path class="lily" d="M 300 148 a 10 6 0 1 0 0.1 0" fill="var(--foliage-deep)" stroke="var(--surface-border)" stroke-width="1.5"/>
+        <path class="lily" d="M 48 66 a 15 9 0 1 0 0.1 0 M 48 66 L 62 60" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
+        <path class="lily" d="M 352 78 a 12 7 0 1 0 0.1 0 M 352 78 L 364 74" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
+        <path class="lily" d="M 322 168 a 10 6 0 1 0 0.1 0" fill="var(--foliage-deep)" stroke="var(--surface-border)" stroke-width="1.5"/>
+        <path class="lily" d="M 66 178 a 11 6 0 1 0 0.1 0" fill="var(--panel-head)" stroke="var(--surface-border)" stroke-width="1.5"/>
       </g>
 
-      <!-- Central grassy ISLAND mound. Its crest (~y 78) is where the tree's
-           own grass mound lands, so the two fuse into one ground plane. -->
+      <!-- THE ISLAND: one organic landmass. Waterline ink -> sandy shore ring
+           -> grass top. The tree roots directly into the grass (its own mound
+           was removed) so there is exactly one ground plane. -->
       <g class="pond-island">
-        <ellipse class="pond-island-shadow" cx="200" cy="150" rx="118" ry="20" fill="var(--pond-water-deep)" opacity="0.45"/>
-        <path class="pond-island-fill" d="M 92 152
-          C 96 118 128 82 200 80
-          C 272 82 304 118 308 152 Z"
+        <!-- underwater shadow ring -->
+        <ellipse cx="200" cy="140" rx="112" ry="22" fill="var(--pond-water-deep)" opacity="0.4"/>
+        <!-- sandy shore: irregular outer blob with the waterline ink edge -->
+        <path class="pond-island-shore" d="M 112 138
+          C 104 116 118 94 140 84
+          C 158 74 178 70 200 71
+          C 226 70 250 76 266 88
+          C 286 98 296 118 288 136
+          C 282 148 260 155 232 157
+          C 208 160 176 159 150 154
+          C 130 150 118 146 112 138 Z"
+          fill="color-mix(in srgb, var(--gold) 22%, var(--surface))"
+          stroke="var(--surface-border)" stroke-width="2.5"/>
+        <!-- grass top: inset blob with its own irregular edge -->
+        <path class="pond-island-grass" d="M 126 130
+          C 120 112 132 96 152 88
+          C 168 80 184 77 202 78
+          C 224 77 244 82 258 92
+          C 274 101 282 116 276 130
+          C 270 141 252 147 228 149
+          C 206 151 178 150 156 146
+          C 140 143 130 138 126 130 Z"
           fill="var(--ground)"/>
-        <path class="pond-island-edge" d="M 92 152 C 96 118 128 82 200 80 C 272 82 304 118 308 152"
-          fill="none" stroke="var(--foliage-deep)" stroke-width="2.5" opacity="0.6"/>
-        <!-- grass tufts along the island crest -->
-        <path class="pond-island-tuft" d="M 168 86 q -1 -8 2 -12 M 176 84 q 0 -9 3 -12 M 224 84 q 1 -9 4 -11 M 232 87 q 1 -8 3 -11"
+        <path class="pond-island-grass-edge" d="M 126 130 C 120 112 132 96 152 88 C 168 80 184 77 202 78 C 224 77 244 82 258 92 C 274 101 282 116 276 130"
+          fill="none" stroke="var(--foliage-deep)" stroke-width="2" opacity="0.55"/>
+        <!-- grass tufts + a rock for texture -->
+        <path class="pond-island-tuft" d="M 160 96 q -1 -8 2 -12 M 168 94 q 0 -9 3 -12 M 236 96 q 1 -9 4 -11 M 244 100 q 1 -8 3 -11 M 200 84 q 0 -8 2 -11"
           fill="none" stroke="var(--foliage-deep)" stroke-width="2.4" stroke-linecap="round"/>
+        <path class="pond-island-rock" d="M 252 134 l 4 -8 l 9 -2 l 7 6 l -3 7 l -12 2 Z"
+          fill="color-mix(in srgb, var(--surface-border) 45%, var(--ground))" stroke="var(--surface-border)" stroke-width="1.5"/>
       </g>
       ${stump}
 
+      <!-- Reeds hug the far shore corners where land meets water. -->
       <g class="pond-reeds">
-        <path d="M 40 128 Q 36 104 42 82 M 46 130 Q 44 108 52 88 M 54 132 Q 54 112 62 94"
+        <path d="M 18 44 Q 14 28 20 12 M 26 46 Q 24 30 32 16 M 34 48 Q 34 34 42 22"
           fill="none" stroke="var(--foliage-deep)" stroke-width="3" stroke-linecap="round"/>
-        <path d="M 350 130 Q 356 106 350 84 M 358 132 Q 366 108 360 88"
+        <path d="M 372 46 Q 378 28 372 12 M 380 48 Q 388 30 382 16"
           fill="none" stroke="var(--foliage-deep)" stroke-width="3" stroke-linecap="round"/>
       </g>
     </svg>
   `;
 }
 
+// Hash-seeded pseudo-random stream (for deterministic initial positions and
+// bubble spots keyed by an id string).
+function seededRand(seedNum: number): () => number {
+  let s = seedNum >>> 0 || 1;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0xffffffff;
+  };
+}
+
 function slotHtml(state: GameState, i: number): string {
-  const seat = SEAT_POS[i % SEAT_POS.length];
   const defId = state.rosters.pond[i];
-  const style = `left:${seat.left};top:${seat.top};`;
   if (defId) {
     const ascension = state.ducks.find((d) => d.defId === defId)?.ascension ?? 0;
-    // Swimming presentation (W4): the duck's lower body is clipped at a
-    // waterline so it sits IN the water rather than floating above it, with a
-    // wake ellipse at the waterline. The seat drifts horizontally (pond-drift,
-    // flipping to face its heading); the inner swimmer bobs independently.
+    // Free-roaming swimmer (W5): starts at a deterministic open-water point;
+    // the waypoint wander system then glides it across the whole lake. The
+    // duck's lower body is clipped at a waterline (W4) with a wake at the
+    // line; the inner swimmer bobs on its own timer.
+    const start = randomWaterPoint(seededRand(hashId(defId)));
+    const style = `left:${start.x.toFixed(1)}%;top:${start.y.toFixed(1)}%;`;
     return `
       <div class="pond-seat occupied" data-slot="${i}" data-duck="${defId}" style="${style}">
         <span class="pond-wake"></span>
@@ -176,10 +236,51 @@ function slotHtml(state: GameState, i: number): string {
         </span>
       </div>`;
   }
+  const dock = EMPTY_DOCK_POS[i % EMPTY_DOCK_POS.length];
   return `
-    <div class="pond-seat empty" data-slot="${i}" style="${style}" title="Assign a duck to swim">
+    <div class="pond-seat empty" data-slot="${i}" style="left:${dock.left};top:${dock.top};" title="Assign a duck to swim">
       <span class="pond-seat-plus">+</span>
     </div>`;
+}
+
+// ---- Waypoint wander (W5): each occupied swimmer periodically picks a new
+// open-water point and glides there via a CSS left/top transition, flipping
+// to face its heading (rig art faces LEFT, so rightward travel flips). One
+// shared 1s timer drives all swimmers; rebuilt rosters reset it. Reduced
+// motion: swimmers stay at their start points (no wandering).
+interface Swimmer {
+  el: HTMLElement;
+  nextMoveAt: number;
+  rand: () => number;
+}
+let swimmers: Swimmer[] = [];
+let wanderTimer: number | null = null;
+
+function moveSwimmer(sw: Swimmer, now: number): void {
+  const fromX = parseFloat(sw.el.style.left) || 50;
+  const fromY = parseFloat(sw.el.style.top) || 80;
+  const to = randomWaterPoint(sw.rand);
+  const dist = Math.hypot(to.x - fromX, to.y - fromY);
+  const durSec = Math.max(3, dist * 0.22); // slow paddle, ~0.22s per percent
+  sw.el.style.transitionDuration = `${durSec.toFixed(1)}s, ${durSec.toFixed(1)}s`;
+  sw.el.style.left = `${to.x.toFixed(1)}%`;
+  sw.el.style.top = `${to.y.toFixed(1)}%`;
+  sw.el.classList.toggle("facing-right", to.x > fromX);
+  sw.nextMoveAt = now + durSec * 1000 + 1500 + sw.rand() * 5000; // pause, then wander on
+}
+
+function startWander(): void {
+  if (wanderTimer !== null) {
+    clearInterval(wanderTimer);
+    wanderTimer = null;
+  }
+  if (reducedMotion || swimmers.length === 0) return;
+  wanderTimer = window.setInterval(() => {
+    const now = Date.now();
+    for (const sw of swimmers) {
+      if (now >= sw.nextMoveAt && sw.el.isConnected) moveSwimmer(sw, now);
+    }
+  }, 1000);
 }
 
 // Deterministic per-id hash (FNV-1a-ish), so a bubble's on-water position and
@@ -195,18 +296,9 @@ function hashId(id: string): number {
 // is visible. Deterministic per bubble id: a bubble either lands on a flank
 // (left/right open water) or in the low front band below the island.
 function bubblePosition(id: string): { left: string; top: string } {
-  const h = hashId(id);
-  const lane = h % 3;
-  if (lane === 0) {
-    // left flank
-    return { left: `${10 + (h % 16)}%`, top: `${58 + ((h >> 4) % 22)}%` };
-  }
-  if (lane === 1) {
-    // right flank
-    return { left: `${74 + (h % 16)}%`, top: `${58 + ((h >> 4) % 22)}%` };
-  }
-  // low front band (below the island)
-  return { left: `${34 + (h % 34)}%`, top: `${76 + ((h >> 4) % 16)}%` };
+  // Anywhere on open water (same sampler as the swimmers), deterministic per id.
+  const p = randomWaterPoint(seededRand(hashId(id)));
+  return { left: `${p.x.toFixed(1)}%`, top: `${p.y.toFixed(1)}%` };
 }
 
 function bubbleClass(bubble: PondBubble): string {
@@ -394,15 +486,19 @@ function rebuildRoster(state: GameState): void {
   for (let i = 0; i < stats.pondSlots; i++) html.push(slotHtml(state, i));
   slotsEl.innerHTML = html.join("");
 
+  swimmers = [];
   slotsEl.querySelectorAll<HTMLElement>(".pond-seat").forEach((slot, idx) => {
-    // Stagger per seat so ducks don't move in lockstep: the seat's slow
-    // drift-and-turn swim (long, varied) and the inner bob (short, varied).
-    slot.style.animationDuration = `${14 + (idx % 5) * 2.4}s`;
-    slot.style.animationDelay = `${(idx % 5) * -3.7}s`;
+    // Stagger the inner bob per seat; register occupied seats as wandering
+    // swimmers (first waypoints staggered so ducks don't set off in lockstep).
     const swimmer = slot.querySelector<HTMLElement>(".pond-swimmer");
     if (swimmer) {
       swimmer.style.animationDuration = `${3 + (idx % 3) * 0.7}s`;
       swimmer.style.animationDelay = `${(idx % 4) * -0.9}s`;
+      swimmers.push({
+        el: slot,
+        nextMoveAt: Date.now() + 800 + idx * 2200,
+        rand: seededRand(hashId(slot.dataset.duck ?? String(idx)) ^ 0x5f3759df),
+      });
     }
     slot.addEventListener("click", () => openRosterPicker(state, "pond", Number(slot.dataset.slot)));
     const defId = slot.dataset.duck;
@@ -414,6 +510,7 @@ function rebuildRoster(state: GameState): void {
     makeDuckDropTarget(slot, "pond", Number(slot.dataset.slot), state);
   });
 
+  startWander();
   lastRosterKey = pondRosterKey(state);
 }
 

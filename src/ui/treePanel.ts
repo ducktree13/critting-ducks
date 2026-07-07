@@ -544,17 +544,11 @@ function buildTreeSvg(state: GameState, treeId: TreeId): string {
   const crownFresh = freshNodeId !== null && ownedIds.has(freshNodeId);
   const crown = buildCrown(treeId, crownPts, crownScale, crownFresh);
 
-  // ground shadow ellipse under the crown
-  const cxRoot = 200;
-  const groundEllipse = `<ellipse class="tree-ground-shadow" cx="${cxRoot}" cy="${GROUND_Y + 3}" rx="${(FIT_W * 0.42).toFixed(0)}" ry="9"/>`;
-
-  // Grass mound: a low rounded hump under the trunk with a deep-foliage shadow
-  // edge, plus a couple of root-flare tufts. Replaces the bare ground line.
-  const gMound = buildGrassMound();
-
+  // W5: the tree draws NO ground shapes of its own — the grove's lake island
+  // (pondArea.ts) is the single ground plane the trunk roots into. The old
+  // ground-shadow ellipse + 320-wide grass mound stacked incoherently over
+  // the island's shapes ("geometric shapes thrown together").
   return `
-    ${groundEllipse}
-    ${gMound}
     <g class="tree-crown" pointer-events="none">${crown}</g>
     <g class="tree-limbs">
       ${silhouette}
@@ -567,45 +561,6 @@ function buildTreeSvg(state: GameState, treeId: TreeId): string {
     <g class="tree-foliage">${leaves.join("")}</g>
     <g class="tree-nodes">${nodeEls.join("")}</g>
   `;
-}
-
-// Grass mound + root-flare tufts replacing the bare ground line. A low hump
-// centered under the trunk: a filled --ground path with a thin --foliage-deep
-// shadow edge along its top, and a few small grass tufts sprouting up from it.
-function buildGrassMound(): string {
-  const y = GROUND_Y;
-  const half = FIT_W * 0.5; // 160
-  const left = 200 - half;
-  const right = 200 + half;
-  const rise = 14; // mound height above the ground line
-  // filled mound (dips below viewport bottom so no seam shows)
-  const moundPath =
-    `M ${left} ${y + 2} ` +
-    `C ${left + 40} ${y - rise} ${200 - 60} ${y - rise} 200 ${y - rise} ` +
-    `C ${200 + 60} ${y - rise} ${right - 40} ${y - rise} ${right} ${y + 2} ` +
-    `L ${right} ${y + 40} L ${left} ${y + 40} Z`;
-  // top shadow edge (same curve, stroked)
-  const edgePath =
-    `M ${left} ${y + 2} ` +
-    `C ${left + 40} ${y - rise} ${200 - 60} ${y - rise} 200 ${y - rise} ` +
-    `C ${200 + 60} ${y - rise} ${right - 40} ${y - rise} ${right} ${y + 2}`;
-  // root-flare tufts: small triangular grass blades along the mound crest
-  const tufts: string[] = [];
-  const tuftXs = [200 - 46, 200 - 20, 200 + 24, 200 + 50];
-  for (let i = 0; i < tuftXs.length; i++) {
-    const tx = tuftXs[i];
-    const ty = y - rise + 4 + (i % 2) * 2;
-    tufts.push(
-      `<path class="tree-tuft" d="M ${tx - 4} ${ty} Q ${tx - 5} ${ty - 9} ${tx - 1} ${ty - 12} ` +
-        `M ${tx} ${ty} Q ${tx} ${ty - 12} ${tx} ${ty - 14} ` +
-        `M ${tx + 4} ${ty} Q ${tx + 5} ${ty - 9} ${tx + 1} ${ty - 12}"/>`,
-    );
-  }
-  return (
-    `<path class="tree-mound" d="${moundPath}"/>` +
-    `<path class="tree-mound-edge" d="${edgePath}"/>` +
-    tufts.join("")
-  );
 }
 
 // spark + (nothing else) uses fill; icons that are stroke-based skip fill.
