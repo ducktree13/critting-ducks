@@ -7,11 +7,9 @@ import { getStats, xpToNext } from "../game/state";
 import { gameSpeed } from "../game/streak";
 import type { GameState } from "../game/types";
 import { openAchievements } from "./achievementsPanel";
-import { openCrafting } from "./craftingMenu";
 import { openExpeditions } from "./expeditionPanel";
 import { fmt } from "./format";
 import { openInventory } from "./inventoryMenu";
-import { openItemsMenu } from "./itemsMenu";
 import { openShop } from "./shopModal";
 import { attachTooltip } from "./tooltip";
 
@@ -173,8 +171,6 @@ export function initHud(header: HTMLElement): void {
     </div>
     <div class="hud-right">
       <button class="shop-btn" id="hud-achievements">Achievements</button>
-      <button class="shop-btn" id="hud-craft">Craft</button>
-      <button class="shop-btn" id="hud-items">Items</button>
       <button class="shop-btn" id="hud-expeditions">Expeditions</button>
       <button class="shop-btn" id="hud-ducks">Ducks</button>
       <button class="shop-btn" id="hud-shop">Shop</button>
@@ -186,8 +182,6 @@ export function initHud(header: HTMLElement): void {
   header.querySelector("#hud-shop")!.addEventListener("click", openShop);
   header.querySelector("#hud-ducks")!.addEventListener("click", () => openInventory());
   header.querySelector("#hud-achievements")!.addEventListener("click", openAchievements);
-  header.querySelector("#hud-craft")!.addEventListener("click", openCrafting);
-  header.querySelector("#hud-items")!.addEventListener("click", openItemsMenu);
   header.querySelector("#hud-expeditions")!.addEventListener("click", openExpeditions);
 
   goldEl = header.querySelector("#hud-gold-amount")!;

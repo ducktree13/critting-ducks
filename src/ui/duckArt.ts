@@ -1,7 +1,7 @@
 import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
 import { mulberry32 } from "../game/rng";
 import { TRAITS } from "../game/traits";
-import type { EquipSlot, EquipmentItem, GameState, OwnedDuck, Rarity } from "../game/types";
+import type { GameState, OwnedDuck, Rarity } from "../game/types";
 
 // ============================================================================
 // The "Duckling" parametric rig (design/STYLE.md §5).
@@ -325,91 +325,6 @@ function auraEllipse(rarity: Rarity): string {
   return `<ellipse cx="54" cy="70" rx="17" ry="9" fill="none" stroke="${c}" stroke-width="${W2}" stroke-dasharray="4 5" opacity="0.8"/>`;
 }
 
-// ---- R5b equipped-gear layers (100×100 space, drawn on top of the base rig) ----
-// Simple flat shapes in the rig's flat-cartoon style: a rarity-tinted fill via
-// the --rarity-* token plus a thin DUCK_INK outline. Rendered AFTER the base
-// rig so gear sits over the duck.
-
-type WeaponShape = "sword" | "spear" | "dagger" | "generic";
-
-// Name-based heuristic mapping an item kind to a silhouette family.
-function weaponShapeFor(kindId: string): WeaponShape {
-  const k = kindId.toLowerCase();
-  if (k.includes("sword") || k.includes("blade") || k.includes("cutlass")) return "sword";
-  if (k.includes("spear") || k.includes("staff") || k.includes("lance")) return "spear";
-  if (k.includes("dagger") || k.includes("knife")) return "dagger";
-  return "generic";
-}
-
-// A held/strapped weapon silhouette near the wing (right side of the body).
-function weaponLayer(item: EquipmentItem): string {
-  const c = `var(--rarity-${item.rarity})`;
-  const handle = "#7a5a3a";
-  switch (weaponShapeFor(item.kindId)) {
-    case "sword":
-      return (
-        `<line x1="66" y1="70" x2="86" y2="42" stroke="${c}" stroke-width="${(3 / RIG_SCALE).toFixed(2)}" stroke-linecap="round"/>` +
-        `<line x1="66" y1="70" x2="86" y2="42" stroke="${DUCK_INK}" stroke-width="${W14}" stroke-linecap="round"/>` +
-        `<line x1="61" y1="70" x2="71" y2="66" stroke="${handle}" stroke-width="${(3.4 / RIG_SCALE).toFixed(2)}" stroke-linecap="round"/>`
-      );
-    case "spear":
-      return (
-        `<line x1="60" y1="82" x2="88" y2="30" stroke="${handle}" stroke-width="${(2.6 / RIG_SCALE).toFixed(2)}" stroke-linecap="round"/>` +
-        `<path d="M 88 30 l -5 8 l 7 -1 z" fill="${c}" stroke="${DUCK_INK}" stroke-width="${W14}" stroke-linejoin="round"/>`
-      );
-    case "dagger":
-      return (
-        `<line x1="64" y1="68" x2="76" y2="52" stroke="${c}" stroke-width="${(2.8 / RIG_SCALE).toFixed(2)}" stroke-linecap="round"/>` +
-        `<line x1="64" y1="68" x2="76" y2="52" stroke="${DUCK_INK}" stroke-width="${W14}" stroke-linecap="round"/>` +
-        `<line x1="60" y1="70" x2="67" y2="66" stroke="${handle}" stroke-width="${(3 / RIG_SCALE).toFixed(2)}" stroke-linecap="round"/>`
-      );
-    default:
-      // generic: a small hafted mace/hammer head near the wing
-      return (
-        `<line x1="60" y1="80" x2="82" y2="46" stroke="${handle}" stroke-width="${(2.6 / RIG_SCALE).toFixed(2)}" stroke-linecap="round"/>` +
-        `<circle cx="83" cy="44" r="5" fill="${c}" stroke="${DUCK_INK}" stroke-width="${W14}"/>`
-      );
-  }
-}
-
-// A chest-plate overlay on the body silhouette.
-function armorLayer(item: EquipmentItem): string {
-  const c = `var(--rarity-${item.rarity})`;
-  return (
-    `<path d="M 42 52 C 52 47 64 48 70 55 C 68 68 58 74 49 72 C 42 70 39 61 42 52 Z" ` +
-    `fill="${c}" fill-opacity="0.9" stroke="${DUCK_INK}" stroke-width="${W16}" stroke-linejoin="round"/>` +
-    `<line x1="56" y1="49" x2="56" y2="72" stroke="${DUCK_INK}" stroke-width="${W14}" opacity="0.6"/>`
-  );
-}
-
-// A small necklace/pendant at the neck (just under the head).
-function charmLayer(item: EquipmentItem): string {
-  const c = `var(--rarity-${item.rarity})`;
-  return (
-    `<path d="M 30 35 Q 37 44 45 36" fill="none" stroke="${DUCK_INK}" stroke-width="${W14}"/>` +
-    `<circle cx="37.5" cy="43" r="3.2" fill="${c}" stroke="${DUCK_INK}" stroke-width="${W14}"/>`
-  );
-}
-
-function gearLayers(equipment: Partial<Record<EquipSlot, EquipmentItem>>): string {
-  let out = "";
-  if (equipment.armor) out += armorLayer(equipment.armor);
-  if (equipment.charm) out += charmLayer(equipment.charm);
-  if (equipment.weapon) out += weaponLayer(equipment.weapon);
-  return out;
-}
-
-// Compact, stable equipment hash for the cache key: w:kind:rarity,a:...,c:...
-// Empty segments for unworn slots keep it short and order-stable.
-function equipHashOf(equipment?: Partial<Record<EquipSlot, EquipmentItem>>): string {
-  if (!equipment) return "w,a,c";
-  const seg = (s: EquipSlot, prefix: string) => {
-    const it = equipment[s];
-    return it ? `${prefix}:${it.kindId}:${it.rarity}` : prefix;
-  };
-  return `${seg("weapon", "w")},${seg("armor", "a")},${seg("charm", "c")}`;
-}
-
 // Accessories that ride the head cluster (lift with neckExtend) vs. those
 // pinned in world space (scythe leans against the ground; sparkles scatter).
 const HEAD_BORNE_ACCESSORY: Record<Accessory, boolean> = {
@@ -567,20 +482,15 @@ export interface DuckSvgOptions {
   ringed?: boolean;
   /** Adds the one-shot pack-reveal draw-on/pop-in animation classes. */
   reveal?: boolean;
-  /** Equipped gear to render on top of the rig (R5b). Pull via
-   * equippedItemsFor(state, defId). Only shown where a duck is OWNED. */
-  equipment?: Partial<Record<EquipSlot, EquipmentItem>>;
 }
 
-// Portraits are a pure function of (defId, size, ascension, ringed, equipment)
-// — the rig params are hash-derived from defId, so re-parsing the same
-// combination on every roster rebuild / picker open is wasted work. Equipment
-// (R5b) folds into the key via a compact equipHash so a gear swap invalidates
-// the entry. `reveal` drives a one-shot pack-reveal animation and is
-// intentionally excluded from both the key and the cache (those calls always
-// render fresh, uncached). The 300-entry FIFO cap is still comfortable: the
-// working set is a small roster × a few sizes × the handful of gear states any
-// one duck actually cycles through, so churn stays well under the cap.
+// Portraits are a pure function of (defId, size, ascension, ringed) — the rig
+// params are hash-derived from defId, so re-parsing the same combination on
+// every roster rebuild / picker open is wasted work. `reveal` drives a
+// one-shot pack-reveal animation and is intentionally excluded from both the
+// key and the cache (those calls always render fresh, uncached). The
+// 300-entry FIFO cap is still comfortable: the working set is a small roster
+// × a few sizes, so churn stays well under the cap.
 const DUCK_SVG_CACHE_LIMIT = 300;
 const duckSvgCache = new Map<string, string>();
 
@@ -590,11 +500,10 @@ function duckSvgUncached(
   ascension: number,
   ringed: boolean,
   reveal: boolean,
-  equipment?: Partial<Record<EquipSlot, EquipmentItem>>,
 ): string {
   const def = getDuckDef(defId);
   const params = rigParamsFor(defId, def.rarity);
-  const rig = buildRig(def.rarity, params) + (equipment ? gearLayers(equipment) : "");
+  const rig = buildRig(def.rarity, params);
 
   const stars = Array.from({ length: Math.max(0, Math.min(ascension, 3)) }, (_, i) =>
     `<text x="${STAR_X[i]}" y="14" font-size="16" text-anchor="middle" fill="#f5c518" stroke="#a87c00" stroke-width="0.5">★</text>`,
@@ -623,18 +532,14 @@ export function duckSvg(defId: string, size: number, ascensionOrOpts: number | D
   const ascension = opts.ascension ?? 0;
   const ringed = opts.ringed ?? true;
   const reveal = opts.reveal ?? false;
-  const equipment = opts.equipment;
-  const hasGear = equipment !== undefined && (equipment.weapon || equipment.armor || equipment.charm) != null;
 
-  if (reveal) return duckSvgUncached(defId, size, ascension, ringed, reveal, equipment);
+  if (reveal) return duckSvgUncached(defId, size, ascension, ringed, reveal);
 
-  // Cache key MUST fold in equipment (R5b) so swapping/removing gear on a duck
-  // doesn't serve a stale portrait from before the change.
-  const key = `${defId}|${size}|${ascension}|${ringed}|${hasGear ? equipHashOf(equipment) : ""}`;
+  const key = `${defId}|${size}|${ascension}|${ringed}`;
   const cached = duckSvgCache.get(key);
   if (cached !== undefined) return cached;
 
-  const svg = duckSvgUncached(defId, size, ascension, ringed, reveal, equipment);
+  const svg = duckSvgUncached(defId, size, ascension, ringed, reveal);
   if (duckSvgCache.size >= DUCK_SVG_CACHE_LIMIT) {
     // Simple FIFO eviction: drop the oldest entry (Map preserves insertion
     // order) rather than any LRU bookkeeping — good enough for a bounded art

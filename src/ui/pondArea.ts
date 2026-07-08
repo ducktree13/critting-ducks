@@ -14,7 +14,6 @@
 
 import { isDuckOnExpedition } from "../game/expeditions";
 import { on } from "../game/events";
-import { equippedItemsFor } from "../game/gear";
 import { popBubble } from "../game/bubbles";
 import { pondIncomePerSec } from "../game/pond";
 import { getStats } from "../game/state";
@@ -232,7 +231,7 @@ function slotHtml(state: GameState, i: number): string {
       <div class="pond-seat occupied" data-slot="${i}" data-duck="${defId}" style="${style}">
         <span class="pond-wake"></span>
         <span class="pond-swimmer">
-          ${duckSvg(defId, 44, { ascension, ringed: false, equipment: equippedItemsFor(state, defId) })}
+          ${duckSvg(defId, 44, { ascension, ringed: false })}
         </span>
       </div>`;
   }
@@ -541,11 +540,6 @@ export function initPondArea(el: HTMLElement, state: GameState): void {
   });
 
   on("roster", () => rebuildRoster(gameState));
-  // Gear swaps don't change pondRosterKey; rebuild seats when a duck shown in
-  // the pond has its equipment change (R5b).
-  on("gear", (e) => {
-    if (e.defId == null || gameState.rosters.pond.includes(e.defId)) rebuildRoster(gameState);
-  });
 
   rebuildRoster(state);
 }

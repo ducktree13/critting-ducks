@@ -1,7 +1,7 @@
 import { ARENA_BASE, ARENA_GROUPS, BASE_STATS, BOSS_ENEMY, ENEMY_TYPES } from "./balance";
 import { attackDamageOf, attackSpeedOf, critChanceBonusOf, defenseOf, getDuckDef, hpOf, xpMultOf } from "./ducks";
 import { emit } from "./events";
-import { rollEquipmentDrop, rollMaterialDrop } from "./gear";
+import { rollMaterialDrop } from "./gear";
 import { getStats, grantXp } from "./state";
 import { registerHitResult } from "./streak";
 import type { ArenaEnemy, ArenaState, GameState, OwnedDuck, Rng } from "./types";
@@ -125,7 +125,6 @@ function victory(state: GameState, rng: Rng, nowMs: number): void {
     lucky.shards += 1;
   }
   rollMaterialDrop(state, rng, wave, boss);
-  rollEquipmentDrop(state, rng, boss);
   if (boss) state.lifetime.bossesDefeated += 1;
 
   emit("wave", { wave, boss, gold, xp });

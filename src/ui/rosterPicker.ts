@@ -1,5 +1,4 @@
 import { getDuckDef } from "../game/ducks";
-import { equippedItemsFor } from "../game/gear";
 import { assignToRoster, isRoleEligible } from "../game/state";
 import type { GameState, Panel } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
@@ -41,7 +40,7 @@ export function openRosterPicker(state: GameState, panel: Panel, slotIndex: numb
     const meta = [`Lv ${duck.level}`, def.role, wrongRole ? "wrong role" : where].filter(Boolean).join(" · ");
     return `
       <button class="picker-row${disabled ? " picker-disabled" : ""}" data-duck="${duck.defId}"${disabled ? " disabled" : ""}>
-        <span class="picker-art">${duckSvg(duck.defId, 44, { ascension: duck.ascension ?? 0, equipment: equippedItemsFor(state, duck.defId) })}</span>
+        <span class="picker-art">${duckSvg(duck.defId, 44, { ascension: duck.ascension ?? 0 })}</span>
         <span class="picker-info">
           <b>${def.name}</b>
           <small>${meta}</small>

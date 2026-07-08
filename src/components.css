@@ -76,9 +76,6 @@ button,
 .duck-card,
 .reveal-card,
 .inv-tile,
-.equip-slot,
-.gear-row,
-.recipe-row,
 .expedition-row,
 .ach-row,
 .mission-tracker,
@@ -116,9 +113,6 @@ button,
 .picker-row,
 .duck-card,
 .inv-tile,
-.equip-slot,
-.gear-row,
-.recipe-row,
 .expedition-row,
 .ach-row,
 .mission-tracker,
@@ -139,9 +133,6 @@ button,
 .picker-row,
 .duck-card,
 .inv-tile,
-.equip-slot,
-.gear-row,
-.recipe-row,
 .expedition-row,
 .ach-row,
 .tree-nav,
@@ -262,11 +253,10 @@ button:disabled {
 }
 
 /* Locked ≠ disabled: 45° stripe pair + dashed border + locked-text (§3, §9).
-   Applies to vein buttons and pack/recipe rows that carry a padlock glyph
-   in their markup. */
+   Applies to vein buttons and pack rows that carry a padlock glyph in their
+   markup. */
 .vein.locked,
-.pack-btn:disabled,
-.recipe-row.locked {
+.pack-btn:disabled {
   background: repeating-linear-gradient(
     45deg,
     var(--locked-a),
@@ -285,10 +275,6 @@ button:disabled {
 .vein.locked:hover,
 .pack-btn:disabled:hover {
   transform: none;
-}
-
-.recipe-row.locked .recipe-info small {
-  color: var(--locked-text);
 }
 
 /* Frameless world areas (Phase E chunk 1): no panel fill/border/header band —
@@ -435,26 +421,26 @@ button:disabled {
 }
 
 /* ---- Rarity border tokens (§4) — de-duplicated from style.css raw hex
-   across reveal cards, duck cards, inventory tiles, equip slots and gear
-   rows. Hue is never the only cue in the actual card art (shape signatures
-   live in the SVG); this border is the chrome-level echo of that hue. */
+   across reveal cards, duck cards, and inventory tiles. Hue is never the
+   only cue in the actual card art (shape signatures live in the SVG); this
+   border is the chrome-level echo of that hue. */
 
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-uncommon {
+:is(.reveal-card, .duck-card, .inv-tile).rarity-uncommon {
   border-color: var(--rarity-uncommon);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-rare {
+:is(.reveal-card, .duck-card, .inv-tile).rarity-rare {
   border-color: var(--rarity-rare);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-epic {
+:is(.reveal-card, .duck-card, .inv-tile).rarity-epic {
   border-color: var(--rarity-epic);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-legendary {
+:is(.reveal-card, .duck-card, .inv-tile).rarity-legendary {
   border-color: var(--rarity-legendary);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-mythic {
+:is(.reveal-card, .duck-card, .inv-tile).rarity-mythic {
   border-color: var(--rarity-mythic);
 }
-:is(.reveal-card, .duck-card, .inv-tile, .equip-slot, .gear-row, .item-tile).rarity-divine {
+:is(.reveal-card, .duck-card, .inv-tile).rarity-divine {
   border-color: var(--rarity-divine);
 }
 

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { DUCK_DEFS } from "../game/ducks";
-import type { EquipmentItem } from "../game/types";
 import { duckSvg } from "./duckArt";
 
 // duckArt.ts is a pure SVG string builder; rig params (including the R5b
@@ -44,69 +43,5 @@ describe("duckArt R5b silhouette variance", () => {
       const svg = duckSvg(def.id, 64, { ringed: false });
       expect(svg.length).toBeLessThan(3300);
     }
-  });
-});
-
-function makeItem(partial: Partial<EquipmentItem>): EquipmentItem {
-  return {
-    id: partial.id ?? "eqX",
-    kindId: partial.kindId ?? "Cutlass",
-    slot: partial.slot ?? "weapon",
-    rarity: partial.rarity ?? "rare",
-    name: partial.name ?? "Fine Cutlass",
-    stats: partial.stats ?? {},
-    equippedBy: partial.equippedBy ?? null,
-  };
-}
-
-describe("duckArt R5b equipped gear", () => {
-  const id = DUCK_DEFS[0].id;
-
-  it("renders gear on top and changes the markup vs. bare", () => {
-    const bare = duckSvg(id, 64, { ringed: false });
-    const armed = duckSvg(id, 64, {
-      ringed: false,
-      equipment: { weapon: makeItem({ id: "eq1", kindId: "Sword", rarity: "epic" }) },
-    });
-    expect(armed).not.toBe(bare);
-    expect(armed).toContain("var(--rarity-epic)");
-  });
-
-  it("cache key folds in equipment (swap → different, remove → back to bare)", () => {
-    const bare = duckSvg(id, 64, { ringed: false });
-    const withA = duckSvg(id, 64, {
-      ringed: false,
-      equipment: { weapon: makeItem({ id: "eqA", kindId: "Dagger", rarity: "common" }) },
-    });
-    const withB = duckSvg(id, 64, {
-      ringed: false,
-      equipment: { weapon: makeItem({ id: "eqB", kindId: "Spear", rarity: "legendary" }) },
-    });
-    expect(withA).not.toBe(withB); // different kind/rarity → different portrait
-    expect(withA).not.toBe(bare);
-    // Removing gear returns byte-identical to the never-equipped portrait (no
-    // stale ghost from the cache).
-    expect(duckSvg(id, 64, { ringed: false })).toBe(bare);
-    expect(duckSvg(id, 64, { ringed: false, equipment: {} })).toBe(bare);
-  });
-
-  it("varies weapon silhouette by kind heuristic", () => {
-    const sword = duckSvg(id, 64, { ringed: false, equipment: { weapon: makeItem({ id: "s", kindId: "Sword" }) } });
-    const spear = duckSvg(id, 64, { ringed: false, equipment: { weapon: makeItem({ id: "p", kindId: "Spear" }) } });
-    expect(sword).not.toBe(spear);
-  });
-
-  it("renders all three slots together", () => {
-    const svg = duckSvg(id, 64, {
-      ringed: false,
-      equipment: {
-        weapon: makeItem({ id: "w", slot: "weapon", kindId: "Hammer", rarity: "rare" }),
-        armor: makeItem({ id: "a", slot: "armor", kindId: "Breastplate", rarity: "epic" }),
-        charm: makeItem({ id: "c", slot: "charm", kindId: "Amulet", rarity: "mythic" }),
-      },
-    });
-    expect(svg).toContain("var(--rarity-rare)");
-    expect(svg).toContain("var(--rarity-epic)");
-    expect(svg).toContain("var(--rarity-mythic)");
   });
 });

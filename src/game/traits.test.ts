@@ -34,14 +34,15 @@ describe("trait effects fold into duck stat helpers", () => {
     expect(hpOf(state, puddle)).toBeCloseTo(30 * 1.05);
   });
 
-  it("weapon gear adds flat attack then multiplies", () => {
+  it("equipment (removed feature, playtest X1) no longer affects attack even if present in state", () => {
     const quackers = { defId: "quackers", level: 1, shards: 0, nextHitIn: 1 };
     state.equipment.push({
       id: "eq1", kindId: "Dagger", slot: "weapon", rarity: "common",
       name: "Worn Dagger", stats: { flatAttack: 1, attackMult: 1.1 }, equippedBy: "quackers",
     });
-    // (1.5 base * 1.1 brave + 1 flat) * 1.1 gear mult
-    expect(attackDamageOf(state, quackers)).toBeCloseTo((1.5 * 1.1 + 1) * 1.1);
+    // Old saves may still carry equipped items, but gear no longer folds into
+    // stats — only the base/level/ascension/trait math applies.
+    expect(attackDamageOf(state, quackers)).toBeCloseTo(1.5 * 1.1);
   });
 });
 

@@ -1,11 +1,9 @@
 import { ORE_LEVEL_GATES, ORE_VALUES } from "../game/balance";
 import { on } from "../game/events";
-import { equippedItemsFor } from "../game/gear";
 import { getStats, refreshStats } from "../game/state";
 import type { GameState, OreId } from "../game/types";
 import { duckSvg, duckTooltipHtml } from "./duckArt";
 import { makeDuckDraggable, makeDuckDropTarget } from "./dragDuck";
-import { fmt } from "./format";
 import { renderMissionTracker } from "./missionsPanel";
 import { openRosterPicker } from "./rosterPicker";
 import { attachTooltip } from "./tooltip";
@@ -40,14 +38,12 @@ const ORE_UNLOCK_HINT: Record<OreId, string> = {
 let panel: HTMLElement;
 let rockEl: HTMLElement;
 let duckRowEl: HTMLElement;
-let oreCountersEl: HTMLElement;
 let veinsEl: HTMLElement;
 let tickerEl: HTMLElement;
 let missionEl: HTMLElement;
 let caveAnchorEl: HTMLElement;
 let goldTargetEl: HTMLElement | null = null;
 let lastRosterKey = "";
-let lastOreCountersKey = "";
 
 // Mine TUNNEL (Phase W1, playtest re-author): a static SVG scene sitting behind
 // the rock/vein/duck-row content via a negative z-index. The camera now looks
@@ -206,13 +202,11 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
       <div class="duck-row" id="mine-ducks"></div>
       <div class="mine-controls">
         <div class="vein-row well" id="vein-row"></div>
-        <div class="ore-counters" id="ore-counters"></div>
       </div>
     </div>
   `;
   rockEl = panel.querySelector("#mine-rock")!;
   duckRowEl = panel.querySelector("#mine-ducks")!;
-  oreCountersEl = panel.querySelector("#ore-counters")!;
   veinsEl = panel.querySelector("#vein-row")!;
   tickerEl = panel.querySelector("#mine-ticker")!;
   missionEl = panel.querySelector("#mine-mission")!;
@@ -244,12 +238,6 @@ export function initMinePanel(root: HTMLElement, state: GameState): void {
     const duckEl = duckRowEl.querySelector<HTMLElement>(`[data-duck="${e.duckId}"]`);
     if (duckEl) walkIntoCave(duckEl, e.duckId);
     else shakeRockAndDeposit();
-  });
-
-  // Equipping/unequipping gear doesn't change rosterKey, so force a roster
-  // rebuild when a duck currently shown in the mine has its gear change (R5b).
-  on("gear", (e) => {
-    if (e.defId == null || state.rosters.mine.includes(e.defId)) renderRoster(state);
   });
 }
 
@@ -425,7 +413,7 @@ function renderRoster(state: GameState): void {
     if (defId) {
       const ascension = state.ducks.find((d) => d.defId === defId)?.ascension ?? 0;
       slots.push(
-        `<div class="duck-slot" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64, { ascension, ringed: false, equipment: equippedItemsFor(state, defId) })}</div>`,
+        `<div class="duck-slot" data-duck="${defId}" data-slot="${i}">${duckSvg(defId, 64, { ascension, ringed: false })}</div>`,
       );
     } else {
       slots.push(`<div class="duck-slot empty" data-slot="${i}" title="Assign a duck">+</div>`);
@@ -451,27 +439,8 @@ function rosterKey(state: GameState): string {
   return state.rosters.mine.join(",") + "|" + getStats(state).mineSlots;
 }
 
-function oreCountersKey(state: GameState): string {
-  // fmt() collapses to formatted strings, so the key must reflect the
-  // *displayed* text (not raw ore counts) to avoid rebuilding on sub-display
-  // fluctuations while still rebuilding whenever a shown value changes.
-  return (Object.keys(ORE_VALUES) as OreId[])
-    .filter((ore) => state.ores[ore] > 0)
-    .map((ore) => `${ore}:${fmt(state.ores[ore])}`)
-    .join(",");
-}
-
 export function renderMinePanel(state: GameState): void {
   if (rosterKey(state) !== lastRosterKey) renderRoster(state);
-
-  const oreKey = oreCountersKey(state);
-  if (oreKey !== lastOreCountersKey) {
-    oreCountersEl.innerHTML = (Object.keys(ORE_VALUES) as OreId[])
-      .filter((ore) => state.ores[ore] > 0)
-      .map((ore) => `<span class="ore-counter">${ORE_NAMES[ore]}: ${fmt(state.ores[ore])}</span>`)
-      .join("");
-    lastOreCountersKey = oreKey;
-  }
 
   tickerEl.textContent = `${state.rosters.mine.length} mining`;
   renderMissionTracker("mine", missionEl, state);

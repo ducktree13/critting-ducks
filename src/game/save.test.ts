@@ -242,6 +242,40 @@ describe("save/load", () => {
     expect("nextLeafAt" in loaded!).toBe(false);
   });
 
+  it("loads an old save with equipment/materials data cleanly (playtest X1 removal)", () => {
+    // Equipment/crafting were removed from UI and gameplay effects, but the
+    // GameState fields must stay so pre-existing saves round-trip without
+    // throwing and don't silently lose the player's stockpiled data.
+    const storage = fakeStorage();
+    storage.setItem(
+      "crittingDucks.save",
+      JSON.stringify({
+        version: 2,
+        state: {
+          version: 2,
+          gold: 100,
+          equipment: [
+            {
+              id: "eq1", kindId: "Dagger", slot: "weapon", rarity: "common",
+              name: "Worn Dagger", stats: { flatAttack: 1, attackMult: 1.1 }, equippedBy: "bill",
+            },
+          ],
+          materials: { slimeGoo: 5, gooseFeather: 2, golemCrumb: 0, sharkTooth: 0, pondlordRelic: 1 },
+          ores: { copper: 300, silver: 10, crystal: 0, starmetal: 0, voidstone: 0, aurorium: 0 },
+        },
+      }),
+    );
+
+    const loaded = load(storage);
+
+    expect(loaded).not.toBeNull();
+    expect(loaded!.equipment).toHaveLength(1);
+    expect(loaded!.equipment[0].id).toBe("eq1");
+    expect(loaded!.materials.slimeGoo).toBe(5);
+    expect(loaded!.materials.pondlordRelic).toBe(1);
+    expect(loaded!.ores.copper).toBe(300);
+  });
+
   it("falls back to null and stashes corrupt JSON instead of wiping it", () => {
     const storage = fakeStorage();
     storage.setItem("crittingDucks.save", "{not valid json");

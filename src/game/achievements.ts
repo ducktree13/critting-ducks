@@ -49,7 +49,6 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   { id: "leaves50", name: "Bubble Popper", desc: "Pop 50 pond bubbles", metric: (s) => s.lifetime.bubblesPopped, target: 50, reward: { gold: 600 } },
   { id: "quackeningHolder", name: "Living Legend", desc: "Reach a 150-crit streak", metric: (s) => s.streak.best, target: 150, reward: { packCredits: { pack25: 1 } } },
   { id: "allOres", name: "Prospector", desc: "Unlock all 6 ore types", metric: (s) => getStats(s).unlockedOres.length, target: 6, reward: { gold: 2000 } },
-  { id: "craft10", name: "Artisan", desc: "Craft 10 pieces of gear", metric: (s) => s.lifetime.gearCrafted, target: 10, reward: { gold: 700 } },
   { id: "act2trees4", name: "Grand Gardener", desc: "Complete all four Act 2 trees", metric: act2TreesCompleted, target: 4, reward: { packCredits: { pack100: 1 } } },
   { id: "wave50", name: "Wave Fifty", desc: "Win arena wave 50", metric: (s) => s.arena.wave, target: 50, reward: { gold: 5000 } },
   { id: "ducks50", name: "Flock Leader", desc: "Own 50 ducks", metric: (s) => s.ducks.length, target: 50, reward: { packCredits: { pack25: 1 } } },

@@ -248,7 +248,7 @@ main.world {
   padding: 8px;
 }
 
-/* An empty well (e.g. ore-counters before any ore is mined) shows nothing. */
+/* An empty well shows nothing. */
 .well:empty {
   display: none;
   border: none;
@@ -373,10 +373,6 @@ main.world {
   padding: 6px;
 }
 
-.mine-controls .ore-counters {
-  justify-content: center;
-}
-
 .mine-body .mission-slot {
   position: absolute;
   left: 8px;
@@ -484,25 +480,6 @@ main.world {
   color: var(--muted);
   font-size: 1.4rem;
   animation: none;
-}
-
-.ore-counters {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  color: var(--muted);
-  font-size: 0.85rem;
-}
-
-/* Slim strip; give the mined ore counts a readable backing over the scene. */
-.mine-controls .ore-counters:not(:empty) {
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  border-radius: var(--radius-m);
-  padding: 3px 10px;
-}
-
-.mine-controls .ore-counters:empty {
-  display: none;
 }
 
 /* ---- Skill tree ---- */
@@ -1620,86 +1597,6 @@ main.world {
   position: relative;
 }
 
-/* ---- Gear: equip slots, unequipped gear list, crafting ---- */
-
-.inv-card-equip {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-}
-
-.equip-slot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 8px;
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--fg);
-  font: inherit;
-  font-size: 0.76rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-.equip-slot:hover {
-  border-color: var(--accent);
-}
-
-.equip-slot small {
-  color: var(--muted);
-  margin-right: 8px;
-}
-
-/* Rarity border colors: see src/components.css (design/STYLE.md §4) */
-
-.gear-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px 10px;
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
-  background: var(--card);
-  font-size: 0.8rem;
-}
-
-/* Rarity border colors: see src/components.css (design/STYLE.md §4) */
-
-.crafting-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 55vh;
-  overflow-y: auto;
-}
-
-.recipe-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 10px;
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
-  background: var(--card);
-}
-
-.recipe-row.locked {
-  opacity: 0.55;
-}
-
-.recipe-info small {
-  display: block;
-  color: var(--muted);
-  font-size: 0.76rem;
-}
-
-.crafting-result {
-  margin-top: 12px;
-}
-
 /* ---- Expeditions ---- */
 
 .expedition-box {
@@ -2088,91 +1985,6 @@ main.world {
   font-weight: 600;
   cursor: pointer;
   /* fill/color/border/radius/shadow: src/components.css */
-}
-
-/* ---- Items menu (Phase R5a): equipment grid + materials/ores stock ---- */
-
-.item-tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 8px;
-  border: 2px solid var(--card-border);
-  border-radius: 10px;
-  background: var(--card);
-  color: var(--fg);
-  font: inherit;
-  font-size: 0.72rem;
-  cursor: pointer;
-  text-align: center;
-}
-
-.item-tile.selected {
-  border-color: var(--accent);
-}
-
-.item-glyph {
-  font-size: 1.4rem;
-  line-height: 1;
-}
-
-.item-glyph-lg {
-  font-size: 2.4rem;
-  line-height: 1;
-}
-
-.item-card-art {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 80px;
-}
-
-.item-worn {
-  color: var(--muted);
-  font-size: 0.68rem;
-}
-
-.item-card-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.items-section {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--card-border);
-}
-
-.items-section h4 {
-  margin: 0 0 6px;
-  font-size: 0.85rem;
-  color: var(--muted);
-}
-
-.items-materials,
-.items-ores {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.items-stock-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border: 1px solid var(--card-border);
-  border-radius: 6px;
-  background: var(--card);
-  font-size: 0.78rem;
-}
-
-.items-stock-icon {
-  font-size: 1rem;
 }
 
 /* ---- Floaters ----

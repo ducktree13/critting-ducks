@@ -1,7 +1,7 @@
 import { ASCENSION, DUCK_LEVEL_STAT_BONUS, EXPEDITION_POWER, POND } from "./balance";
 import { GENERATED_DUCKS } from "./duckgen";
 import { TRAITS } from "./traits";
-import type { DuckDef, EquipSlot, EquipmentStats, GameState, OwnedDuck } from "./types";
+import type { DuckDef, GameState, OwnedDuck } from "./types";
 
 // The 13 v1 ducks, rescaled for the v2 economy (PLAN2.md §3: mining power
 // ~1/10 of v1, attack damage ~1/2), plus ~147 more from duckgen.ts to reach
@@ -59,37 +59,29 @@ function traitEffect(def: DuckDef) {
   return TRAITS[def.trait].effect;
 }
 
-// The equipped item's stats for one slot, or undefined if nothing's there.
-function gearEffect(state: GameState, defId: string, slot: EquipSlot): EquipmentStats | undefined {
-  return state.equipment.find((e) => e.equippedBy === defId && e.slot === slot)?.stats;
-}
-
 export function miningPowerOf(duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
   return def.miningPower * levelStatMult(duck.level) * ascensionMult(duck) * (traitEffect(def).miningMult ?? 1);
 }
 
-// Weapon gear: +flatAttack, then *attackMult.
-export function attackDamageOf(state: GameState, duck: OwnedDuck): number {
+// Equipment/crafting are removed for now (playtest X1): gear no longer
+// folds into these stats, even for old saves carrying equipped items. The
+// `state` param stays (unused) so call sites across the codebase don't need
+// to change if/when a future rework reintroduces gear effects here.
+export function attackDamageOf(_state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  const gear = gearEffect(state, duck.defId, "weapon");
-  const base = def.attackDamage * levelStatMult(duck.level) * ascensionMult(duck) * (traitEffect(def).attackMult ?? 1);
-  return (base + (gear?.flatAttack ?? 0)) * (gear?.attackMult ?? 1);
+  return def.attackDamage * levelStatMult(duck.level) * ascensionMult(duck) * (traitEffect(def).attackMult ?? 1);
 }
 
-// Armor gear: *hpMult (level scaling matches v1's own hp scaling).
-export function hpOf(state: GameState, duck: OwnedDuck): number {
+export function hpOf(_state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  const gear = gearEffect(state, duck.defId, "armor");
-  return def.hp * levelStatMult(duck.level) * ascensionMult(duck) * (traitEffect(def).hpMult ?? 1) * (gear?.hpMult ?? 1);
+  return def.hp * levelStatMult(duck.level) * ascensionMult(duck) * (traitEffect(def).hpMult ?? 1);
 }
 
-// Armor gear: +flatDefense. Defense does not scale with level (matches v1)
-// but does scale with ascension.
-export function defenseOf(state: GameState, duck: OwnedDuck): number {
+// Defense does not scale with level (matches v1) but does scale with ascension.
+export function defenseOf(_state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  const gear = gearEffect(state, duck.defId, "armor");
-  return def.defense * ascensionMult(duck) * (traitEffect(def).defenseMult ?? 1) + (gear?.flatDefense ?? 0);
+  return def.defense * ascensionMult(duck) * (traitEffect(def).defenseMult ?? 1);
 }
 
 export function attackSpeedOf(duck: OwnedDuck): number {
@@ -97,11 +89,9 @@ export function attackSpeedOf(duck: OwnedDuck): number {
   return def.attacksPerSecond * (traitEffect(def).attackSpeedMult ?? 1);
 }
 
-// Charm gear: +critChanceBonus.
-export function critChanceBonusOf(state: GameState, duck: OwnedDuck): number {
+export function critChanceBonusOf(_state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  const gear = gearEffect(state, duck.defId, "charm");
-  return def.critChanceBonus + (traitEffect(def).critChanceBonus ?? 0) + (gear?.critChanceBonus ?? 0);
+  return def.critChanceBonus + (traitEffect(def).critChanceBonus ?? 0);
 }
 
 // Multiplies this duck's own XP contribution (trait-only, e.g. Intelligent).
@@ -109,17 +99,15 @@ export function xpMultOf(duck: OwnedDuck): number {
   return traitEffect(getDuckDef(duck.defId)).xpMult ?? 1;
 }
 
-// Multiplies this duck's own gold contribution: trait (e.g. Greedy) * charm gear.
-export function goldMultOf(state: GameState, duck: OwnedDuck): number {
+// Multiplies this duck's own gold contribution (trait-only, e.g. Greedy).
+export function goldMultOf(_state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
-  const gear = gearEffect(state, duck.defId, "charm");
-  return (traitEffect(def).goldMult ?? 1) * (gear?.goldMult ?? 1);
+  return traitEffect(def).goldMult ?? 1;
 }
 
-// Pond contribution (PLAN2.md §10): derived from effective HP (armor gear
-// included) rather than a new per-duck field, so it scales with rarity/
-// level/ascension/gear for free — every duck in the roster is usable, and
-// Lazy ducks excel via their trait.
+// Pond contribution (PLAN2.md §10): derived from effective HP rather than a
+// new per-duck field, so it scales with rarity/level/ascension for free —
+// every duck in the roster is usable, and Lazy ducks excel via their trait.
 export function passivePowerOf(state: GameState, duck: OwnedDuck): number {
   const def = getDuckDef(duck.defId);
   return hpOf(state, duck) * POND.passivePowerFromHp * (traitEffect(def).passivePowerMult ?? 1);
@@ -127,8 +115,8 @@ export function passivePowerOf(state: GameState, duck: OwnedDuck): number {
 
 // Expedition contribution (PLAN2.md §11): folds attack, mining, and a
 // slice of hp into one number, so both fighter and miner ducks are worth
-// sending — same effective-stat helpers as everywhere else, so gear and
-// ascension scale it for free.
+// sending — same effective-stat helpers as everywhere else, so ascension
+// scales it for free.
 export function expeditionPowerOf(state: GameState, duck: OwnedDuck): number {
   return (
     attackDamageOf(state, duck) * EXPEDITION_POWER.attackWeight +

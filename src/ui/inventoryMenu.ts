@@ -1,18 +1,14 @@
 import { ASCENSION } from "../game/balance";
 import { attackDamageOf, defenseOf, getDuckDef, hpOf, miningPowerOf } from "../game/ducks";
-import { equipItem, equippedItemsFor, unequipItem } from "../game/gear";
-import { on } from "../game/events";
 import { ascendDuck, ascensionCost, canAscend, canUpgrade, upgradeAll, upgradeCost } from "../game/packs";
 import { assignToRoster, getStats, isRoleEligible, toggleFavorite } from "../game/state";
 import { TRAITS } from "../game/traits";
-import type { EquipSlot, EquipmentItem, GameState, Panel } from "../game/types";
+import type { GameState, Panel } from "../game/types";
 import { showToast } from "./achievementsPanel";
 import { duckSvg, rarityCrestBadge } from "./duckArt";
 import { makeDuckDraggable } from "./dragDuck";
 import { duckComparator, type SortKey } from "./duckSort";
-import { attachTooltip } from "./tooltip";
 
-const SLOT_LABEL: Record<EquipSlot, string> = { weapon: "Weapon", armor: "Armor", charm: "Charm" };
 const PANEL_LABEL: Record<Panel, string> = { mine: "Mine", arena: "Arena", pond: "Pond" };
 
 let overlay: HTMLElement;
@@ -69,15 +65,6 @@ export function initInventoryMenu(state: GameState): void {
     renderUpgradeAllButton();
   });
   document.body.appendChild(overlay);
-
-  // Gear changes made from the Items menu (or elsewhere) must refresh the
-  // duck card's equip-slot display when this menu is open.
-  on("gear", () => {
-    if (overlay.classList.contains("open")) {
-      renderCard();
-      renderGrid(); // grid tiles now show equipped gear too (R5b)
-    }
-  });
 }
 
 function renderUpgradeAllButton(): void {
@@ -110,7 +97,7 @@ function renderGrid(): void {
       const def = getDuckDef(duck.defId);
       return `
         <button class="inv-tile rarity-${def.rarity}${duck.defId === selectedDefId ? " selected" : ""}" data-duck="${duck.defId}">
-          ${duckSvg(duck.defId, 48, { ascension: duck.ascension ?? 0, equipment: equippedItemsFor(gameState, duck.defId) })}
+          ${duckSvg(duck.defId, 48, { ascension: duck.ascension ?? 0 })}
           ${duck.favorite ? `<span class="inv-fav">♥</span>` : ""}
           <small>${def.name}</small>
         </button>`;
@@ -179,19 +166,8 @@ function renderCard(): void {
     })
     .join("");
 
-  const equipped = equippedItemsFor(gameState, duck.defId);
-  const slotsHtml = (["weapon", "armor", "charm"] as EquipSlot[])
-    .map((slot) => {
-      const item = equipped[slot];
-      return `<button class="equip-slot rarity-${item?.rarity ?? "none"}" data-slot="${slot}">
-        <small>${SLOT_LABEL[slot]}</small>
-        <span>${item ? item.name : "— empty —"}</span>
-      </button>`;
-    })
-    .join("");
-
   card.innerHTML = `
-    <div class="inv-card-art">${rarityCrestBadge(def.rarity)}${duckSvg(duck.defId, 96, { ascension: duck.ascension ?? 0, equipment: equipped })}</div>
+    <div class="inv-card-art">${rarityCrestBadge(def.rarity)}${duckSvg(duck.defId, 96, { ascension: duck.ascension ?? 0 })}</div>
     <div class="inv-card-body">
       <div class="inv-card-title">
         <b>${def.name}</b>
@@ -212,7 +188,6 @@ function renderCard(): void {
       </div>
       <div class="inv-card-roster">${rosterLabel}</div>
       <div class="inv-card-quick-assign">${quickAssignHtml}</div>
-      <div class="inv-card-equip">${slotsHtml}</div>
     </div>
   `;
   card.querySelector("#inv-fav-btn")!.addEventListener("click", () => {
@@ -237,63 +212,4 @@ function renderCard(): void {
       renderUpgradeAllButton();
     }
   });
-  card.querySelectorAll<HTMLButtonElement>(".equip-slot").forEach((btn) => {
-    const slot = btn.dataset.slot as EquipSlot;
-    const item = equipped[slot];
-    if (item) {
-      attachTooltip(btn, () => equipmentTooltipHtml(item));
-    }
-    btn.addEventListener("click", () => openEquipPicker(duck.defId, slot));
-  });
-}
-
-function equipmentTooltipHtml(item: EquipmentItem): string {
-  const parts = Object.entries(item.stats)
-    .filter(([, v]) => v !== undefined)
-    .map(([k, v]) => `${k}: ${v}`);
-  return `<b>${item.name}</b> <span class="tt-rarity rarity-${item.rarity}">${item.rarity}</span><div class="tt-stats">${parts.join(" · ")}</div>`;
-}
-
-// Overlay listing unequipped items for the given slot, plus the currently
-// equipped item (if any) with an unequip option.
-function openEquipPicker(defId: string, slot: EquipSlot): void {
-  document.querySelector(".picker-overlay")?.remove();
-  const equipped = equippedItemsFor(gameState, defId)[slot];
-  const candidates = gameState.equipment.filter((e) => e.slot === slot && e.equippedBy === null);
-
-  const rows = candidates
-    .map((item) => {
-      const statLine = Object.entries(item.stats)
-        .filter(([, v]) => v !== undefined)
-        .map(([k, v]) => `${k} ${v}`)
-        .join(", ");
-      return `<button class="picker-row" data-item="${item.id}">
-        <span class="picker-info"><b>${item.name}</b><small>${item.rarity} · ${statLine}</small></span>
-      </button>`;
-    })
-    .join("");
-
-  const overlay = document.createElement("div");
-  overlay.className = "picker-overlay";
-  overlay.innerHTML = `
-    <div class="picker-box">
-      <h3>${SLOT_LABEL[slot]}</h3>
-      <div class="picker-list">
-        ${rows || `<p class="inv-hint">No unequipped ${SLOT_LABEL[slot].toLowerCase()}s. Find or craft some!</p>`}
-        ${equipped ? `<button class="picker-row picker-clear" data-clear="1">Unequip ${equipped.name}</button>` : ""}
-      </div>
-    </div>
-  `;
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) overlay.remove();
-  });
-  overlay.querySelectorAll<HTMLButtonElement>(".picker-row").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      if (btn.dataset.clear && equipped) unequipItem(gameState, equipped.id);
-      else if (btn.dataset.item) equipItem(gameState, defId, btn.dataset.item);
-      overlay.remove();
-      renderCard();
-    });
-  });
-  document.body.appendChild(overlay);
 }

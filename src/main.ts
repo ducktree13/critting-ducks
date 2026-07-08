@@ -19,12 +19,10 @@ import { gameSpeed } from "./game/streak";
 import type { GameState, Rng } from "./game/types";
 import { initAchievementsPanel } from "./ui/achievementsPanel";
 import { initArenaPanel, renderArenaPanel } from "./ui/arenaPanel";
-import { initCraftingMenu } from "./ui/craftingMenu";
 import { initExpeditionPanel } from "./ui/expeditionPanel";
 import { initFloaters } from "./ui/floaters";
 import { initHud, renderHud } from "./ui/hud";
 import { initInventoryMenu } from "./ui/inventoryMenu";
-import { initItemsMenu } from "./ui/itemsMenu";
 import { initMinePanel, renderMinePanel } from "./ui/minePanel";
 import { initPondArea, renderPondArea } from "./ui/pondArea";
 import { initShopModal } from "./ui/shopModal";
@@ -107,9 +105,7 @@ initShopModal(state, rng, {
   },
 });
 initInventoryMenu(state);
-initItemsMenu(state);
 initAchievementsPanel(state);
-initCraftingMenu(state, rng);
 initExpeditionPanel(state, rng);
 initHud(app.querySelector("header.hud")!);
 initTheme(state, app.querySelector<HTMLElement>("#hud-theme")!);

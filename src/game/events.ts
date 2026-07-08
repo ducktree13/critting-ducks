@@ -1,4 +1,4 @@
-import type { EquipmentItem, MaterialId, MissionSection } from "./types";
+import type { MaterialId, MissionSection } from "./types";
 
 export interface GameEventMap {
   hit: { panel: "mine" | "arena"; duckId: string; isCrit: boolean; gold: number; xp: number; ore: number; dmg: number; targetId?: string };
@@ -13,12 +13,10 @@ export interface GameEventMap {
   missionComplete: { section: MissionSection; name: string };
   achievement: { id: string; name: string };
   materialDrop: { material: MaterialId };
-  equipmentDrop: { item: EquipmentItem };
   chapterAdvance: { chapter: number };
   bubblePopped: { kind: "gold" | "xp" | "duck"; amount: number; isCrit: boolean };
   expeditionReady: { id: string };
   expeditionClaimed: { success: boolean; isCrit: boolean; gold: number; xp: number };
-  gear: { defId: string | null; itemId: string };
 }
 
 export type GameEventName = keyof GameEventMap;
