@@ -76,13 +76,16 @@ describe("computeOfflineProgress", () => {
   });
 
   it("rolls XP into level-ups", () => {
-    // 1 xp/sec at 50% for 3600s → 1800 xp clears the 100/160/256/409.6/655.36
-    // thresholds (growth 1.6): level 1 → 6 with ~219 left over
+    // 1 xp/sec at 50% for 3600s → 1800 xp. With growth 1.32 the thresholds
+    // run 100/132/174.24/230.00/303.60/400.75 (cum ≈ 1340.58): level 1 → 7
+    // with ~459.4 left over; the level-8 threshold (~528.98) isn't reached.
     const report = computeOfflineProgress(state, 3600, noBuffStats());
     expect(report.xpGained).toBeCloseTo(1800);
-    expect(report.levelsGained).toBe(5);
-    expect(state.level).toBe(6);
-    expect(state.xp).toBeCloseTo(1800 - 100 - 160 - 256 - 409.6 - 655.36);
+    expect(report.levelsGained).toBe(6);
+    expect(state.level).toBe(7);
+    let spent = 0;
+    for (let l = 1; l <= 6; l++) spent += 100 * Math.pow(1.32, l - 1);
+    expect(state.xp).toBeCloseTo(1800 - spent);
   });
 
   it("adds pond income at full rate, not discounted by the mine's offline rate", () => {

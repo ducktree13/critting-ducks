@@ -50,7 +50,10 @@ export const DUCK_LEVEL_STAT_BONUS = 0.1; // +10% base stats per level above 1
 export const DUCK_MAX_LEVEL = 10;
 export const SHARD_CAP = 200; // per duck; overflow becomes Shard Points
 
-export const XP_CURVE = { base: 100, growth: 1.6 } as const; // xpToNext(level) = base * growth^(level-1)
+// xpToNext(level) = base * growth^(level-1). Growth was 1.6, which walled the
+// game around level 17 (L17->18 alone cost 184K XP, 27x what L10->11 cost).
+// 1.32 keeps a long tail (L30 ~314K, L40 ~5M) without the cliff.
+export const XP_CURVE = { base: 100, growth: 1.32 } as const;
 export const MINE_XP_PER_HIT = 1;
 
 export const LEVEL_REWARDS = {
@@ -96,10 +99,13 @@ export const GACHA = {
     divine: 60,
   } as Record<Rarity, number>,
   packs: {
-    standard: { price: 150, rolls: 1, guarantee: null, minLevel: 1 },
-    five: { price: 750, rolls: 5, guarantee: "uncommon", minLevel: 1 },
-    pack25: { price: 3750, rolls: 25, guarantee: "rare", minLevel: 1 },
-    pack100: { price: 15000, rolls: 100, guarantee: "epic", minLevel: 20 },
+    // Prices raised ~2.7x (playtest: gold outpaced its sinks badly; the
+    // choice was lower income or drastically higher prices — prices won so
+    // the satisfying income numbers stay).
+    standard: { price: 400, rolls: 1, guarantee: null, minLevel: 1 },
+    five: { price: 2000, rolls: 5, guarantee: "uncommon", minLevel: 1 },
+    pack25: { price: 11000, rolls: 25, guarantee: "rare", minLevel: 1 },
+    pack100: { price: 48000, rolls: 100, guarantee: "epic", minLevel: 20 },
   } as Record<PackId, { price: number; rolls: number; guarantee: Rarity | null; minLevel: number }>,
   packCritMaxBonus: 1, // free bonus packs per purchase, crits can chain up to this
 } as const;

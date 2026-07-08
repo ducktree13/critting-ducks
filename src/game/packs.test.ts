@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { ASCENSION, SHARD_CAP } from "./balance";
+import { ASCENSION, GACHA, SHARD_CAP } from "./balance";
 import { ascendDuck, ascensionCost, canAscend, canUpgrade, openPack, packPrice, packUnlocked, rollRarity, upgradeAll, upgradeDuck } from "./packs";
 import { assignToRoster, createInitialState, refreshStats } from "./state";
 import type { GameState, Rng } from "./types";
@@ -53,10 +53,12 @@ describe("welcome pack", () => {
 
 describe("pack tiers", () => {
   it("charges full price per tier with no bulk discount", () => {
-    expect(packPrice("standard", state, 0)).toBe(150);
-    expect(packPrice("five", state, 0)).toBe(750);
-    expect(packPrice("pack25", state, 0)).toBe(3750);
-    expect(packPrice("pack100", state, 0)).toBe(15000);
+    expect(packPrice("standard", state, 0)).toBe(GACHA.packs.standard.price);
+    expect(packPrice("five", state, 0)).toBe(GACHA.packs.five.price);
+    expect(packPrice("pack25", state, 0)).toBe(GACHA.packs.pack25.price);
+    expect(packPrice("pack100", state, 0)).toBe(GACHA.packs.pack100.price);
+    // No bulk discount: bigger packs cost exactly rolls x more or worse.
+    expect(GACHA.packs.five.price).toBeGreaterThanOrEqual(GACHA.packs.standard.price * 5);
   });
 
   it("locks the 100-pack below player level 20", () => {
@@ -117,7 +119,7 @@ describe("pack crits", () => {
     const opened = openPack(state, rng, "standard", 0)!;
     expect(opened.bonusPacks).toBe(1);
     expect(opened.results).toHaveLength(2);
-    expect(before - state.gold).toBe(150); // bonus pack was free
+    expect(before - state.gold).toBe(GACHA.packs.standard.price); // bonus pack was free
     expect(state.lifetime.packs).toBe(2);
   });
 
@@ -162,7 +164,7 @@ describe("pack credits and T100", () => {
     expect(packPrice("five", state, 5_000)).toBe(0);
     openPack(state, seq([NO_CRIT]), "five", 5_000);
     expect(state.gold).toBe(1_000_000);
-    expect(packPrice("five", state, 10_000)).toBe(750); // expired
+    expect(packPrice("five", state, 10_000)).toBe(GACHA.packs.five.price); // expired
   });
 });
 

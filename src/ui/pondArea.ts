@@ -65,26 +65,37 @@ const EMPTY_DOCK_POS: { left: string; top: string }[] = [
   { left: "46%", top: "88%" },
 ];
 
-// The island's exclusion zone in percent-space of the pond scene (the lake
-// SVG stretches to fill the box with preserveAspectRatio="none", so viewBox
-// coords map linearly to percents). Swimmers and bubbles avoid this region.
-const ISLAND_ZONE = { x0: 27, x1: 73, y0: 30, y1: 78 };
+// Exclusion zones in percent-space of the pond scene (the lake SVG stretches
+// to fill the box with preserveAspectRatio="none", so viewBox coords map
+// linearly to percents: x/4, y/2). Swimmers and bubbles avoid all of these:
+// the island, and each obstacle on the water (lily pads at 48/66, 352/78,
+// 322/168, 66/178; reed clumps in the far-shore corners) — ducks shouldn't
+// swim through scenery.
+const NO_SWIM_ZONES: { x0: number; x1: number; y0: number; y1: number }[] = [
+  { x0: 27, x1: 73, y0: 30, y1: 78 }, // island
+  { x0: 7, x1: 17, y0: 27, y1: 40 }, // lily (48,66)
+  { x0: 83, x1: 93, y0: 33, y1: 46 }, // lily (352,78)
+  { x0: 75, x1: 86, y0: 78, y1: 90 }, // lily (322,168)
+  { x0: 11, x1: 22, y0: 83, y1: 95 }, // lily (66,178)
+  { x0: 0, x1: 13, y0: 0, y1: 30 }, // reeds, top-left corner
+  { x0: 88, x1: 100, y0: 0, y1: 30 }, // reeds, top-right corner
+];
 // Open-water sampling bounds (percent) — inside the lake, below the far shore.
 const WATER_BOUNDS = { x0: 5, x1: 95, y0: 34, y1: 90 };
 
-function inIsland(x: number, y: number): boolean {
-  return x > ISLAND_ZONE.x0 && x < ISLAND_ZONE.x1 && y > ISLAND_ZONE.y0 && y < ISLAND_ZONE.y1;
+function inNoSwimZone(x: number, y: number): boolean {
+  return NO_SWIM_ZONES.some((z) => x > z.x0 && x < z.x1 && y > z.y0 && y < z.y1);
 }
 
-// Random open-water point (rejection sample around the island; falls back to
-// the front band which is always open water).
+// Random open-water point (rejection sample around the island + obstacles;
+// falls back to the mid-front band which is always open water).
 function randomWaterPoint(rand: () => number): { x: number; y: number } {
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 14; i++) {
     const x = WATER_BOUNDS.x0 + rand() * (WATER_BOUNDS.x1 - WATER_BOUNDS.x0);
     const y = WATER_BOUNDS.y0 + rand() * (WATER_BOUNDS.y1 - WATER_BOUNDS.y0);
-    if (!inIsland(x, y)) return { x, y };
+    if (!inNoSwimZone(x, y)) return { x, y };
   }
-  return { x: 20 + rand() * 60, y: 82 + rand() * 8 };
+  return { x: 30 + rand() * 40, y: 80 + rand() * 8 };
 }
 
 function pondRosterKey(state: GameState): string {

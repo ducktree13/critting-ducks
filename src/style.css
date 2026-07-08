@@ -550,18 +550,32 @@ main.world {
   opacity: 0.9;
 }
 
-/* Front (zoomable) tree: grab cursor + suppress browser touch gestures so
-   wheel-zoom and drag-pan aren't hijacked by page scroll / pinch. Background
-   forest trees are not zoomable and keep default behavior. */
+/* Front (interactive) tree. Zoom/pan removed (X4) — the tree renders
+   centered and large, full viewBox always. */
 #tree-svg-act1,
 #tree-svg-current {
-  cursor: grab;
-  touch-action: none;
   pointer-events: auto;
 }
-#tree-svg-act1.panning,
-#tree-svg-current.panning {
-  cursor: grabbing;
+
+/* X4 prestige reveal: on the Act-2 transition the camera pulls back from
+   ~2.6x (centered on where the old tree stood) to 1x — the Act-1 tree was
+   small; the new forest is larger. One-shot, transform-only. */
+.grove-reveal {
+  animation: grove-zoom-out 2.4s var(--ease-out);
+  transform-origin: 50% 78%;
+  z-index: 4; /* over the flanking areas while scaled up */
+}
+
+@keyframes grove-zoom-out {
+  0% { transform: scale(2.6); }
+  18% { transform: scale(2.6); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grove-reveal {
+    animation: none;
+  }
 }
 
 .tree-switcher {

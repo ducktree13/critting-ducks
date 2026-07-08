@@ -108,10 +108,10 @@ const FIT_W = 360; // usable width inside the 400 viewBox (widened in R2 so the
 // 30 act-1 nodes spread far enough apart to seat without overlap)
 const FIT_TOP = 40; // top margin
 
-// The skeleton renders at a constant tall scale (a hair under a perfect fit) so
-// the tree is a full barren silhouette from the first frame; foliage — not tree
-// size — is the visible progression.
-const TREE_SCALE = 0.95;
+// The skeleton renders at a constant tall scale filling its canvas — the tree
+// is the centered focal point of the whole game (X4: "just center it and make
+// it large"); foliage — not tree size — is the visible progression.
+const TREE_SCALE = 1.0;
 // Target node separation in viewBox space between any two seated nodes. Nodes
 // render at r=13 (26px diameter), so ~32 units keeps a clear gap. Act-1's
 // 30-node tree (the tightest) tops out around 33 units with FIT_W=360; we aim
@@ -595,149 +595,6 @@ function wireTreeSvg(svg: SVGSVGElement): void {
   });
 }
 
-// ---- Wheel zoom + drag pan on the FRONT tree SVG only (act1, or the selected
-// act2 tree). The background forest trees are non-interactive and never wired
-// for zoom. The base viewBox is 0 0 VB_W VB_H; zoom shrinks it (min 1x =
-// full, max ZOOM_MAX). Pan clamps so the content can't leave the viewport.
-// State is module-local per treeId and re-applied after event-driven rebuilds
-// (innerHTML is replaced, so the <svg> element is fresh each time). Node clicks
-// stay per-element so they survive viewBox changes; a drag on empty background
-// pans only after a small movement threshold, distinguishing it from a click.
-const VB_W = 400;
-const VB_H = 600;
-const ZOOM_MAX = 3;
-const DRAG_THRESHOLD = 5; // px of movement before a press becomes a pan
-
-interface ViewBox {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-const zoomState: Partial<Record<TreeId, ViewBox>> = {};
-
-function defaultViewBox(): ViewBox {
-  return { x: 0, y: 0, w: VB_W, h: VB_H };
-}
-
-// Clamp a viewBox so it stays within the base 0..VB_W / 0..VB_H content bounds
-// and never zooms out past 1x (w<=VB_W) or in past ZOOM_MAX.
-function clampViewBox(vb: ViewBox): ViewBox {
-  const minW = VB_W / ZOOM_MAX;
-  const w = Math.min(VB_W, Math.max(minW, vb.w));
-  const h = w * (VB_H / VB_W);
-  const x = Math.min(VB_W - w, Math.max(0, vb.x));
-  const y = Math.min(VB_H - h, Math.max(0, vb.y));
-  return { x, y, w, h };
-}
-
-function applyViewBox(svg: SVGSVGElement, vb: ViewBox): void {
-  svg.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
-}
-
-// Map a pointer event to viewBox coordinates given the current viewBox.
-function pointerToVb(svg: SVGSVGElement, e: { clientX: number; clientY: number }, vb: ViewBox): { x: number; y: number } {
-  const rect = svg.getBoundingClientRect();
-  const fx = (e.clientX - rect.left) / (rect.width || 1);
-  const fy = (e.clientY - rect.top) / (rect.height || 1);
-  return { x: vb.x + fx * vb.w, y: vb.y + fy * vb.h };
-}
-
-function wireTreeZoom(svg: SVGSVGElement, treeId: TreeId): void {
-  // Re-apply any preserved zoom for this tree after a rebuild.
-  let vb = clampViewBox(zoomState[treeId] ?? defaultViewBox());
-  zoomState[treeId] = vb;
-  applyViewBox(svg, vb);
-
-  const commit = (next: ViewBox): void => {
-    vb = clampViewBox(next);
-    zoomState[treeId] = vb;
-    applyViewBox(svg, vb);
-  };
-
-  // Cursor-anchored wheel zoom. passive:false so we can preventDefault and the
-  // page doesn't scroll while wheeling over the tree.
-  svg.addEventListener(
-    "wheel",
-    (e) => {
-      e.preventDefault();
-      const anchor = pointerToVb(svg, e, vb);
-      const factor = Math.exp(-e.deltaY * 0.0015); // wheel up -> zoom in
-      const newW = vb.w / factor;
-      const clampedW = Math.min(VB_W, Math.max(VB_W / ZOOM_MAX, newW));
-      const scale = clampedW / vb.w;
-      const newH = clampedW * (VB_H / VB_W);
-      // keep the anchor point fixed under the cursor
-      const nx = anchor.x - (anchor.x - vb.x) * scale;
-      const ny = anchor.y - (anchor.y - vb.y) * scale;
-      commit({ x: nx, y: ny, w: clampedW, h: newH });
-    },
-    { passive: false },
-  );
-
-  // Drag on empty background pans; a press on a node bubbles here but node
-  // handlers stopPropagation, and we only start panning past DRAG_THRESHOLD.
-  let dragging = false;
-  let moved = false;
-  let startClient = { x: 0, y: 0 };
-  let startVb = vb;
-
-  svg.addEventListener("pointerdown", (e) => {
-    // ignore presses that originate on an interactive node (let it click)
-    if ((e.target as Element).closest(".tree-node:not(.hidden)")) return;
-    dragging = true;
-    moved = false;
-    startClient = { x: e.clientX, y: e.clientY };
-    startVb = vb;
-  });
-
-  svg.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    const dxPx = e.clientX - startClient.x;
-    const dyPx = e.clientY - startClient.y;
-    if (!moved && Math.hypot(dxPx, dyPx) < DRAG_THRESHOLD) return;
-    if (!moved) {
-      moved = true;
-      svg.setPointerCapture(e.pointerId);
-      svg.classList.add("panning");
-    }
-    const rect = svg.getBoundingClientRect();
-    const vx = (dxPx / (rect.width || 1)) * startVb.w;
-    const vy = (dyPx / (rect.height || 1)) * startVb.h;
-    commit({ x: startVb.x - vx, y: startVb.y - vy, w: startVb.w, h: startVb.h });
-  });
-
-  const endDrag = (e: PointerEvent): void => {
-    if (!dragging) return;
-    dragging = false;
-    if (moved) {
-      try {
-        svg.releasePointerCapture(e.pointerId);
-      } catch {
-        /* pointer may already be released */
-      }
-      svg.classList.remove("panning");
-    }
-  };
-  svg.addEventListener("pointerup", endDrag);
-  svg.addEventListener("pointercancel", endDrag);
-
-  // Double-click empty background resets to 1x.
-  svg.addEventListener("dblclick", (e) => {
-    if ((e.target as Element).closest(".tree-node:not(.hidden)")) return;
-    commit(defaultViewBox());
-  });
-}
-
-function resetTreeZoom(treeId: TreeId): void {
-  zoomState[treeId] = defaultViewBox();
-  // Target the FRONT (interactive) tree only — in chapter 2 the background
-  // forest trees render first in the DOM, so a bare ".tree-svg" query would hit
-  // a non-interactive back tree instead of the zoomable front one.
-  const svg = bodyEl.querySelector<SVGSVGElement>(".tree-front");
-  if (svg) applyViewBox(svg, zoomState[treeId]!);
-}
-
 // Phase V2: the grove is a forest on an island. Chapter 1 shows a single Act-1
 // tree; chapter 2 shows all four Act-2 trees — the selected one full-size and
 // interactive in front, the other three at reduced fit behind/beside it,
@@ -769,15 +626,11 @@ function rebuildLayout(): void {
     bodyEl.innerHTML = `
       <div class="tree-switcher well">
         <b>${TREE_NAMES.act1}</b>
-        <button class="tree-nav" id="tree-reset" aria-label="Reset zoom" title="Reset zoom">⌂</button>
       </div>
       <div class="tree-forest">
         <svg class="tree-svg tree-front" id="tree-svg-act1" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, "act1")}</svg>
       </div>`;
-    const svg = bodyEl.querySelector<SVGSVGElement>("#tree-svg-act1")!;
-    wireTreeSvg(svg);
-    wireTreeZoom(svg, "act1");
-    bodyEl.querySelector("#tree-reset")!.addEventListener("click", () => resetTreeZoom("act1"));
+    wireTreeSvg(bodyEl.querySelector<SVGSVGElement>("#tree-svg-act1")!);
     return;
   }
 
@@ -801,19 +654,15 @@ function rebuildLayout(): void {
       <button class="tree-nav" id="tree-prev" aria-label="Previous tree">◀</button>
       <b>${TREE_NAMES[front]}</b>
       <button class="tree-nav" id="tree-next" aria-label="Next tree">▶</button>
-      <button class="tree-nav" id="tree-reset" aria-label="Reset zoom" title="Reset zoom">⌂</button>
     </div>
     <div class="tree-forest">
       ${backLayers}
       <svg class="tree-svg tree-front" id="tree-svg-current" viewBox="0 0 400 600" preserveAspectRatio="xMidYMax meet">${buildTreeSvg(state, front)}</svg>
     </div>
   `;
-  const svg = bodyEl.querySelector<SVGSVGElement>("#tree-svg-current")!;
-  wireTreeSvg(svg);
-  wireTreeZoom(svg, front);
+  wireTreeSvg(bodyEl.querySelector<SVGSVGElement>("#tree-svg-current")!);
   bodyEl.querySelector("#tree-prev")!.addEventListener("click", () => cycleTree(-1));
   bodyEl.querySelector("#tree-next")!.addEventListener("click", () => cycleTree(1));
-  bodyEl.querySelector("#tree-reset")!.addEventListener("click", () => resetTreeZoom(front));
 }
 
 function cycleTree(dir: 1 | -1): void {
@@ -852,6 +701,18 @@ export function initTreePanel(root: HTMLElement, state: GameState): void {
   on("chapterAdvance", () => {
     playFellingAnimation();
     rebuildLayout();
+    // X4 prestige reveal: after the felling, the camera pulls back FAR — the
+    // whole grove starts zoomed in ~2.6x on where the old tree stood and eases
+    // out to 1x, revealing that the Act-1 tree was quite small (its stump sits
+    // on the island) and the new forest's trees are larger. One-shot,
+    // transform-only; reduced motion skips it via the CSS media block.
+    const grove = document.querySelector("#grove-area");
+    if (grove) {
+      grove.classList.remove("grove-reveal");
+      void (grove as HTMLElement).offsetWidth;
+      grove.classList.add("grove-reveal");
+      window.setTimeout(() => grove.classList.remove("grove-reveal"), 2600);
+    }
   });
 
   rebuildLayout();

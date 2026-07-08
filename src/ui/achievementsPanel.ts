@@ -1,5 +1,4 @@
 import { ACHIEVEMENTS } from "../game/achievements";
-import { MATERIAL_NAMES } from "../game/balance";
 import { on } from "../game/events";
 import type { GameState } from "../game/types";
 import { fmt } from "./format";
@@ -33,7 +32,8 @@ export function initAchievementsPanel(state: GameState): void {
 
   on("achievement", (e) => showToast(`🏆 Achievement: ${e.name}`));
   on("missionComplete", (e) => showToast(`✔ Mission complete: ${e.name}`));
-  on("materialDrop", (e) => showToast(`🧪 Material: ${MATERIAL_NAMES[e.material]}`));
+  // Materials keep dropping/accumulating in state (for a future gear rework)
+  // but the items UI is removed (playtest X1), so no toast advertises them.
   on("chapterAdvance", () => showToast(`🌳 Act 2 begins! New trees are sprouting.`));
   on("bubblePopped", (e) => {
     if (e.kind === "duck") showToast(`🫧✨ A bubble revealed... Duck Tree!`);
